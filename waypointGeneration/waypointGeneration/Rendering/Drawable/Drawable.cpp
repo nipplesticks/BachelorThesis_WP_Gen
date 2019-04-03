@@ -32,7 +32,6 @@ void Drawable::SetVertices(std::vector<Vertex>* vertices)
 	memset(&bufferDesc, 0, sizeof(bufferDesc));
 	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
-	//bufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	bufferDesc.ByteWidth = sizeof(Vertex) * (UINT)m_vertices->size();
 
 	D3D11_SUBRESOURCE_DATA vertexData;

@@ -15,6 +15,7 @@ ForwardRender::~ForwardRender()
 void ForwardRender::Init()
 {
 	Renderer * r = Renderer::GetInstance();
+	ID3D11DeviceContext * dc = r->GetDeviceContext();
 
 	m_swapChain = r->GetSwapChain();
 	m_backBufferRTV = r->GetRTV();
@@ -30,6 +31,7 @@ void ForwardRender::Init()
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 
+	dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	m_forwardShaders.LoadVertexShader(L"Rendering\\Rendering\\Shaders\\ForwardVertex.hlsl", inputDesc, _countof(inputDesc));
 	m_forwardShaders.LoadPixelShader(L"Rendering\\Rendering\\Shaders\\ForwardPixel.hlsl");
 }
@@ -62,6 +64,7 @@ void ForwardRender::Draw()
 	
 	*/
 
+	//dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	for (size_t i = 0; i < drawQueueSize; i++)
 	{
 		m_objectValues.color = p_drawQueue[i]->GetColor();
@@ -79,7 +82,6 @@ void ForwardRender::Draw()
 		dc->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 		dc->Draw(p_drawQueue[i]->GetVertices()->size(), 0);
 	}
-
 }
 
 void ForwardRender::Release()

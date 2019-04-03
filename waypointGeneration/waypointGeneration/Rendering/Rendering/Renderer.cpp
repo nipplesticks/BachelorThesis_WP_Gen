@@ -107,12 +107,12 @@ void Renderer::Init()
 
 void Renderer::Clear()
 {
-
+	m_forwardRenderer.Clear();
 }
 
 void Renderer::Flush()
 {
-
+	m_forwardRenderer.Draw();
 }
 
 void Renderer::Present()
@@ -142,6 +142,8 @@ void Renderer::Release()
 	if (m_depthStencilState)
 		m_depthStencilState->Release();
 	m_depthStencilState = nullptr;
+
+	m_forwardRenderer.Release();
 
 	m_deviceContext->Release();
 
