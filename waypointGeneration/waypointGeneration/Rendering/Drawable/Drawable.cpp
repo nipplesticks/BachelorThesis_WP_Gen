@@ -3,7 +3,7 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Passess/IRender.h"
 
-Drawable::Drawable()
+Drawable::Drawable() : Transform()
 {
 }
 

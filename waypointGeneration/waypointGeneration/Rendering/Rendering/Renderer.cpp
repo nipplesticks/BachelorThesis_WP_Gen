@@ -83,23 +83,47 @@ void Renderer::Init()
 			_initViewPort(wndRes.x, wndRes.y);
 			pBackBuffer->Release();
 		}
+
+		D3D11_SAMPLER_DESC ssDesc = {};
+		ssDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		ssDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		ssDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		ssDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		ssDesc.MaxAnisotropy = 0;
+		ssDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		ssDesc.MaxLOD = D3D11_FLOAT32_MAX;
+		ssDesc.MinLOD = -D3D11_FLOAT32_MAX;
+		
+		for (unsigned int i = 0; i < 4; i++)
+			ssDesc.BorderColor[i] = 1.0f;
+
+		m_device->CreateSamplerState(&ssDesc, &m_samplerState);
+
+
+		m_forwardRenderer.Init();
+
 	}
 }
 
 void Renderer::Clear()
 {
+
 }
 
 void Renderer::Flush()
 {
+
 }
 
 void Renderer::Present()
 {
+	m_swapChain->Present(0, 0);
 }
 
 void Renderer::Release()
 {
+	m_swapChain->SetFullscreenState(false, NULL);
+
 	if (m_swapChain)
 		m_swapChain->Release();
 	m_swapChain = nullptr;
@@ -120,7 +144,6 @@ void Renderer::Release()
 	m_depthStencilState = nullptr;
 
 	m_deviceContext->Release();
-
 
 #ifdef _DEBUG
 	if (m_device->Release() > 0)
@@ -146,6 +169,41 @@ ID3D11Device * Renderer::GetDevice()
 ID3D11DeviceContext * Renderer::GetDeviceContext()
 {
 	return m_deviceContext;
+}
+
+IDXGISwapChain * Renderer::GetSwapChain()
+{
+	return m_swapChain;
+}
+
+ID3D11RenderTargetView * Renderer::GetRTV()
+{
+	return m_backBufferRTV;
+}
+
+ID3D11DepthStencilView * Renderer::GetDSV()
+{
+	return m_depthStencilView;
+}
+
+ID3D11Texture2D * Renderer::GetDepthBufferTex()
+{
+	return m_depthBufferTex;
+}
+
+ID3D11SamplerState * Renderer::GetSamplerState()
+{
+	return m_samplerState;
+}
+
+ID3D11DepthStencilState * Renderer::GetDepthStencilState()
+{
+	return m_depthStencilState;
+}
+
+const D3D11_VIEWPORT & Renderer::GetViewport() const
+{
+	return m_viewport;
 }
 
 void Renderer::_createDepthStencil(UINT width, UINT hight)

@@ -121,7 +121,9 @@
   <ItemGroup>
     <ClCompile Include="Rendering\Drawable\Drawable.cpp" />
     <ClCompile Include="Rendering\Drawable\Transform\Transform.cpp" />
+    <ClCompile Include="Rendering\Rendering\Passess\ForwardRender.cpp" />
     <ClCompile Include="Rendering\Rendering\Passess\IRender.cpp" />
+    <ClCompile Include="Rendering\Rendering\ShaderWrapper\Shader.cpp" />
     <ClCompile Include="waypointGenerationPCH.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -136,12 +138,36 @@
   <ItemGroup>
     <ClInclude Include="Rendering\Drawable\Drawable.h" />
     <ClInclude Include="Rendering\Drawable\Transform\Transform.h" />
+    <ClInclude Include="Rendering\Rendering\Passess\ForwardRender.h" />
     <ClInclude Include="Rendering\Rendering\Passess\IRender.h" />
+    <ClInclude Include="Rendering\Rendering\ShaderWrapper\Shader.h" />
     <ClInclude Include="Rendering\structs.h" />
     <ClInclude Include="waypointGenerationPCH.h" />
     <ClInclude Include="Rendering\Camera\Camera.h" />
     <ClInclude Include="Rendering\Rendering\Renderer.h" />
     <ClInclude Include="Rendering\Window\Window.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Rendering\Rendering\Shaders\ForwardPixel.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Rendering\Rendering\Shaders\ForwardVertex.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

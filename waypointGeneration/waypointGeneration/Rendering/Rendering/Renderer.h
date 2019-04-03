@@ -1,4 +1,6 @@
 #pragma once
+#include "Passess/ForwardRender.h"
+
 
 class Renderer
 {
@@ -20,7 +22,13 @@ public:
 public:
 	ID3D11Device * GetDevice();
 	ID3D11DeviceContext * GetDeviceContext();
-
+	IDXGISwapChain* GetSwapChain();
+	ID3D11RenderTargetView* GetRTV();
+	ID3D11DepthStencilView* GetDSV();
+	ID3D11Texture2D* GetDepthBufferTex();
+	ID3D11SamplerState* GetSamplerState();
+	ID3D11DepthStencilState* GetDepthStencilState();
+	const D3D11_VIEWPORT & GetViewport() const;
 
 private:
 	ID3D11Device*			m_device = nullptr;
@@ -35,6 +43,9 @@ private:
 	D3D11_VIEWPORT				m_viewport;
 
 	UINT m_sampleCount = 1;
+
+private:
+	ForwardRender m_forwardRenderer;
 
 private:
 	void _createDepthStencil(UINT width = 0, UINT hight = 0);

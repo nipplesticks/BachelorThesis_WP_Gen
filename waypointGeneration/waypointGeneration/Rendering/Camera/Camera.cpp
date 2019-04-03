@@ -201,8 +201,8 @@ void Camera::_calcMatrices()
 
 	DirectX::XMMATRIX viewProj = view * proj;
 
-	DirectX::XMStoreFloat4x4A(&m_viewMatrix, DirectX::XMMatrixTranspose(view));
-	DirectX::XMStoreFloat4x4A(&m_viewProjectionMatrix, DirectX::XMMatrixTranspose(viewProj));
+	DirectX::XMStoreFloat4x4A(&m_viewMatrix, view);
+	DirectX::XMStoreFloat4x4A(&m_viewProjectionMatrix, viewProj);
 }
 
 void Camera::_calcForwardRightAndUp()

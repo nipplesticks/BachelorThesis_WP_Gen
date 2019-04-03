@@ -39,6 +39,12 @@
     <ClCompile Include="Rendering\Rendering\Passess\IRender.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\Rendering\Passess\ForwardRender.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\Rendering\ShaderWrapper\Shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Rendering\Window\Window.h">
@@ -65,5 +71,15 @@
     <ClInclude Include="Rendering\Rendering\Passess\IRender.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Rendering\Rendering\Passess\ForwardRender.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\Rendering\ShaderWrapper\Shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Rendering\Rendering\Shaders\ForwardVertex.hlsl" />
+    <FxCompile Include="Rendering\Rendering\Shaders\ForwardPixel.hlsl" />
   </ItemGroup>
 </Project>
