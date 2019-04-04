@@ -7,7 +7,7 @@ struct VS_OUTPUT
 
 float4 main(VS_OUTPUT input) : SV_Target
 {
-    input.color = float4(1, 1, 1, 1);
+    //input.color = float4(1, 1, 1, 1);
     const float3 LIGHT_DIR = normalize(float3(1.0f, -1.0f, 1.0f));
     //const float3 LIGHT_DIR = normalize(float3(0.0, 0.0, 1.0f));
     float4 ambient = input.color * 0.1f;

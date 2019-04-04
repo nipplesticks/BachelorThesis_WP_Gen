@@ -4,8 +4,11 @@
 #include "MapGeneration/DiamondSquare.h"
 #include "MapGeneration/TerrainCreator.h"
 
-#define MOUSE_SESITIVITY_X 0.05
-#define MOUSE_SESITIVITY_Y 0.05
+#define MOUSE_SESITIVITY_X	0.05
+#define MOUSE_SESITIVITY_Y	0.05
+#define CAMERA_XZ_SPEED		10.0
+#define CAMERA_Y_SPEED		10.0
+
 
 
 static const DirectX::XMFLOAT4 _SXMcube[] =
@@ -84,6 +87,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	TerrainCreator terrainCreator;
 	std::vector<Vertex> vertices = terrainCreator.CreateTerrainFromFloatList(heightmap, mapSize);
 
+	Drawable map;
+	map.SetColor(0.3f, 1.0f, 0.02f);
+	map.SetVertices(&vertices);
+	map.SetPosition(-50, 0, -50);
+
+
 	while (wnd->IsOpen())
 	{
 		POINT mousePos = wnd->GetMousePosition();
@@ -96,17 +105,17 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		DirectX::XMFLOAT3 translation(0, 0, 0);
 
 		if (wnd->IsKeyPressed(Input::W))
-			translation.z += 1.0f * dt;
+			translation.z += CAMERA_XZ_SPEED * dt;
 		if (wnd->IsKeyPressed(Input::S))
-			translation.z -= 1.0f * dt;
+			translation.z -= CAMERA_XZ_SPEED * dt;
 		if (wnd->IsKeyPressed(Input::D))
-			translation.x += 1.0f * dt;
+			translation.x += CAMERA_XZ_SPEED * dt;
 		if (wnd->IsKeyPressed(Input::A))
-			translation.x -= 1.0f * dt;
+			translation.x -= CAMERA_XZ_SPEED * dt;
 		if (wnd->IsKeyPressed(Input::SPACE))
-			translation.y += 1.0f * dt;
+			translation.y += CAMERA_Y_SPEED * dt;
 		if (wnd->IsKeyPressed(Input::C))
-			translation.y -= 1.0f * dt;
+			translation.y -= CAMERA_Y_SPEED * dt;
 
 		float mouseDeltaX = (float)mousePos.x - (float)mouseReference.x;
 		float mouseDeltaY = (float)mousePos.y - (float)mouseReference.y;
@@ -120,9 +129,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		test.Rotate(0, 1.0f * dt, 0);
 		test.Update();
 
+		map.Update();
+
 		renderer->Clear();
 
 		test.Draw();
+		map.Draw();
 
 		renderer->Flush();
 		renderer->Present();
