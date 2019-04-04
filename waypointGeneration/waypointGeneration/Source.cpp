@@ -10,10 +10,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	Renderer * renderer = Renderer::GetInstance();
 	renderer->Init();
 	
+	Game * game = new Game();
 	Timer deltaTime;
 	deltaTime.Start();
-
-	Game * game = new Game();
 
 	while (wnd->IsOpen())
 	{

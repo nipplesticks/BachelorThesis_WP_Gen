@@ -67,5 +67,5 @@ private:
 
 	std::vector<Drawable*> m_containingDrawables;
 	std::vector<Waypoint*> m_containingWaypoints;
-	std::vector<Triangle*> m_containingTriangle;
+	std::vector<Triangle*> m_containingTriangles;
 };

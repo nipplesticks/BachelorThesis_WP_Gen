@@ -122,7 +122,7 @@ bool Quadrant::ContainsWaypoints() const
 
 bool Quadrant::ContainsTriangles() const
 {
-	return !m_containingTriangle.empty();
+	return !m_containingTriangles.empty();
 }
 
 void Quadrant::SetObject(Drawable * object)
@@ -137,19 +137,19 @@ void Quadrant::SetObject(Waypoint * wp)
 
 void Quadrant::SetObject(Triangle * t)
 {
-	m_containingTriangle.push_back(t);
+	m_containingTriangles.push_back(t);
 }
 
 void Quadrant::ClearAllObjects()
 {
 	m_containingDrawables.clear();
 	m_containingWaypoints.clear();
-	m_containingTriangle.clear();
+	m_containingTriangles.clear();
 }
 
 void Quadrant::ClearTriangles()
 {
-	m_containingTriangle.clear();
+	m_containingTriangles.clear();
 }
 
 void Quadrant::ClearDrawables()
@@ -172,7 +172,7 @@ const std::vector<Waypoint*>& Quadrant::GetWaypoints() const
 	return m_containingWaypoints;
 }
 
-const std::vector<Triangle>& Quadrant::GetTriangles() const
+const std::vector<Triangle*>& Quadrant::GetTriangles() const
 {
-	return m_containingTriangle;
+	return m_containingTriangles;
 }
