@@ -1,6 +1,8 @@
 #include "waypointGenerationPCH.h"
 #include "Rendering/Rendering/Renderer.h"
 #include "Rendering/Camera/Camera.h"
+#include "MapGeneration/DiamondSquare.h"
+#include "MapGeneration/TerrainCreator.h"
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
@@ -30,7 +32,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	Drawable test;
 	test.SetVertices(&verts);
 	test.SetColor(0.5f, 0.0f, 0.5f);
-	
+
+	// Heightmap test
+	int mapSize = 100;
+	DiamondSquare diamondSquare;
+	std::vector<float> heightmap = diamondSquare.CreateDiamondSquare(mapSize, 50, 10.0f);
+	TerrainCreator terrainCreator;
+	std::vector<Vertex> vertices = terrainCreator.CreateTerrainFromFloatList(heightmap, mapSize);
+
 	while (wnd->IsOpen())
 	{
 		if (wnd->IsKeyPressed(Input::ESCAPE))

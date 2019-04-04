@@ -22,7 +22,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{C301D87B-C447-4A33-8F1A-9D4040B2D661}</ProjectGuid>
     <RootNamespace>waypointGeneration</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -119,6 +119,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="MapGeneration\DiamondSquare.cpp" />
+    <ClCompile Include="MapGeneration\TerrainCreator.cpp" />
     <ClCompile Include="Rendering\Drawable\Drawable.cpp" />
     <ClCompile Include="Rendering\Drawable\Transform\Transform.cpp" />
     <ClCompile Include="Rendering\Rendering\Passess\ForwardRender.cpp" />
@@ -136,6 +138,8 @@
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="MapGeneration\DiamondSquare.h" />
+    <ClInclude Include="MapGeneration\TerrainCreator.h" />
     <ClInclude Include="Rendering\Drawable\Drawable.h" />
     <ClInclude Include="Rendering\Drawable\Transform\Transform.h" />
     <ClInclude Include="Rendering\Rendering\Passess\ForwardRender.h" />
