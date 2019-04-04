@@ -98,9 +98,9 @@ void DiamondSquare::_smoothValues(int filtersize)
 	int count = 0;
 	float total = 0.0f;
 
-	for (int x = 0; x < m_mapSize - 1; x++)
+	for (int x = 0; x < m_mapSize; x++)
 	{
-		for (int z = 0; z < m_mapSize - 1; z++)
+		for (int z = 0; z < m_mapSize; z++)
 		{
 			count = 0;
 			total = 0.0f;
