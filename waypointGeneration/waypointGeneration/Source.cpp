@@ -81,9 +81,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	wnd->MouseToCenter();
 
 	// Heightmap test
-	int mapSize = 1000;
+	int mapSize = 65;
 	DiamondSquare diamondSquare;
-	//std::vector<float> heightmap = diamondSquare.CreateDiamondSquare(mapSize, 10, 10.0f);
+	std::vector<float> heightmap = diamondSquare.CreateDiamondSquare(mapSize, 10, 10.0f);
 
 	const int arraySize = 4;
 	int mapSizes[arraySize];
@@ -106,11 +106,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	noises[3] = 10.0f;
 
 	DiamondSquare advancedMap;
-	std::vector<float> advancedHeightmap = advancedMap.AdvancedCreateDiamondSquare(mapSizes, stepSizes, noises, arraySize);
+	std::vector<std::vector<float>> advancedHeightmap = advancedMap.AdvancedCreateDiamondSquare(mapSizes, stepSizes, noises, arraySize);
 
 	TerrainCreator terrainCreator;
-	//std::vector<Vertex> vertices = terrainCreator.CreateTerrainFromFloatList(heightmap, mapSize);
-	std::vector<Vertex> vertices = terrainCreator.CreateTerrainFromFloatList(advancedHeightmap, mapSize);
+	std::vector<Vertex> vertices = terrainCreator.CreateTerrainFromFloatList(heightmap, mapSize);
+	std::vector<Vertex> temp;
+	for (int i = 0; i < arraySize; i++)
+	{
+		temp = terrainCreator.CreateTerrainFromFloatList(advancedHeightmap[i], mapSizes[i]);
+	}
 
 	Drawable map;
 	map.SetColor(0.3f, 1.0f, 0.02f);

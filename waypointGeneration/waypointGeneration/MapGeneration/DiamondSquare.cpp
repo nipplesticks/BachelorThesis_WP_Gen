@@ -31,28 +31,26 @@ std::vector<float> DiamondSquare::CreateDiamondSquare(int mapSize, int stepSize,
 	return m_diamondSquare;
 }
 
-std::vector<float> DiamondSquare::AdvancedCreateDiamondSquare(int mapSize[], int stepSize[], float noise[], int arraySize)
+std::vector< std::vector<float>> DiamondSquare::AdvancedCreateDiamondSquare(int mapSize[], int stepSize[], float noise[], int arraySize)
 {
 	int totalMapSize = 0;
 	for (int i = 0; i < arraySize; i++)
 		totalMapSize += mapSize[i] * mapSize[i];
 	m_mapSize = totalMapSize;
-	m_diamondSquare.resize(totalMapSize);
+	std::vector<std::vector<float>> map;
 
 	for (int i = 0; i < arraySize; i++)
 	{
 		while (stepSize[i] > 1)
 		{
-			_advancedDiamondSquareAlgorithm(mapSize[i], stepSize[i], noise[i]);
+			_advancedDiamondSquareAlgorithm(map, mapSize[i], stepSize[i], noise[i]);
 
 			stepSize[i] = stepSize[i] * 0.5;
 			noise[i] = noise[i] * 0.5;
 		}
 	}
 
-	//_smoothValues((int)pow(2, 2) + 1);
-
-	return m_diamondSquare;
+	return map;
 }
 
 float DiamondSquare::_fRand()
@@ -148,7 +146,7 @@ void DiamondSquare::_advancedSquareStep(std::vector<float> & map, int mapSize, i
 	_advancedSetValue(map, mapSize, x, z, diamondValue);
 }
 
-void DiamondSquare::_advancedDiamondSquareAlgorithm(int mapSize, int stepSize, float noise)
+void DiamondSquare::_advancedDiamondSquareAlgorithm(std::vector<std::vector<float>> & map, int mapSize, int stepSize, float noise)
 {
 	int halfStep = stepSize * 0.5;
 	std::vector<float> mapFractions;
@@ -165,7 +163,8 @@ void DiamondSquare::_advancedDiamondSquareAlgorithm(int mapSize, int stepSize, f
 			_advancedSquareStep(mapFractions, mapSize, x + halfStep, z, stepSize, halfStep, _fRand() * noise);
 		}
 
-	m_diamondSquare.insert(std::begin(m_diamondSquare), std::begin(mapFractions), std::end(mapFractions));
+	_advancedSmoothValues(mapFractions, (int)pow(2, 2) + 1);
+	map.push_back(mapFractions);
 }
 
 void DiamondSquare::_smoothValues(int filtersize)
@@ -198,4 +197,8 @@ void DiamondSquare::_smoothValues(int filtersize)
 				m_diamondSquare[z + (m_mapSize * x)] = total / (float)count;
 		}
 	}
+}
+
+void DiamondSquare::_advancedSmoothValues(std::vector<float>& map, int filtersize)
+{
 }
