@@ -119,6 +119,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Game\Game.cpp" />
+    <ClCompile Include="Game\Pathfinding\Waypoint.cpp" />
+    <ClCompile Include="Game\QuadTree\Quadrant.cpp" />
+    <ClCompile Include="Game\QuadTree\QuadTree.cpp" />
     <ClCompile Include="MapGeneration\DiamondSquare.cpp" />
     <ClCompile Include="MapGeneration\TerrainCreator.cpp" />
     <ClCompile Include="Rendering\Drawable\Drawable.cpp" />
@@ -138,6 +142,10 @@
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Game\Game.h" />
+    <ClInclude Include="Game\Pathfinding\Waypoint.h" />
+    <ClInclude Include="Game\QuadTree\Quadrant.h" />
+    <ClInclude Include="Game\QuadTree\QuadTree.h" />
     <ClInclude Include="MapGeneration\DiamondSquare.h" />
     <ClInclude Include="MapGeneration\TerrainCreator.h" />
     <ClInclude Include="Rendering\Drawable\Drawable.h" />

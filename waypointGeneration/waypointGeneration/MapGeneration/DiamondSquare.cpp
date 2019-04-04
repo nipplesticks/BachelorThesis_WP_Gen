@@ -69,6 +69,7 @@ float DiamondSquare::_getValue(int x, int z)
 	if (x < m_mapSize && x >= 0)
 		if (z < m_mapSize && z >= 0)
 			return m_diamondSquare[x + (z * m_mapSize)];
+	return 0.0f;
 }
 
 void DiamondSquare::_setValue(int x, int z, float value)
