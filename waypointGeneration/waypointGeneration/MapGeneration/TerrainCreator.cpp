@@ -11,8 +11,12 @@ TerrainCreator::~TerrainCreator()
 
 std::vector<Vertex> TerrainCreator::CreateTerrainFromFloatList(std::vector<float> heightValues, int mapSize)
 {
+
+	std::vector<DirectX::XMFLOAT4A> triangleNormals;
 	std::vector<Vertex> vertices;
 
+
+	int counter = 0;
 	for (int i = 0; i < mapSize - 1; i++)
 	{
 		for (int j = 0; j < mapSize - 1; j++)
@@ -38,6 +42,8 @@ std::vector<Vertex> TerrainCreator::CreateTerrainFromFloatList(std::vector<float
 			for (int k = vertices.size() - 4; k < vertices.size(); k++)
 				DirectX::XMStoreFloat4A(&vertices[k].Normal, normal);
 
+			triangleNormals.push_back(vertices.back().Normal);
+
 			v.Position = v0 = DirectX::XMFLOAT4A(float(j), float(heightValues[j + (i + 1) * mapSize]), float(i + 1), 1.0f);
 			vertices.push_back(v);
 
@@ -54,7 +60,41 @@ std::vector<Vertex> TerrainCreator::CreateTerrainFromFloatList(std::vector<float
 			for (int k = vertices.size() - 4; k < vertices.size(); k++)
 				DirectX::XMStoreFloat4A(&vertices[k].Normal, normal);
 
+			triangleNormals.push_back(vertices.back().Normal);
 		}
+	}
+
+	for (auto & v : vertices)
+	{
+		bool done = false;
+		auto it = vertices.begin();
+		DirectX::XMFLOAT4A normal(0, 0, 0, 0);
+		int normalCounter = 0;
+
+		it = std::find(it, vertices.end(), v);
+		while (!done)
+		{
+
+			if (it != vertices.end())
+			{
+				normalCounter++;
+				size_t index = it - vertices.begin();
+				const DirectX::XMFLOAT4A & nor = triangleNormals[index / 3];
+
+				normal.x += nor.x;
+				normal.y += nor.y;
+				normal.z += nor.z;
+				it = std::find(it + 1, vertices.end(), v);
+			}
+			else
+			{
+				done = true;
+			}
+		}
+		normal.x /= (float)normalCounter;
+		normal.y /= (float)normalCounter;
+		normal.z /= (float)normalCounter;
+		v.Normal = normal;
 	}
 
 	return vertices;

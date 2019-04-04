@@ -17,4 +17,17 @@ struct Vertex
 {
 	DirectX::XMFLOAT4A Position;
 	DirectX::XMFLOAT4A Normal;
+
+
+	bool operator==(const Vertex & v)
+	{
+		if (fabs(Position.x - v.Position.x) > 0.001f)
+			return false;
+		if (fabs(Position.y - v.Position.y) > 0.001f)
+			return false;
+		if (fabs(Position.z - v.Position.z) > 0.001f)
+			return false;
+
+		return true;
+	}
 };
