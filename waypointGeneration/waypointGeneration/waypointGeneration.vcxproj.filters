@@ -77,6 +77,9 @@
     <ClInclude Include="Rendering\Rendering\ShaderWrapper\Shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Utility\Timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Rendering\Rendering\Shaders\ForwardVertex.hlsl" />
