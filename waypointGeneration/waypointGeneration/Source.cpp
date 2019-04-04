@@ -38,7 +38,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	Camera camera;
 	camera.SetAsActiveCamera();
 	camera.SetDirection(0.f, 0.f, 1.f);
-	camera.CreateProjectionMatrix();
+	camera.CreateProjectionMatrix(0.01f, 10000.0f);
 	camera.SetPosition(0.f, 0.f, -10.f);
 
 
@@ -81,11 +81,36 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	wnd->MouseToCenter();
 
 	// Heightmap test
-	int mapSize = 100;
+	int mapSize = 1000;
 	DiamondSquare diamondSquare;
-	std::vector<float> heightmap = diamondSquare.CreateDiamondSquare(mapSize, 50, 10.0f);
+	//std::vector<float> heightmap = diamondSquare.CreateDiamondSquare(mapSize, 10, 10.0f);
+
+	const int arraySize = 4;
+	int mapSizes[arraySize];
+	int stepSizes[arraySize];
+	float noises[arraySize];
+
+	mapSizes[0] = 100;
+	mapSizes[1] = 50;
+	mapSizes[2] = 25;
+	mapSizes[3] = 125;
+
+	stepSizes[0] = 10;
+	stepSizes[1] = 10;
+	stepSizes[2] = 5;
+	stepSizes[3] = 125;
+
+	noises[0] = 2.5f;
+	noises[1] = 7.5f;
+	noises[2] = 0.5f;
+	noises[3] = 10.0f;
+
+	DiamondSquare advancedMap;
+	std::vector<float> advancedHeightmap = advancedMap.AdvancedCreateDiamondSquare(mapSizes, stepSizes, noises, arraySize);
+
 	TerrainCreator terrainCreator;
-	std::vector<Vertex> vertices = terrainCreator.CreateTerrainFromFloatList(heightmap, mapSize);
+	//std::vector<Vertex> vertices = terrainCreator.CreateTerrainFromFloatList(heightmap, mapSize);
+	std::vector<Vertex> vertices = terrainCreator.CreateTerrainFromFloatList(advancedHeightmap, mapSize);
 
 	Drawable map;
 	map.SetColor(0.3f, 1.0f, 0.02f);

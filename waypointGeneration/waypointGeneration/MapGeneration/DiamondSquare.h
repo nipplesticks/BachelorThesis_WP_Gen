@@ -7,6 +7,8 @@ public:
 	~DiamondSquare();
 
 	std::vector<float> CreateDiamondSquare(int mapSize, int stepSize, float noise);
+	// Requires unified arraysize of all the arrays
+	std::vector<float> AdvancedCreateDiamondSquare(int mapSize[], int stepSize[], float noise[], int arraySize);
 
 private:
 	int m_mapSize;
@@ -18,5 +20,16 @@ private:
 	void _diamondStep(int x, int z, int stepSize, int halfStep, float noise);
 	void _squareStep(int x, int z, int stepSize, int halfStep, float noise);
 	void _diamondSquareAlgorithm(int stepSize, float noise);
+
+	// Advanced diamond square algorithm creating different parts of the map with different values.
+	// The algorithm will create separate parts and then connect them.
+	// This makes it possible to have different map widths in the same map.
+	float _advancedGetValue(const std::vector<float> & map, int mapSize, int x, int z);
+	void _advancedSetValue(std::vector<float> & map, int mapSize, int x, int z, float value);
+	void _advancedDiamondStep(std::vector<float> & map, int mapSize, int x, int z, int stepSize, int halfStep, float noise);
+	void _advancedSquareStep(std::vector<float> & map, int mapSize, int x, int z, int stepSize, int halfStep, float noise);
+	void _advancedDiamondSquareAlgorithm(int mapSize, int stepSize, float noise);
+
+	// Smoothing
 	void _smoothValues(int filtersize); // filtersize must be 2^n + 1
 };
