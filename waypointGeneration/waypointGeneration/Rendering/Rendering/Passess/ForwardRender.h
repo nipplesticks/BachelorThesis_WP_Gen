@@ -13,7 +13,7 @@ public:
 	void Update() override;
 	void Draw() override;
 	void Release() override;
-
+	
 private:
 	IDXGISwapChain*				m_swapChain = nullptr;
 	ID3D11RenderTargetView*		m_backBufferRTV = nullptr;

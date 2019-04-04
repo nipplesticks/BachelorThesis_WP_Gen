@@ -45,9 +45,12 @@ void ForwardRender::Draw()
 {
 	Renderer * r = Renderer::GetInstance();
 	ID3D11DeviceContext * dc = r->GetDeviceContext();
+	dc->RSSetViewports(1, &m_viewport);
 	dc->OMSetDepthStencilState(m_depthStencilState, NULL);
 	dc->PSSetSamplers(1, 1, &m_samplerState);
 	m_forwardShaders.SetShaders(dc);
+	dc->OMSetRenderTargets(1, &m_backBufferRTV, m_depthStencilView);
+	
 
 	size_t drawQueueSize = p_drawQueue.size();
 	
@@ -80,7 +83,7 @@ void ForwardRender::Draw()
 		UINT stride = sizeof(Vertex);
 		UINT offset = 0;
 		dc->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-		dc->Draw(p_drawQueue[i]->GetVertices()->size(), 0);
+		dc->Draw((UINT)p_drawQueue[i]->GetVertices()->size(), 0);
 	}
 }
 

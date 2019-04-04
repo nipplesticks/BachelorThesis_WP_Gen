@@ -28,9 +28,13 @@ VS_OUTPUT main(VS_INPUT input)
 {
     VS_OUTPUT output;
     
-    output.position = mul(WorldMatrix, input.position);
-    output.position = mul(ViewProjectionMatrix, output.position);
-    output.normal = mul(WorldMatrix, input.normal);
+    //output.position = mul(WorldMatrix, input.position);
+    //output.position = mul(ViewProjectionMatrix, output.position);
+    output.position = input.position;
+    output.normal = input.normal;
+    //output.normal = mul(WorldMatrix, input.normal);
+
+
     output.color = ObjectColor;
 
     return output;

@@ -15,15 +15,16 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	camera->SetDirection(0.f, 0.f, 1.f);
 	camera->CreateProjectionMatrix();
 	camera->SetPosition(0.f, 0.f, -1.f);
+	camera->Update();
 
 	std::vector<Vertex> verts;
 	Vertex vertToPush;
-	vertToPush.Position = DirectX::XMFLOAT4A(0.0f, 0.0f, 1.0f, 0.0f);
-	vertToPush.Normal = DirectX::XMFLOAT4A(1.0f, 1.0f, 1.0f, 1.0f);
+	vertToPush.Position = DirectX::XMFLOAT4A(0.0f, 0.5f, 0.0f, 1.0f);
+	vertToPush.Normal = DirectX::XMFLOAT4A(0.0f, 0.0f, -1.0f, 0.0f);
 	verts.push_back(vertToPush);
-	vertToPush.Position = DirectX::XMFLOAT4A(1.0f, 0.0f, 1.0f, 0.0f);
+	vertToPush.Position = DirectX::XMFLOAT4A(0.5f, 0.5f, 0.0f, 1.0f);
 	verts.push_back(vertToPush);
-	vertToPush.Position = DirectX::XMFLOAT4A(0.0f, 1.0f, 1.0f, 0.0f);
+	vertToPush.Position = DirectX::XMFLOAT4A(0.0f, 0.0f, 0.0f, 1.0f);
 	verts.push_back(vertToPush);
 
 	Drawable test;
