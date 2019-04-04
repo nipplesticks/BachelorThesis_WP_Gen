@@ -146,6 +146,7 @@
     <ClInclude Include="Rendering\Rendering\Passess\IRender.h" />
     <ClInclude Include="Rendering\Rendering\ShaderWrapper\Shader.h" />
     <ClInclude Include="Rendering\structs.h" />
+    <ClInclude Include="Utility\Timer.h" />
     <ClInclude Include="waypointGenerationPCH.h" />
     <ClInclude Include="Rendering\Camera\Camera.h" />
     <ClInclude Include="Rendering\Rendering\Renderer.h" />

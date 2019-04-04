@@ -1,5 +1,6 @@
 #pragma once
 #include "Rendering/Window/Window.h"
+#include "Utility/Timer.h"
 //#include "Rendering/Rendering/Renderer.h"
 
 // STD
