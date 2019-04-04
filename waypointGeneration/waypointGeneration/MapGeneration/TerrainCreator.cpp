@@ -174,15 +174,19 @@ DirectX::XMFLOAT4A xmAvg(const DirectX::XMFLOAT4A & a, int nrOf)
 void TerrainCreator::_normalSmoothingType0(std::vector<DirectX::XMFLOAT4A> & normals, std::vector<Vertex>& vertices, int index, int mapSize)
 {
 	int counter = 1;
-	DirectX::XMFLOAT4A normal = normals[(x + y * mapSize) / 3];
+	DirectX::XMFLOAT4A normal = normals[index / 3];
 
-	if (x > 0)
+	if (index > 0)
 	{
 		counter++;
-		normal = xmAdd(normal, normals[(x - 1 + y * mapSize) / 3]);
+		normal = xmAdd(normal, normals[(index - 1) / 3]);
 	}
 
-	normal = xmAdd(normal, normals[(x - 1 + y * mapSize) / 3]);
+	if (index < vertices.size())
+	{
+		counter++;
+		normal = xmAdd(normal, normals[(index + 1) / 3]);
+	}
 
 }
 
@@ -202,6 +206,6 @@ void TerrainCreator::_normalSmoothingType4(std::vector<DirectX::XMFLOAT4A> & nor
 {
 }
 
-void TerrainCreator::_normalSmoothingType5(std::vector<DirectX::XMFLOAT4A> & normals, std::vector<Vertex>& vertices, int x, int y, int mapSize)
+void TerrainCreator::_normalSmoothingType5(std::vector<DirectX::XMFLOAT4A> & normals, std::vector<Vertex>& vertices, int index, int mapSize)
 {
 }
