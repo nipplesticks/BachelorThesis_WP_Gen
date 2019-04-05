@@ -55,8 +55,8 @@ std::vector< std::vector<float>> DiamondSquare::AdvancedCreateDiamondSquare(int 
 
 float DiamondSquare::_fRand()
 {
-	int min = -15;
-	int max = 15;
+	int min = -10;
+	int max = 10;
 	float randomNumber = (float)rand() / RAND_MAX;
 
 	return (min + randomNumber * (max - min));

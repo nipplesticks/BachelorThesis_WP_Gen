@@ -44,8 +44,6 @@ void ForwardRender::Draw()
 	m_forwardShaders.SetShaders(dc);
 	dc->OMSetRenderTargets(1, &m_backBufferRTV, m_depthStencilView);
 	
-
-	
 	DirectX::XMFLOAT4 camPos = Camera::GetActiveCamera()->GetPosition();
 	m_cameraValues.cameraPosition.x = camPos.x;
 	m_cameraValues.cameraPosition.y = camPos.y;
@@ -72,6 +70,10 @@ void ForwardRender::Draw()
 		dc->Unmap(m_objectBuffer, 0);
 
 		dc->VSSetConstantBuffers(0, 1, &m_objectBuffer);
+
+		ID3D11ShaderResourceView * tex = p_drawQueue[i]->GetTexture();
+
+		dc->PSSetShaderResources(0, 1, &tex);
 
 		ID3D11Buffer * vertexBuffer = p_drawQueue[i]->GetBuffer();
 		UINT stride = sizeof(Vertex);
