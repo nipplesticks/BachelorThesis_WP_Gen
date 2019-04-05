@@ -192,39 +192,121 @@ void QuadTree::_pointTraverse(const DirectX::XMFLOAT2 & point, int quadIndex, Dr
 				const std::vector<Drawable*> & objects = m_quadTree[quadIndex].GetDrawables();
 
 				size_t size = objects.size();
-				float tTemp = FLT_MAX;
 
 				for (int i = 0; i < size; i++)
 				{
-					DirectX::BoundingBox bb;
-					//bb.CreateFromPoints(&bb, objects[i])
-					/*sf::FloatRect fr;
-					fr.left = objects[i]->GetPosition().x;
-					fr.top = objects[i]->GetPosition().y;
-					fr.width = objects[i]->GetSize().x;
-					fr.height = objects[i]->GetSize().y;*/
+					DirectX::BoundingBox bb = objects[i]->GetBoundingBox();
 
-					/*if (fr.contains(point))
+					DirectX::XMVECTOR pointVec = DirectX::XMLoadFloat2(&point);
+					if (bb.Contains(pointVec))
 					{
 						ePtr = objects[i];
-					}*/
+					}
 				}
 			}
 		}
 	}
 }
 
-void QuadTree::_traverseWithRay(const DirectX::XMFLOAT2 & rayStart, const DirectX::XMFLOAT2 & rayEnd, int quadIndex, float & t, Drawable *& ePtr) const
+void QuadTree::_traverseWithRay(const DirectX::XMFLOAT2 & rayOrigin, const DirectX::XMFLOAT2 & rayDirection, int quadIndex, float & t, Drawable *& ePtr, Drawable * avoidThis) const
 {
+	if (t > 0.0f)
+	{
+		float teee = 0.f;
+		if (m_quadTree[quadIndex].Intersects(rayDirection, rayOrigin, teee))
+		{
+			int nrOfChildren = m_quadTree[quadIndex].GetNrOfChildren();
+
+			if (nrOfChildren > 0)
+			{
+				const unsigned int * children = m_quadTree[quadIndex].GetChildren();
+				for (int i = 0; i < nrOfChildren; i++)
+					_traverseWithRay(rayOrigin, rayDirection, children[i], t, ePtr, avoidThis);
+			}
+			else
+			{
+				// Trace Objects
+				const std::vector<Drawable*> & objects = m_quadTree[quadIndex].GetDrawables();
+
+				size_t size = objects.size();
+				float tTemp = FLT_MAX;
+
+				for (int i = 0; i < size; i++)
+				{
+					if (_insideRay(rayOrigin, rayDirection, objects[i], tTemp) && tTemp < t)
+					{
+						if (avoidThis && ePtr)
+						{
+							if (avoidThis != ePtr)
+							{
+								ePtr = objects[i];
+								t = tTemp;
+							}
+						}
+						else
+						{
+							ePtr = objects[i];
+							t = tTemp;
+						}
+
+					}
+				}
+			}
+		}
+	}
 }
 
 bool QuadTree::_lineWithLineIntersection(const DirectX::XMFLOAT2 & lineOrigin1, const DirectX::XMFLOAT2 & lineEnd1, const DirectX::XMFLOAT2 & lineOrigin2, const DirectX::XMFLOAT2 & lineEnd2, float & t) const
 {
-	return false;
+	static const float EPSILON = 0.0001f;
+
+	DirectX::XMVECTOR v1 = DirectX::XMLoadFloat2(&lineOrigin1);
+	DirectX::XMVECTOR v2 = DirectX::XMLoadFloat2(&lineEnd1);
+	
+	DirectX::XMVECTOR b = DirectX::XMVectorSubtract(v1, v2);
+	v1 = DirectX::XMLoadFloat2(&lineOrigin2);
+	v2 = DirectX::XMLoadFloat2(&lineEnd2);
+
+	DirectX::XMVECTOR d = DirectX::XMVectorSubtract(v1, v2);
+
+	float bDotDPerp = DirectX::XMVectorGetX(DirectX::XMVector2Dot(b, d));
+	
+	if (fabs(bDotDPerp) < EPSILON)
+		return false;
+
+	v2 = DirectX::XMLoadFloat2(&lineOrigin1);
+	
+	DirectX::XMFLOAT2 bDotDPerpFloat;
+	bDotDPerpFloat.x = bDotDPerp;
+	bDotDPerpFloat.y = bDotDPerp;
+
+	DirectX::XMVECTOR c = DirectX::XMVectorSubtract(v1, v2);
+	DirectX::XMVECTOR bDotDPerpVector = DirectX::XMLoadFloat2(&bDotDPerpFloat);
+	float tTemp = DirectX::XMVectorGetX(DirectX::XMVectorDivide(DirectX::XMVector2Dot(c, d), bDotDPerpVector));
+	
+	if (tTemp < 0.0f || tTemp > 1.0f)
+		return false;
+
+	float u = DirectX::XMVectorGetX(DirectX::XMVectorDivide(DirectX::XMVector2Dot(c, b), bDotDPerpVector));
+
+	if (u < 0.0f || u > 1.0f)
+		return false;
+
+	t = tTemp;
+
+	return true;
 }
 
 bool QuadTree::_insideRay(const DirectX::XMFLOAT2 & rayStart, const DirectX::XMFLOAT2 & rayEnd, const Quadrant & quadrant) const
 {
+	DirectX::XMVECTOR v1 = DirectX::XMLoadFloat2(&rayStart);
+	DirectX::XMVECTOR v2 = DirectX::XMLoadFloat2(&rayEnd);
+	DirectX::XMFLOAT2 length;
+	DirectX::XMStoreFloat2(&length, DirectX::XMVectorSubtract(v2, v1));
+
+	if (_insideAABB(rayStart, length, quadrant))
+		return true;
+
 	return false;
 }
 

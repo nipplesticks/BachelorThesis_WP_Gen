@@ -32,7 +32,7 @@ private:
 	void _traverseAndPlace(Waypoint * e, int quadIndex);
 	void _traverseAndPlace(Triangle * e, int quadIndex);
 	void _pointTraverse(const DirectX::XMFLOAT2 & point, int quadIndex, Drawable *& ePtr) const;
-	void _traverseWithRay(const DirectX::XMFLOAT2 & rayStart, const DirectX::XMFLOAT2 & rayEnd, int quadIndex, float & t, Drawable *& ePtr) const;
+	void _traverseWithRay(const DirectX::XMFLOAT2 & rayOrigin, const DirectX::XMFLOAT2 & rayDirection, int quadIndex, float & t, Drawable *& ePtr, Drawable * avoidThis) const;
 	bool _lineWithLineIntersection(const DirectX::XMFLOAT2 & lineOrigin1, const DirectX::XMFLOAT2 & lineEnd1, const DirectX::XMFLOAT2 & lineOrigin2, const DirectX::XMFLOAT2 & lineEnd2, float & t) const;
 	bool _insideRay(const DirectX::XMFLOAT2 & rayStart, const DirectX::XMFLOAT2 & rayEnd, const Quadrant & quadrant) const;
 	bool _insideRay(const DirectX::XMFLOAT2 & rayStart, const DirectX::XMFLOAT2 & rayEnd, const Drawable * e, float & t) const;

@@ -71,7 +71,7 @@ bool Quadrant::Intersects(const DirectX::BoundingBox & AABB)
 	return m_aabb.Intersects(AABB);
 }
 
-bool Quadrant::Intersects(const DirectX::XMFLOAT2 & ray, const DirectX::XMFLOAT2 & origin, float & t)
+bool Quadrant::Intersects(const DirectX::XMFLOAT2 & ray, const DirectX::XMFLOAT2 & origin, float & t) const
 {
 	return m_aabb.Intersects(DirectX::XMLoadFloat2(&origin), DirectX::XMVector2Normalize(DirectX::XMLoadFloat2(&ray)), t);
 }

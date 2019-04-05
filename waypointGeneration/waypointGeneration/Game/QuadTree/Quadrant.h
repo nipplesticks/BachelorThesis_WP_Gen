@@ -26,7 +26,7 @@ public:
 
 	bool Intersects(const DirectX::BoundingOrientedBox & OBB);
 	bool Intersects(const DirectX::BoundingBox & AABB);
-	bool Intersects(const DirectX::XMFLOAT2 & ray, const DirectX::XMFLOAT2 & origin, float & t);
+	bool Intersects(const DirectX::XMFLOAT2 & ray, const DirectX::XMFLOAT2 & origin, float & t) const;
 	bool Intersects(const DirectX::XMFLOAT2 & point);
 	bool Intersects(const Triangle & tri);
 

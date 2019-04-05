@@ -87,10 +87,10 @@ void Game::_cameraControl(double dt)
 
 void Game::_loadTerrain()
 {
-	const int TERRAIN_SIZE = 1000;
+	const int TERRAIN_SIZE = 1025;
 
 	m_terrainMesh = m_terrainCreator.CreateTerrainFromFloatList(
-		m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, 5000, 1000),
+		m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, TERRAIN_SIZE, 25.0f, -15, 15, 1),
 		TERRAIN_SIZE,
 		m_terrainTexture,
 		m_terrainTex2D

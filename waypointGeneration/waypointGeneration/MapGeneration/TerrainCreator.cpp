@@ -27,8 +27,9 @@ bool float4Equal(const DirectX::XMFLOAT4 & a, const DirectX::XMFLOAT4 & b)
 
 std::vector<Vertex> TerrainCreator::CreateTerrainFromFloatList(std::vector<float> heightValues, int mapSize, ID3D11ShaderResourceView *& srv, ID3D11Texture2D *& tex2D)
 {
-	static const float SNOW_START = 10.0f;
+	static const float SNOW_START = 20.0f;
 	static const float WATER_START = -5.0f;
+	static const float UNWALKABLE_SURFACE = 0.8f;
 
 	srv = nullptr;
 	tex2D = nullptr;
@@ -116,7 +117,7 @@ std::vector<Vertex> TerrainCreator::CreateTerrainFromFloatList(std::vector<float
 			triangleNormals.push_back(newNormal);
 
 			float dot = fabs(DirectX::XMVectorGetX(DirectX::XMVector3Dot(normal, DirectX::XMVectorSet(0, 1, 0, 0))));
-			if (dot < 0.5f)
+			if (dot < UNWALKABLE_SURFACE)
 			{
 				if (float4Equal(texture[j + i * mapSize], colors[2]))
 					texture[j + i * mapSize] = colors[3];
@@ -178,7 +179,7 @@ std::vector<Vertex> TerrainCreator::CreateTerrainFromFloatList(std::vector<float
 
 
 			dot = fabs(DirectX::XMVectorGetX(DirectX::XMVector3Dot(normal, DirectX::XMVectorSet(0, 1, 0, 0))));
-			if (dot < 0.5f)
+			if (dot < UNWALKABLE_SURFACE)
 			{
 				if (float4Equal(texture[j + (i + 1) * mapSize], colors[2]))
 					texture[j + (i + 1) * mapSize] = colors[3];
