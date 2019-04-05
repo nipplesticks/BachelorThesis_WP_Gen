@@ -85,8 +85,18 @@ void Game::_cameraControl(double dt)
 
 void Game::_loadTerrain()
 {
-	const int TERRAIN_SIZE = 1000;
-	m_terrainMesh = m_terrainCreator.CreateTerrainFromFloatList(m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, 5000, 1000), TERRAIN_SIZE);
+	const int TERRAIN_SIZE = 100;
+
+	ID3D11Texture2D * terrainTexture2D;
+	ID3D11ShaderResourceView * terrainTexture;
+
+	m_terrainMesh = m_terrainCreator.CreateTerrainFromFloatList(
+		m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, 5000, 1000),
+		TERRAIN_SIZE,
+		terrainTexture,
+		terrainTexture2D
+	);
+
 	m_terrain.SetVertices(&m_terrainMesh);
 	m_terrain.SetColor(0.3f, 0.5f, 0.02f);
 	m_terrain.SetPosition(-TERRAIN_SIZE / 2, 0.0f, -TERRAIN_SIZE / 2);

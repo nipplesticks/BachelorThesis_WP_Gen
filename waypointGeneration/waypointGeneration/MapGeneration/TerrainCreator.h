@@ -7,7 +7,7 @@ public:
 	TerrainCreator();
 	~TerrainCreator();
 	
-	std::vector<Vertex> CreateTerrainFromFloatList(std::vector<float> heightValues, int mapSize);
+	std::vector<Vertex> CreateTerrainFromFloatList(std::vector<float> heightValues, int mapSize, ID3D11ShaderResourceView *& srv, ID3D11Texture2D *& tex2D);
 	std::vector<Vertex> CreateTerrainFromFloatList2(std::vector<float> heightValues, int mapSize);
 
 private:

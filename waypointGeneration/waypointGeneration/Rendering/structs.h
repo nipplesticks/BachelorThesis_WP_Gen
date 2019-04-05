@@ -55,6 +55,7 @@ struct Vertex
 {
 	DirectX::XMFLOAT4A Position;
 	DirectX::XMFLOAT4A Normal;
+	DirectX::XMFLOAT2A UV;
 
 	bool operator==(const Vertex & v)
 	{

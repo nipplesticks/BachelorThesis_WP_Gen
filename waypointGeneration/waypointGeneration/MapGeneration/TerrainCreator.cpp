@@ -1,6 +1,7 @@
 #include "waypointGenerationPCH.h"
 #include "TerrainCreator.h"
 #include <map>
+#include "../Rendering/Rendering/Renderer.h"
 
 TerrainCreator::TerrainCreator()
 {
@@ -10,14 +11,24 @@ TerrainCreator::~TerrainCreator()
 {
 }
 
-std::vector<Vertex> TerrainCreator::CreateTerrainFromFloatList(std::vector<float> heightValues, int mapSize)
+std::vector<Vertex> TerrainCreator::CreateTerrainFromFloatList(std::vector<float> heightValues, int mapSize, ID3D11ShaderResourceView *& srv, ID3D11Texture2D *& tex2D)
 {
+	srv = nullptr;
+	tex2D = nullptr;
 	std::vector<DirectX::XMFLOAT4A> triangleNormals;
 	std::vector<Vertex> vertices;
 
+	DirectX::XMFLOAT4 colors[3] = {
+		{1.0f, 1.0f, 1.0f, 1.0f},
+		{0.0f, 0.0f, 1.0f, 1.0f},
+		{0.0f, 1.0f, 0.0f, 1.0f}
+	};
+
+	std::vector<DirectX::XMFLOAT4> texture(mapSize * mapSize);
+	
 	int counter = 0;
 	for (int i = 0; i < mapSize - 1; i++)
-	{
+	{	
 		for (int j = 0; j < mapSize - 1; j++)
 		{
 			Vertex v;
@@ -28,11 +39,33 @@ std::vector<Vertex> TerrainCreator::CreateTerrainFromFloatList(std::vector<float
 			v.Normal = DirectX::XMFLOAT4A(1.0f, 1.0f, 1.0f, 0.0f);
 			vertices.push_back(v);
 
+			if (vertices.back().Position.y > 5.0f)
+				texture[j + i * mapSize] = colors[0];
+			else if (vertices.back().Position.y < -5.0f)
+				texture[j + i * mapSize] = colors[1];
+			else
+				texture[j + i * mapSize] = colors[2];
+
+
 			v.Position = v1 = DirectX::XMFLOAT4A(float(j), float(heightValues[j + (i + 1) * mapSize]), float(i + 1), 1.0f);
 			vertices.push_back(v);
 
+			if (vertices.back().Position.y > 5.0f)
+				texture[j + (i + 1) * mapSize] = colors[0];
+			else if (vertices.back().Position.y < -5.0f)
+				texture[j + (i + 1) * mapSize] = colors[1];
+			else
+				texture[j + (i + 1) * mapSize] = colors[2];
+
 			v.Position = v2 = DirectX::XMFLOAT4A(float(j + 1), float(heightValues[(j + 1) + i * mapSize]), float(i), 1.0f);
 			vertices.push_back(v);
+
+			if (vertices.back().Position.y > 5.0f)
+				texture[(j + 1) + i * mapSize] = colors[0];
+			else if (vertices.back().Position.y < -5.0f)
+				texture[(j + 1) + i * mapSize] = colors[1];
+			else
+				texture[(j + 1) + i * mapSize] = colors[2];
 
 			DirectX::XMVECTOR e0 = DirectX::XMVectorSubtract(DirectX::XMLoadFloat4A(&v1), DirectX::XMLoadFloat4A(&v0));
 			DirectX::XMVECTOR e1 = DirectX::XMVectorSubtract(DirectX::XMLoadFloat4A(&v2), DirectX::XMLoadFloat4A(&v0));
@@ -41,18 +74,37 @@ std::vector<Vertex> TerrainCreator::CreateTerrainFromFloatList(std::vector<float
 			for (int k = vertices.size() - 4; k < vertices.size(); k++)
 				DirectX::XMStoreFloat4A(&vertices[k].Normal, normal);
 
-
-
 			triangleNormals.push_back(vertices.back().Normal);
 
 			v.Position = v0 = DirectX::XMFLOAT4A(float(j), float(heightValues[j + (i + 1) * mapSize]), float(i + 1), 1.0f);
 			vertices.push_back(v);
 
+			if (vertices.back().Position.y > 5.0f)
+				texture[j + (i + 1) * mapSize] = colors[0];
+			else if (vertices.back().Position.y < -5.0f)
+				texture[j + (i + 1) * mapSize] = colors[1];
+			else
+				texture[j + (i + 1) * mapSize] = colors[2];
+
 			v.Position = v1 = DirectX::XMFLOAT4A(float(j + 1), float(heightValues[(j + 1) + (i + 1) * mapSize]), float(i + 1), 1.0f);
 			vertices.push_back(v);
 
+			if (vertices.back().Position.y > 5.0f)
+				texture[(j + 1) + (i + 1) * mapSize] = colors[0];
+			else if (vertices.back().Position.y < -5.0f)
+				texture[(j + 1) + (i + 1) * mapSize] = colors[1];
+			else
+				texture[(j + 1) + (i + 1) * mapSize] = colors[2];
+
 			v.Position = v2 = DirectX::XMFLOAT4A(float(j + 1), float(heightValues[(j + 1) + i * mapSize]), float(i), 1.0f);
 			vertices.push_back(v);
+
+			if (vertices.back().Position.y > 5.0f)
+				texture[(j + 1) + i * mapSize] = colors[0];
+			else if (vertices.back().Position.y < -5.0f)
+				texture[(j + 1) + i * mapSize] = colors[1];
+			else
+				texture[(j + 1) + i * mapSize] = colors[2];
 
 			e0 = DirectX::XMVectorSubtract(DirectX::XMLoadFloat4A(&v1), DirectX::XMLoadFloat4A(&v0));
 			e1 = DirectX::XMVectorSubtract(DirectX::XMLoadFloat4A(&v2), DirectX::XMLoadFloat4A(&v0));
@@ -63,6 +115,35 @@ std::vector<Vertex> TerrainCreator::CreateTerrainFromFloatList(std::vector<float
 
 			triangleNormals.push_back(vertices.back().Normal);
 		}
+	}
+
+	D3D11_TEXTURE2D_DESC desc = {};
+	desc.ArraySize = 1;
+	desc.Height = mapSize;
+	desc.Width = mapSize;
+	desc.MipLevels = 1;
+	desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	desc.SampleDesc.Count = 1;
+	desc.SampleDesc.Quality = 0;
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	desc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA data;
+	data.pSysMem = texture.data();
+	data.SysMemPitch = mapSize * sizeof(DirectX::XMFLOAT4);
+	//data.SysMemSlicePitch = 1;
+
+	ID3D11Device * device = Renderer::GetInstance()->GetDevice();
+
+	if (SUCCEEDED(device->CreateTexture2D(&desc, &data, &tex2D)))
+	{
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Format = desc.Format;
+		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MipLevels = 1;
+		
+		HRESULT hr = device->CreateShaderResourceView(tex2D, &srvDesc, &srv);
 	}
 
 	return vertices;

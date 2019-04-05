@@ -31,6 +31,12 @@ private:
 	Drawable m_terrain;
 	Drawable m_player;
 
+	ID3D11Texture2D *			m_terrainTex2D = nullptr;
+	ID3D11ShaderResourceView *	m_terrainTexture = nullptr;
+
+	ID3D11Texture2D *			m_whiteTex2D = nullptr;
+	ID3D11ShaderResourceView *	m_whiteTexture = nullptr;
+
 	POINT m_mousePosLastFrame;
 
 	std::vector<Drawable> m_buildings;
