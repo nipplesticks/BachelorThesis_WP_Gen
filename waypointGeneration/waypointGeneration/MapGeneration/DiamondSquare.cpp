@@ -31,28 +31,6 @@ std::vector<float> DiamondSquare::CreateDiamondSquare(int mapSize, int stepSize,
 	return m_diamondSquare;
 }
 
-std::vector< std::vector<float>> DiamondSquare::AdvancedCreateDiamondSquare(int mapSize[], int stepSize[], float noise[], int arraySize)
-{
-	int totalMapSize = 0;
-	for (int i = 0; i < arraySize; i++)
-		totalMapSize += mapSize[i] * mapSize[i];
-	m_mapSize = totalMapSize;
-	std::vector<std::vector<float>> map;
-
-	for (int i = 0; i < arraySize; i++)
-	{
-		while (stepSize[i] > 1)
-		{
-			_advancedDiamondSquareAlgorithm(map, mapSize[i], stepSize[i], noise[i]);
-
-			stepSize[i] = stepSize[i] * 0.5;
-			noise[i] = noise[i] * 0.5;
-		}
-	}
-
-	return map;
-}
-
 float DiamondSquare::_fRand()
 {
 	int min = -10;
@@ -113,61 +91,6 @@ void DiamondSquare::_diamondSquareAlgorithm(int stepSize, float noise)
 		}
 }
 
-float DiamondSquare::_advancedGetValue(const std::vector<float> & map, int mapSize, int x, int z)
-{
-	if (x < mapSize && x >= 0)
-		if (z < mapSize && z >= 0)
-			return map[x + (z * mapSize)];
-}
-
-void DiamondSquare::_advancedSetValue(std::vector<float> & map, int mapSize, int x, int z, float value)
-{
-	map[x + (z * mapSize)] = value;
-}
-
-void DiamondSquare::_advancedDiamondStep(std::vector<float> & map, int mapSize, int x, int z, int stepSize, int halfStep, float noise)
-{
-	float corner1 = _advancedGetValue(map, mapSize, x - halfStep, z - halfStep);
-	float corner2 = _advancedGetValue(map, mapSize, x + halfStep, z - halfStep);
-	float corner3 = _advancedGetValue(map, mapSize, x - halfStep, z + halfStep);
-	float corner4 = _advancedGetValue(map, mapSize, x + halfStep, z + halfStep);
-	float squareValue = ((corner1 + corner2 + corner3 + corner4) * 0.25) + noise;
-
-	_advancedSetValue(map, mapSize, x, z, squareValue);
-}
-
-void DiamondSquare::_advancedSquareStep(std::vector<float> & map, int mapSize, int x, int z, int stepSize, int halfStep, float noise)
-{
-	float corner1 = _advancedGetValue(map, mapSize, x - halfStep, z);
-	float corner2 = _advancedGetValue(map, mapSize, x + halfStep, z);
-	float corner3 = _advancedGetValue(map, mapSize, x, z + halfStep);
-	float corner4 = _advancedGetValue(map, mapSize, x, z + halfStep);
-	float diamondValue = ((corner1 + corner2 + corner3 + corner4) * 0.25) + noise;
-
-	_advancedSetValue(map, mapSize, x, z, diamondValue);
-}
-
-void DiamondSquare::_advancedDiamondSquareAlgorithm(std::vector<std::vector<float>> & map, int mapSize, int stepSize, float noise)
-{
-	int halfStep = stepSize * 0.5;
-	std::vector<float> mapFractions;
-	mapFractions.resize(mapSize * mapSize);
-
-	for (int z = halfStep; z < mapSize - 1; z += stepSize)
-		for (int x = halfStep; x < mapSize - 1; x += stepSize)
-			_advancedDiamondStep(mapFractions, mapSize, x, z, stepSize, halfStep, _fRand() * noise);
-
-	for (int z = 0; z < mapSize - 1; z += stepSize)
-		for (int x = 0; x < mapSize - 1; x += stepSize)
-		{
-			_advancedSquareStep(mapFractions, mapSize, x + halfStep, z, stepSize, halfStep, _fRand() * noise);
-			_advancedSquareStep(mapFractions, mapSize, x + halfStep, z, stepSize, halfStep, _fRand() * noise);
-		}
-
-	_advancedSmoothValues(mapFractions, (int)pow(2, 2) + 1);
-	map.push_back(mapFractions);
-}
-
 void DiamondSquare::_smoothValues(int filtersize)
 {
 	int count = 0;
@@ -198,8 +121,4 @@ void DiamondSquare::_smoothValues(int filtersize)
 				m_diamondSquare[z + (m_mapSize * x)] = total / (float)count;
 		}
 	}
-}
-
-void DiamondSquare::_advancedSmoothValues(std::vector<float>& map, int filtersize)
-{
 }
