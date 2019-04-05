@@ -26,7 +26,7 @@ public:
 
 	bool Intersects(const DirectX::BoundingOrientedBox & OBB);
 	bool Intersects(const DirectX::BoundingBox & AABB);
-	bool Intersects(const DirectX::XMFLOAT2 & ray, const DirectX::XMFLOAT2 & origin, float & t);
+	bool Intersects(const DirectX::XMFLOAT2 & ray, const DirectX::XMFLOAT2 & origin, float & t) const;
 	bool Intersects(const DirectX::XMFLOAT2 & point);
 	bool Intersects(const Triangle & tri);
 
@@ -37,6 +37,8 @@ public:
 	const unsigned int & GetLevel() const;
 
 	bool IsLeaf() const;
+
+	const float & GetSize() const;
 
 	bool ContainsDrawables() const;
 	bool ContainsWaypoints() const;
@@ -64,6 +66,7 @@ private:
 	UINT m_children[4] = { 0 };
 	UINT m_nrOfChildren = 0;
 	UINT m_level = 0;
+	float m_size = 0.0f;
 
 	std::vector<Drawable*> m_containingDrawables;
 	std::vector<Waypoint*> m_containingWaypoints;

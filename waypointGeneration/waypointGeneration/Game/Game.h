@@ -8,7 +8,7 @@
 #define MOUSE_SESITIVITY_Y	0.05
 #define CAMERA_XZ_SPEED		100.0
 #define CAMERA_ZOOM_SPEED	3000.0
-#define TERRAIN_SIZE		1000
+#define TERRAIN_SIZE		2049
 
 class Game
 {

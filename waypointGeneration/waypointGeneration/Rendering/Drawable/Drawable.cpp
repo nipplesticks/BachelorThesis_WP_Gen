@@ -24,6 +24,9 @@ void Drawable::SetVertices(std::vector<Vertex>* vertices)
 		m_vertexBuffer->Release();
 	m_vertexBuffer = nullptr;
 
+	// Calculate mesh size
+	// TODO
+
 	/* Create Vertex Buffer */
 
 	UINT32 vertexSize = sizeof(Vertex);
@@ -74,6 +77,16 @@ const std::vector<Vertex>* Drawable::GetVertices() const
 ID3D11Buffer * Drawable::GetBuffer() const
 {
 	return m_vertexBuffer;
+}
+
+const DirectX::XMFLOAT2 & Drawable::GetSize() const
+{
+	return m_size;
+}
+
+const DirectX::BoundingBox & Drawable::GetBoundingBox() const
+{
+	return m_boundingBox;
 }
 
 ID3D11ShaderResourceView * Drawable::GetTexture() const
