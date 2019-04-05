@@ -33,8 +33,8 @@ std::vector<float> DiamondSquare::CreateDiamondSquare(int mapSize, int stepSize,
 
 float DiamondSquare::_fRand()
 {
-	int min = -10;
-	int max = 10;
+	int min = -15;
+	int max = 15;
 	float randomNumber = (float)rand() / RAND_MAX;
 
 	return (min + randomNumber * (max - min));
@@ -68,7 +68,7 @@ void DiamondSquare::_squareStep(int x, int z, int stepSize, int halfStep, float 
 {
 	float corner1 = _getValue(x - halfStep, z);
 	float corner2 = _getValue(x + halfStep, z);
-	float corner3 = _getValue(x, z + halfStep);
+	float corner3 = _getValue(x, z - halfStep);
 	float corner4 = _getValue(x, z + halfStep);
 	float diamondValue = ((corner1 + corner2 + corner3 + corner4) * 0.25) + noise;
 

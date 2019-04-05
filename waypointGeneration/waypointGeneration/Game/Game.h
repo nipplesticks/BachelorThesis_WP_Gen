@@ -7,7 +7,8 @@
 #define MOUSE_SESITIVITY_X	0.05
 #define MOUSE_SESITIVITY_Y	0.05
 #define CAMERA_XZ_SPEED		100.0
-#define CAMERA_Y_SPEED		100.0
+#define CAMERA_ZOOM_SPEED	3000.0
+#define TERRAIN_SIZE		1000
 
 class Game
 {
@@ -37,7 +38,7 @@ private:
 	ID3D11Texture2D *			m_whiteTex2D = nullptr;
 	ID3D11ShaderResourceView *	m_whiteTexture = nullptr;
 
-	POINT m_mousePosLastFrame;
+	POINT m_mouseReferencePosition;
 
 	std::vector<Drawable> m_buildings;
 private:
@@ -48,4 +49,5 @@ private:
 	void _loadTerrain();
 	void _loadMeshes();
 	void _randomizeBuildings();
+	void _setupGame();
 };

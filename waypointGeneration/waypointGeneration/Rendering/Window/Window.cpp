@@ -1,5 +1,6 @@
 #include "waypointGenerationPCH.h"
 #include "Window.h"
+#include <windowsx.h>
 
 Window::Window()
 {
@@ -79,6 +80,11 @@ BOOL Window::IsMousePressed(int button)
 	return m_mousePress[button];
 }
 
+INT Window::GetMouseWheelDelta(Input::SCROLL scrollDir)
+{
+	return m_scroll[scrollDir];
+}
+
 HWND Window::GetHwnd() const
 {
 	return m_hwnd;
@@ -131,6 +137,12 @@ void Window::SetMousePosition(POINT mousePos, BOOL windowRelative)
 	SetCursorPos(mousePos.x, mousePos.y);
 }
 
+void Window::ResetInput()
+{
+	m_scroll[0] = 0;
+	m_scroll[1] = 0;
+}
+
 LRESULT Window::_WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	Window * wnd = Window::GetInstance();
@@ -144,6 +156,11 @@ LRESULT Window::_WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_KEYUP:
 		wnd->m_keyPress[wParam] = false;
 		return 0;
+
+	case WM_MOUSEWHEEL:
+		wnd->m_scroll[1] = GET_WHEEL_DELTA_WPARAM(wParam) > 0 ? 1 : -1;
+		return 0;
+
 
 	case WM_LBUTTONDOWN:
 	case WM_MBUTTONDOWN:

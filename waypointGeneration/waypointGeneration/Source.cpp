@@ -2,8 +2,17 @@
 #include "Rendering/Rendering/Renderer.h"
 #include "Game/Game.h"
 
+void _alocConsole() {
+	AllocConsole();
+	FILE* fp;
+	freopen_s(&fp, "CONIN$", "r", stdin);
+	freopen_s(&fp, "CONOUT$", "w", stdout);
+}
+	
+
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
+	_alocConsole();
 	Window * wnd = Window::GetInstance();
 	wnd->Create(hInstance, nCmdShow, 1280, 720, 0);
 
@@ -22,6 +31,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 			wnd->Close();
 
 		game->Update(dt);
+		wnd->ResetInput();
 
 		renderer->Clear();
 
@@ -29,6 +39,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 		renderer->Flush();
 		renderer->Present();
+
 	}
 
 	renderer->Release();

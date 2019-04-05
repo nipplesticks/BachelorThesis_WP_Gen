@@ -12,7 +12,9 @@ Game::Game()
 
 	Window * wnd = Window::GetInstance();
 	wnd->MouseToCenter();
-	m_mousePosLastFrame = wnd->GetMousePosition();
+	m_mouseReferencePosition = wnd->GetMousePosition();
+
+	_setupGame();
 }
 
 Game::~Game()
@@ -58,46 +60,65 @@ void Game::_playerFixYPosition()
 void Game::_cameraControl(double dt)
 {
 	Window * wnd = Window::GetInstance();
-	POINT mousePos = wnd->GetMousePosition();
-	wnd->MouseToCenter();
-
+	POINT mp = wnd->GetMousePosition();
+	
 	DirectX::XMFLOAT3 translation(0, 0, 0);
 
-	if (wnd->IsKeyPressed(Input::W))
+	if (wnd->IsKeyPressed(Input::UP_ARROW) || mp.y < 50)
 		translation.z += CAMERA_XZ_SPEED * dt;
-	if (wnd->IsKeyPressed(Input::S))
+	if (wnd->IsKeyPressed(Input::DOWN_ARROW) || mp.y > wnd->GetWindowSize().y - 50)
 		translation.z -= CAMERA_XZ_SPEED * dt;
-	if (wnd->IsKeyPressed(Input::D))
+	if (wnd->IsKeyPressed(Input::RIGHT_ARROW) || mp.x > wnd->GetWindowSize().x - 75)
 		translation.x += CAMERA_XZ_SPEED * dt;
-	if (wnd->IsKeyPressed(Input::A))
+	if (wnd->IsKeyPressed(Input::LEFT_ARROW) || mp.x < 75)
 		translation.x -= CAMERA_XZ_SPEED * dt;
+	
+	INT scrollDelta;
+	if (scrollDelta = wnd->GetMouseWheelDelta(Input::VERTICAL))
+	{
+		DirectX::XMFLOAT2 mousePos, center;
+		mousePos.x = mp.x;
+		mousePos.y = mp.y;
+		center.x = m_mouseReferencePosition.x;
+		center.y = m_mouseReferencePosition.y;
+
+		DirectX::XMFLOAT2 zoomDir;
+		DirectX::XMStoreFloat2(&zoomDir, DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&mousePos), DirectX::XMLoadFloat2(&center)));
+
+		float x = zoomDir.x * dt * scrollDelta * 9;
+		float y = zoomDir.y * dt * scrollDelta * -16;
+		float z = CAMERA_ZOOM_SPEED * dt * scrollDelta;
+
+		m_camera.Translate(0, 0, CAMERA_ZOOM_SPEED * dt * scrollDelta, false);
+		m_camera.Translate(x, 0, y);
+	}
+
 	if (wnd->IsKeyPressed(Input::SPACE))
-		translation.y += CAMERA_Y_SPEED * dt;
+		translation.y += CAMERA_ZOOM_SPEED * dt;
 	if (wnd->IsKeyPressed(Input::C))
-		translation.y -= CAMERA_Y_SPEED * dt;
+		translation.y -= CAMERA_ZOOM_SPEED * dt;
 
-	float mouseDeltaX = (float)mousePos.x - (float)m_mousePosLastFrame.x;
-	float mouseDeltaY = (float)mousePos.y - (float)m_mousePosLastFrame.y;
+	/*float mouseDeltaX = (float)mousePos.x - (float)m_mousePosLastFrame.x;
+	float mouseDeltaY = (float)mousePos.y - (float)m_mousePosLastFrame.y;*/
 
-	DirectX::XMFLOAT2 camRotation(DirectX::XMConvertToRadians(mouseDeltaX) * MOUSE_SESITIVITY_X, DirectX::XMConvertToRadians(mouseDeltaY) * MOUSE_SESITIVITY_Y);
+	//DirectX::XMFLOAT2 camRotation(DirectX::XMConvertToRadians(mouseDeltaX) * MOUSE_SESITIVITY_X, DirectX::XMConvertToRadians(mouseDeltaY) * MOUSE_SESITIVITY_Y);
 
-	m_camera.Rotate(camRotation.y, camRotation.x, 0.0f);
+	//m_camera.Rotate(camRotation.y, camRotation.x, 0.0f);
+
 	m_camera.Translate(translation);
 }
 
 void Game::_loadTerrain()
 {
-	const int TERRAIN_SIZE = 1000;
-
 	m_terrainMesh = m_terrainCreator.CreateTerrainFromFloatList(
-		m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, 5000, 1000),
+		m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, 200, 100),
 		TERRAIN_SIZE,
 		m_terrainTexture,
 		m_terrainTex2D
 	);
 
 	m_terrain.SetVertices(&m_terrainMesh);
-	m_terrain.SetPosition(-TERRAIN_SIZE / 2, 0.0f, -TERRAIN_SIZE / 2);
+	//m_terrain.SetPosition(-TERRAIN_SIZE / 2, 0.0f, -TERRAIN_SIZE / 2);
 	m_terrain.SetTexture(m_terrainTexture);
 }
 
@@ -166,4 +187,21 @@ void Game::_loadMeshes()
 
 void Game::_randomizeBuildings()
 {
+}
+
+void Game::_setupGame()
+{
+	const auto & startPos = m_terrainMesh.front().Position;
+	m_player.SetPosition(startPos.x, startPos.y + 0.5f, startPos.z);
+	m_camera.SetDirection(1, -2, 1);
+
+	const DirectX::XMFLOAT4 camDir = m_camera.GetDirectionVector();
+
+	DirectX::XMVECTOR camPosDir = DirectX::XMVectorScale(DirectX::XMLoadFloat4(&camDir), -1.0f);
+	DirectX::XMVECTOR playerPos = DirectX::XMLoadFloat3(&m_player.GetPosition());
+	DirectX::XMVECTOR camPos = DirectX::XMVectorAdd(playerPos, DirectX::XMVectorScale(camPosDir, 100.0f));
+
+	DirectX::XMFLOAT3 xmCamPos;
+	DirectX::XMStoreFloat3(&xmCamPos, camPos);
+	m_camera.SetPosition(xmCamPos);
 }

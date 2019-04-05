@@ -114,6 +114,11 @@ public:
 		MBUTTON = 16,
 		RBUTTON = 2
 	};
+	enum SCROLL
+	{
+		HORIZONTAL = 0,
+		VERTICAL = 1
+	};
 };
 
 
@@ -133,6 +138,7 @@ public:
 
 	BOOL IsKeyPressed(int key);
 	BOOL IsMousePressed(int button);
+	INT	 GetMouseWheelDelta(Input::SCROLL scrollDir);
 
 	HWND GetHwnd() const;
 
@@ -143,6 +149,8 @@ public:
 	POINT GetMousePosition();
 	void MouseToCenter();
 	void SetMousePosition(POINT mousePos, BOOL windowRelative = true);
+
+	void ResetInput();
 
 private:
 	HWND	m_hwnd;
@@ -160,6 +168,7 @@ private:
 
 	bool m_keyPress[256]	= { false };
 	bool m_mousePress[256]	= { false };
+	INT m_scroll[2] = { 0, 0 };
 
 private:
 	Window();
