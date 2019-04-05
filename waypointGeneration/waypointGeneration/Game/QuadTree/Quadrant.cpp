@@ -22,6 +22,8 @@ void Quadrant::Create(const DirectX::XMFLOAT2 & pos, float size, UINT currentLev
 	xmP2.x += size;
 	xmP2.y += size;
 
+	m_size = size;
+
 	m_max = xmP2;
 	DirectX::XMVECTOR p1 = DirectX::XMLoadFloat2(&pos);
 	DirectX::XMVECTOR p2 = DirectX::XMLoadFloat2(&xmP2);
@@ -108,6 +110,11 @@ const unsigned int & Quadrant::GetLevel() const
 bool Quadrant::IsLeaf() const
 {
 	return m_isLeaf;
+}
+
+const float & Quadrant::GetSize() const
+{
+	return m_size;
 }
 
 bool Quadrant::ContainsDrawables() const

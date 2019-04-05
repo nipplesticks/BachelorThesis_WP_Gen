@@ -15,6 +15,8 @@ public:
 	const DirectX::XMFLOAT4A & GetColor() const;
 	const std::vector<Vertex> * GetVertices() const;
 	ID3D11Buffer * GetBuffer() const;
+	const DirectX::XMFLOAT2 & GetSize() const;
+	const DirectX::BoundingBox & GetBoundingBox() const;
 
 	void Draw();
 
@@ -23,6 +25,8 @@ private:
 
 	std::vector<Vertex> * m_vertices = nullptr;
 
+	DirectX::XMFLOAT2 m_size;
+	DirectX::BoundingBox m_boundingBox;
 
 	// D3D11 stuff
 	ID3D11Buffer * m_vertexBuffer = nullptr;
