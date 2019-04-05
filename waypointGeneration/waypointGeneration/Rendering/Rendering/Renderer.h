@@ -30,6 +30,9 @@ public:
 	ID3D11DepthStencilState* GetDepthStencilState();
 	const D3D11_VIEWPORT & GetViewport() const;
 
+	ID3D11Texture2D* GetDefaultTex2D() const;
+	ID3D11ShaderResourceView* GetDefaultTexture() const;
+
 private:
 	ID3D11Device*			m_device = nullptr;
 	ID3D11DeviceContext *	m_deviceContext = nullptr;
@@ -47,8 +50,12 @@ private:
 private:
 	ForwardRender m_forwardRenderer;
 
+	ID3D11ShaderResourceView * m_defaultTexture = nullptr;
+	ID3D11Texture2D * m_defaultTex2D = nullptr;
+
 private:
 	void _createDepthStencil(UINT width = 0, UINT hight = 0);
 	void _initViewPort(UINT width = 0, UINT hight = 0);
+	void _createDefaultTexture();
 
 };

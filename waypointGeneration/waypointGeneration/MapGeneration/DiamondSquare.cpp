@@ -13,17 +13,19 @@ std::vector<float> DiamondSquare::CreateDiamondSquare(int mapSize, int stepSize,
 {
 	m_mapSize = mapSize;
 	m_diamondSquare.resize(m_mapSize * m_mapSize);
+	int min = -50;
+	int max = 50;
 	
 	for (int z = 0; z < m_mapSize; z += stepSize)
 		for (int x = 0; x < m_mapSize; x += stepSize)
-			_setValue(x, z, _fRand());
+			_setValue(x, z, _fRand(min, max));
 
 	while (stepSize > 1)
 	{
 		_diamondSquareAlgorithm(stepSize, noise);
 
-		stepSize = stepSize * 0.5;
-		noise = noise * 0.5;
+		stepSize *= 0.5;
+		noise *= 0.5;
 	}
 
 	_smoothValues((int)pow(2, 2) + 1);
@@ -31,10 +33,10 @@ std::vector<float> DiamondSquare::CreateDiamondSquare(int mapSize, int stepSize,
 	return m_diamondSquare;
 }
 
-float DiamondSquare::_fRand()
+float DiamondSquare::_fRand(int min, int max)
 {
-	int min = -15;
-	int max = 15;
+	//int min = -10;
+	//int max = 10;
 	float randomNumber = (float)rand() / RAND_MAX;
 
 	return (min + randomNumber * (max - min));
@@ -78,16 +80,18 @@ void DiamondSquare::_squareStep(int x, int z, int stepSize, int halfStep, float 
 void DiamondSquare::_diamondSquareAlgorithm(int stepSize, float noise)
 {
 	int halfStep = stepSize * 0.5;
+	static int min = -50;
+	static int max = 50;
 
 	for (int z = halfStep; z < m_mapSize - 1; z += stepSize)
 		for (int x = halfStep; x < m_mapSize - 1; x += stepSize)
-			_diamondStep(x, z, stepSize, halfStep, _fRand() * noise);
+			_diamondStep(x, z, stepSize, halfStep, _fRand(min, max) * noise);
 
 	for (int z = 0; z < m_mapSize - 1; z += stepSize)
 		for (int x = 0; x < m_mapSize - 1; x += stepSize)
 		{
-			_squareStep(x + halfStep, z, stepSize, halfStep, _fRand() * noise);
-			_squareStep(x + halfStep, z, stepSize, halfStep, _fRand() * noise);
+			_squareStep(x + halfStep, z, stepSize, halfStep, _fRand(min, max) * noise);
+			_squareStep(x + halfStep, z, stepSize, halfStep, _fRand(min, max) * noise);
 		}
 }
 

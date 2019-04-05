@@ -99,6 +99,7 @@ void Renderer::Init()
 
 		m_device->CreateSamplerState(&ssDesc, &m_samplerState);
 
+		_createDefaultTexture();
 
 		m_forwardRenderer.Init();
 
@@ -112,7 +113,6 @@ void Renderer::Clear()
 
 	m_deviceContext->ClearRenderTargetView(m_backBufferRTV, c);
 	m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
 }
 
 void Renderer::Flush()
@@ -147,6 +147,18 @@ void Renderer::Release()
 	if (m_depthStencilState)
 		m_depthStencilState->Release();
 	m_depthStencilState = nullptr;
+
+	if (m_depthStencilState)
+		m_depthStencilState->Release();
+	m_depthStencilState = nullptr;
+
+	if (m_defaultTex2D)
+		m_defaultTex2D->Release();
+	m_defaultTex2D = nullptr;
+
+	if (m_defaultTexture)
+		m_defaultTexture->Release();
+	m_defaultTexture = nullptr;
 
 	m_forwardRenderer.Release();
 
@@ -213,6 +225,16 @@ const D3D11_VIEWPORT & Renderer::GetViewport() const
 	return m_viewport;
 }
 
+ID3D11Texture2D * Renderer::GetDefaultTex2D() const
+{
+	return m_defaultTex2D;
+}
+
+ID3D11ShaderResourceView * Renderer::GetDefaultTexture() const
+{
+	return m_defaultTexture;
+}
+
 void Renderer::_createDepthStencil(UINT width, UINT hight)
 {
 	D3D11_TEXTURE2D_DESC depthStencilDesc;
@@ -273,4 +295,35 @@ void Renderer::_initViewPort(UINT width, UINT hight)
 	m_viewport.MaxDepth = 1.0f;
 	m_viewport.TopLeftX = 0;
 	m_viewport.TopLeftY = 0;
+}
+
+void Renderer::_createDefaultTexture()
+{
+	D3D11_TEXTURE2D_DESC desc = {};
+	desc.ArraySize = 1;
+	desc.Height = 1;
+	desc.Width = 1;
+	desc.MipLevels = 1;
+	desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	desc.SampleDesc.Count = 1;
+	desc.SampleDesc.Quality = 0;
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	desc.MiscFlags = 0;
+
+	DirectX::XMFLOAT4 c(1.0f, 1.0f, 1.0f, 1.0f);
+	D3D11_SUBRESOURCE_DATA data;
+	data.pSysMem = &c;
+	data.SysMemPitch = sizeof(DirectX::XMFLOAT4);
+
+	if (SUCCEEDED(m_device->CreateTexture2D(&desc, &data, &m_defaultTex2D)))
+	{
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Format = desc.Format;
+		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MipLevels = 1;
+
+		HRESULT hr = m_device->CreateShaderResourceView(m_defaultTex2D, &srvDesc, &m_defaultTexture);
+	}
+
 }

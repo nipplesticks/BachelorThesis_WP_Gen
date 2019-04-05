@@ -12,7 +12,7 @@ private:
 	int m_mapSize;
 	std::vector<float> m_diamondSquare;
 
-	float _fRand();
+	float _fRand(int min, int max);
 	float _getValue(int x, int z);
 	void _setValue(int x, int z, float value);
 	void _diamondStep(int x, int z, int stepSize, int halfStep, float noise);

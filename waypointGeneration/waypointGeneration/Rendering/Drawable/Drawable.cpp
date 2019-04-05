@@ -5,6 +5,7 @@
 
 Drawable::Drawable() : Transform()
 {
+	m_texture = Renderer::GetInstance()->GetDefaultTexture();
 }
 
 Drawable::~Drawable()
@@ -45,6 +46,11 @@ void Drawable::SetVertices(std::vector<Vertex>* vertices)
 	}
 }
 
+void Drawable::SetTexture(ID3D11ShaderResourceView * texture)
+{
+	m_texture = texture;
+}
+
 void Drawable::SetColor(float r, float g, float b)
 {
 	m_color = DirectX::XMFLOAT4A(r, g, b, 1.0f);
@@ -81,6 +87,11 @@ const DirectX::XMFLOAT2 & Drawable::GetSize() const
 const DirectX::BoundingBox & Drawable::GetBoundingBox() const
 {
 	return m_boundingBox;
+}
+
+ID3D11ShaderResourceView * Drawable::GetTexture() const
+{
+	return m_texture;
 }
 
 void Drawable::Draw()

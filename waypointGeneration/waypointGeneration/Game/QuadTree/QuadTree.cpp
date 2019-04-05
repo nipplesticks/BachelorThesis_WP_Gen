@@ -147,7 +147,7 @@ size_t QuadTree::_GetQuadrantIndex(const DirectX::XMFLOAT2 & worldPos, unsigned 
 void QuadTree::_traverseAndPlace(Drawable * e, int quadIndex)
 {
 	DirectX::XMFLOAT3 pos = e->GetPosition();
-	if (_insideAABB(DirectX::XMFLOAT2(pos.x, pos.z), e->GetSize(), m_quadTree[quadIndex])
+	if (_insideAABB(DirectX::XMFLOAT2(pos.x, pos.z), e->GetSize(), m_quadTree[quadIndex]))
 	{
 		int nrOfChildren = m_quadTree[quadIndex].GetNrOfChildren();
 
@@ -197,17 +197,17 @@ void QuadTree::_pointTraverse(const DirectX::XMFLOAT2 & point, int quadIndex, Dr
 				for (int i = 0; i < size; i++)
 				{
 					DirectX::BoundingBox bb;
-					bb.CreateFromPoints(&bb, objects[i])
-					sf::FloatRect fr;
+					//bb.CreateFromPoints(&bb, objects[i])
+					/*sf::FloatRect fr;
 					fr.left = objects[i]->GetPosition().x;
 					fr.top = objects[i]->GetPosition().y;
 					fr.width = objects[i]->GetSize().x;
-					fr.height = objects[i]->GetSize().y;
+					fr.height = objects[i]->GetSize().y;*/
 
-					if (fr.contains(point))
+					/*if (fr.contains(point))
 					{
 						ePtr = objects[i];
-					}
+					}*/
 				}
 			}
 		}

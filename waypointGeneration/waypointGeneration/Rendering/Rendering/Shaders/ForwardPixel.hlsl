@@ -1,3 +1,6 @@
+SamplerState defaultSampler : register(s1);
+Texture2D albedoTexture : register(t0);
+
 struct VS_OUTPUT
 {
     float4 position : SV_POSITION;
@@ -8,11 +11,10 @@ struct VS_OUTPUT
 
 float4 main(VS_OUTPUT input) : SV_Target
 {
-    //input.color = float4(1, 1, 1, 1);
     const float3 LIGHT_DIR = normalize(float3(1.0f, -1.0f, 1.0f));
-    //const float3 LIGHT_DIR = normalize(float3(0.0, 0.0, 1.0f));
-    float4 ambient = input.color * 0.1f;
+    float4 albedo = albedoTexture.Sample(defaultSampler, input.uv) * input.color;
+    float4 ambient = 0.3f * albedo;
     float diffuseFactor = abs(min(dot(LIGHT_DIR, input.normal.xyz), 0.0f));
-    float4 diffuse = input.color * diffuseFactor;
+    float4 diffuse = diffuseFactor * albedo;
     return saturate(float4(ambient.rgb + diffuse.rgb, 1.0f));
 }

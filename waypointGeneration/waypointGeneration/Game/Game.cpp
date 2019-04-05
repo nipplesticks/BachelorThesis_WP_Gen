@@ -17,6 +17,8 @@ Game::Game()
 
 Game::~Game()
 {
+	m_terrainTex2D->Release();
+	m_terrainTexture->Release();
 }
 
 void Game::Update(double dt)
@@ -85,40 +87,49 @@ void Game::_cameraControl(double dt)
 
 void Game::_loadTerrain()
 {
-	const int TERRAIN_SIZE = 100;
-
-	ID3D11Texture2D * terrainTexture2D;
-	ID3D11ShaderResourceView * terrainTexture;
+	const int TERRAIN_SIZE = 1000;
 
 	m_terrainMesh = m_terrainCreator.CreateTerrainFromFloatList(
 		m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, 5000, 1000),
 		TERRAIN_SIZE,
-		terrainTexture,
-		terrainTexture2D
+		m_terrainTexture,
+		m_terrainTex2D
 	);
 
 	m_terrain.SetVertices(&m_terrainMesh);
-	m_terrain.SetColor(0.3f, 0.5f, 0.02f);
 	m_terrain.SetPosition(-TERRAIN_SIZE / 2, 0.0f, -TERRAIN_SIZE / 2);
+	m_terrain.SetTexture(m_terrainTexture);
 }
 
 void Game::_loadMeshes()
 {
 	static const DirectX::XMFLOAT4 _SXMcube[] =
 	{
-		{ 0.5,	-0.5,  0.5, 0.5},	{-0.5,	-0.5,	-0.5, 0.5},	{ 0.5,	-0.5,	-0.5, 0.5},
-		{-0.5,	 0.5, -0.5, 0.5},	{ 0.5,	 0.5,	 0.5, 0.5},	{ 0.5,	 0.5,	-0.5, 0.5},
-		{ 0.5,	 0.5, -0.5, 0.5},	{ 0.5,	-0.5,	 0.5, 0.5},	{ 0.5,	-0.5,	-0.5, 0.5},
-		{ 0.5,	 0.5,  0.5, 0.5},	{-0.5,	-0.5,	 0.5, 0.5},	{ 0.5,	-0.5,	 0.5, 0.5},
-		{-0.5,	-0.5,  0.5, 0.5},	{-0.5,	 0.5,	-0.5, 0.5},	{-0.5,	-0.5,	-0.5, 0.5},
-		{ 0.5,	-0.5, -0.5, 0.5},	{-0.5,	 0.5,	-0.5, 0.5},	{ 0.5,	 0.5,	-0.5, 0.5},
-		{ 0.5,	-0.5,  0.5, 0.5},	{-0.5,	-0.5,	 0.5, 0.5},	{-0.5,	-0.5,	-0.5, 0.5},
-		{-0.5,	 0.5, -0.5, 0.5},	{-0.5,	 0.5,	 0.5, 0.5},	{ 0.5,	 0.5,	 0.5, 0.5},
-		{ 0.5,	 0.5, -0.5, 0.5},	{ 0.5,	 0.5,	 0.5, 0.5},	{ 0.5,	-0.5,	 0.5, 0.5},
-		{ 0.5,	 0.5,  0.5, 0.5},	{-0.5,	 0.5,	 0.5, 0.5},	{-0.5,	-0.5,	 0.5, 0.5},
-		{-0.5,	-0.5,  0.5, 0.5},	{-0.5,	 0.5,	 0.5, 0.5},	{-0.5,	 0.5,	-0.5, 0.5},
-		{ 0.5,	-0.5, -0.5, 0.5},	{-0.5,	-0.5,	-0.5, 0.5},	{-0.5,	 0.5,	-0.5, 0.5}
+		{ 0.5,	-0.5,  0.5, 1.0f},	{-0.5,	-0.5,	-0.5, 1.0f},	{ 0.5,	-0.5,	-0.5, 1.0f},
+		{-0.5,	 0.5, -0.5, 1.0f},	{ 0.5,	 0.5,	 0.5, 1.0f},	{ 0.5,	 0.5,	-0.5, 1.0f},
+		{ 0.5,	 0.5, -0.5, 1.0f},	{ 0.5,	-0.5,	 0.5, 1.0f},	{ 0.5,	-0.5,	-0.5, 1.0f},
+		{ 0.5,	 0.5,  0.5, 1.0f},	{-0.5,	-0.5,	 0.5, 1.0f},	{ 0.5,	-0.5,	 0.5, 1.0f},
+		{-0.5,	-0.5,  0.5, 1.0f},	{-0.5,	 0.5,	-0.5, 1.0f},	{-0.5,	-0.5,	-0.5, 1.0f},
+		{ 0.5,	-0.5, -0.5, 1.0f},	{-0.5,	 0.5,	-0.5, 1.0f},	{ 0.5,	 0.5,	-0.5, 1.0f},
+		{ 0.5,	-0.5,  0.5, 1.0f},	{-0.5,	-0.5,	 0.5, 1.0f},	{-0.5,	-0.5,	-0.5, 1.0f},
+		{-0.5,	 0.5, -0.5, 1.0f},	{-0.5,	 0.5,	 0.5, 1.0f},	{ 0.5,	 0.5,	 0.5, 1.0f},
+		{ 0.5,	 0.5, -0.5, 1.0f},	{ 0.5,	 0.5,	 0.5, 1.0f},	{ 0.5,	-0.5,	 0.5, 1.0f},
+		{ 0.5,	 0.5,  0.5, 1.0f},	{-0.5,	 0.5,	 0.5, 1.0f},	{-0.5,	-0.5,	 0.5, 1.0f},
+		{-0.5,	-0.5,  0.5, 1.0f},	{-0.5,	 0.5,	 0.5, 1.0f},	{-0.5,	 0.5,	-0.5, 1.0f},
+		{ 0.5,	-0.5, -0.5, 1.0f},	{-0.5,	-0.5,	-0.5, 1.0f},	{-0.5,	 0.5,	-0.5, 1.0f}
 	};
+
+	static const DirectX::XMFLOAT2A _SXMUV[] = 
+	{
+		{0.0f, 0.0f},
+		{0.0f, 1.0f},
+		{1.0f, 1.0f},
+
+		{0.0f, 0.0f},
+		{1.0f, 0.0f},
+		{1.0f, 1.0f},
+	};
+
 	std::vector<Vertex> verts;
 	for (int i = 0; i < _countof(_SXMcube); i++)
 	{
@@ -127,6 +138,8 @@ void Game::_loadMeshes()
 		v.Position.y = _SXMcube[i].y;
 		v.Position.z = _SXMcube[i].z;
 		v.Position.w = _SXMcube[i].w;
+
+		v.UV = _SXMUV[i % 6];
 
 		verts.push_back(v);
 	}
@@ -146,13 +159,9 @@ void Game::_loadMeshes()
 
 	}
 	m_playerMesh = verts;
-
+	
 	m_player.SetVertices(&m_playerMesh);
 	m_player.SetColor(1.0f, 0.0f, 0.0f);
-
-
-
-
 }
 
 void Game::_randomizeBuildings()
