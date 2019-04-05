@@ -43,7 +43,7 @@ std::vector<Vertex> TerrainCreator::CreateTerrainFromFloatList(std::vector<float
 		{0.37647f, 0.5019f, 0.219607f, 1.0f},
 		//{0.0f, 1.0f, 0.0f, 1.0f},
 		//{1.0f, 0.0f, 0.0f, 1.0f}
-		{0.62745f, 0.321569f, 0.1764706f, 1.0f}
+		{80.0 / 256.0, 82.0 / 256.0, 86.0 / 256.0, 1}
 	};
 
 	std::vector<DirectX::XMFLOAT4> texture(mapSize * mapSize);
