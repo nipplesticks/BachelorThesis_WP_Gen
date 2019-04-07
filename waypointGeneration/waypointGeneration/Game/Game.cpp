@@ -1,6 +1,6 @@
 #include "waypointGenerationPCH.h"
 #include "Game.h"
-
+#include "../Rendering/Rendering/Renderer.h"
 Game::Game()
 {
 	_loadTerrain();
@@ -30,6 +30,8 @@ void Game::Update(double dt)
 		PathFinding
 	
 	*/
+
+	
 
 
 	_playerFixYPosition();
@@ -115,6 +117,17 @@ void Game::_cameraControl(double dt)
 	m_camera.Rotate(camRotation.y, camRotation.x, 0.0f);
 
 	m_camera.Translate(translation);
+
+
+	if (wnd->IsKeyPressed(Input::E))
+	{
+		DirectX::XMFLOAT3 worldPos;
+		if (Renderer::GetInstance()->GetMousePicking(worldPos))
+		{
+			m_player.SetPosition(worldPos.x, worldPos.y + 0.5f, worldPos.z);
+		}
+	}
+
 }
 
 void Game::_loadTerrain()
@@ -163,6 +176,7 @@ void Game::_loadTerrain()
 		m_edges[i].SetVertices(&m_edgeMeshes[i]);
 		m_edges[i].SetTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 		m_edges[i].SetColor(0.1, 0.2f, 0.1f, 1.0f);
+		m_edges[i].SetPickable(true);
 	}
 
 	m_terrain.SetVertices(&m_terrainMesh);
@@ -255,9 +269,14 @@ void Game::_loadMeshes()
 	m_player.SetVertices(&m_playerMesh);
 	m_player.SetColor(1.0f, 0.0f, 0.0f);
 	m_water.SetVertices(&m_XZPlane);
-	m_water.SetColor(0.0, 0.0, 1, 0.5f);
+	m_water.SetColor(0.0f, 0.26015625f, 0.3265625f, 0.999f);
 	m_water.SetScale((float)TERRAIN_SIZE - 1.5f, 1.0f, (float)TERRAIN_SIZE - 1.5f);
 	m_water.SetPosition((float)(TERRAIN_SIZE - 1) * 0.5f, m_terrainCreator.WATER_START, (float)(TERRAIN_SIZE - 1) * 0.5f);
+
+
+
+	m_terrain.SetPickable(true);
+	m_water.SetPickable(true);
 }
 
 void Game::_randomizeBuildings()

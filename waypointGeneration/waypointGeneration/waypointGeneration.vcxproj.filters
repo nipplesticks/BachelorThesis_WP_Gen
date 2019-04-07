@@ -120,5 +120,8 @@
   <ItemGroup>
     <FxCompile Include="Rendering\Rendering\Shaders\ForwardVertex.hlsl" />
     <FxCompile Include="Rendering\Rendering\Shaders\ForwardPixel.hlsl" />
+    <FxCompile Include="Rendering\Rendering\Shaders\DepthPrePassPixel.hlsl" />
+    <FxCompile Include="Rendering\Rendering\Shaders\PickingPassPixel.hlsl" />
+    <FxCompile Include="Rendering\Rendering\Shaders\PickingPassVertex.hlsl" />
   </ItemGroup>
 </Project>

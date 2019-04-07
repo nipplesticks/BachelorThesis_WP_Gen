@@ -107,6 +107,16 @@ const DirectX::BoundingBox & Drawable::GetBoundingBox() const
 	return m_boundingBox;
 }
 
+void Drawable::SetPickable(bool isPickable)
+{
+	m_isPickable = isPickable;
+}
+
+bool Drawable::IsPickable() const
+{
+	return m_isPickable;
+}
+
 ID3D11ShaderResourceView * Drawable::GetTexture() const
 {
 	return m_texture;

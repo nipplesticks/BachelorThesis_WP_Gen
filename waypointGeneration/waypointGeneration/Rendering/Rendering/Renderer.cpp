@@ -106,6 +106,11 @@ void Renderer::Init()
 	}
 }
 
+bool Renderer::GetMousePicking(DirectX::XMFLOAT3 & worldPos)
+{
+	return m_forwardRenderer.GetMousePicking(worldPos);
+}
+
 void Renderer::Clear()
 {
 	IRender::Clear();
@@ -117,6 +122,7 @@ void Renderer::Clear()
 
 void Renderer::Flush()
 {
+	m_forwardRenderer.Update();
 	m_forwardRenderer.Draw();
 }
 

@@ -81,8 +81,9 @@ void Shader::LoadVertexShader(const std::wstring & path, D3D11_INPUT_ELEMENT_DES
 		return;
 	}
 
-	r->GetDevice()->CreateVertexShader(pVS->GetBufferPointer(), pVS->GetBufferSize(), nullptr, &m_vertexShader);
-	r->GetDevice()->CreateInputLayout(desc, elements, pVS->GetBufferPointer(), pVS->GetBufferSize(), &m_inputLayout);
+	HRESULT hr = r->GetDevice()->CreateVertexShader(pVS->GetBufferPointer(), pVS->GetBufferSize(), nullptr, &m_vertexShader);
+	if (desc)
+		hr = r->GetDevice()->CreateInputLayout(desc, elements, pVS->GetBufferPointer(), pVS->GetBufferSize(), &m_inputLayout);
 }
 
 void Shader::LoadPixelShader(const std::wstring & path)

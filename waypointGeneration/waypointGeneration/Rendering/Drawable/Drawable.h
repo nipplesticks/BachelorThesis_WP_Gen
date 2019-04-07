@@ -24,6 +24,9 @@ public:
 	const DirectX::XMFLOAT2 & GetSize() const;
 	const DirectX::BoundingBox & GetBoundingBox() const;
 
+	void SetPickable(bool isPickable);
+	bool IsPickable() const;
+
 	ID3D11ShaderResourceView * GetTexture() const;
 
 
@@ -31,6 +34,8 @@ public:
 
 private:
 	DirectX::XMFLOAT4A m_color = {1,1,1,1};
+
+	bool m_isPickable = false;
 
 	D3D11_PRIMITIVE_TOPOLOGY m_topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 

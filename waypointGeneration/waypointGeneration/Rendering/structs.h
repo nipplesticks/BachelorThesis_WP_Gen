@@ -15,6 +15,11 @@ struct ObjectBuffer
 	DirectX::XMFLOAT4A color;
 };
 
+struct MouseBuffer
+{
+	DirectX::XMUINT4 MousePos;
+};
+
 struct Triangle
 {
 	Triangle(const DirectX::XMFLOAT3 & p0,

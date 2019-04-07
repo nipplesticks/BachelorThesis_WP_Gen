@@ -13,6 +13,9 @@ public:
 
 	void Init();
 
+	/* Returns true if mouseray hit something */
+	bool GetMousePicking(DirectX::XMFLOAT3 & worldPos);
+
 	void Clear();
 	void Flush();
 	void Present();
@@ -44,8 +47,6 @@ private:
 	ID3D11SamplerState*			m_samplerState;
 	ID3D11DepthStencilState*	m_depthStencilState;
 	D3D11_VIEWPORT				m_viewport;
-
-
 
 	UINT m_sampleCount = 1;
 
