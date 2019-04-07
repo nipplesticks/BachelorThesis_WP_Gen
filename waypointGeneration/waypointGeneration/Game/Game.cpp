@@ -38,6 +38,7 @@ void Game::Update(double dt)
 	m_camera.Update();
 	m_player.Update();
 	m_terrain.Update();
+	m_water.Update();
 
 	for (auto & b : m_buildings)
 		b.Update();
@@ -45,7 +46,9 @@ void Game::Update(double dt)
 
 void Game::Draw()
 {
+	
 	m_terrain.Draw();
+	m_water.Draw();
 	m_player.Draw();
 
 	for (auto & b : m_buildings)
@@ -141,6 +144,12 @@ void Game::_loadMeshes()
 		{ 0.5,	-0.5, -0.5, 1.0f},	{-0.5,	-0.5,	-0.5, 1.0f},	{-0.5,	 0.5,	-0.5, 1.0f}
 	};
 
+	static const DirectX::XMFLOAT4A _SXMPlane[] =
+	{
+		{-0.5, 0.0f, 0.5f, 1.0f}, {0.5, 0.0f, 0.5f, 1.0f}, {-0.5, 0.0f, -0.5f, 1.0f},
+		{0.5, 0.0f, 0.5f, 1.0f}, {0.5, 0.0f, -0.5f, 1.0f}, {-0.5, 0.0f, -0.5f, 1.0f}
+	};
+
 	static const DirectX::XMFLOAT2A _SXMUV[] = 
 	{
 		{0.0f, 0.0f},
@@ -152,6 +161,8 @@ void Game::_loadMeshes()
 		{1.0f, 1.0f},
 	};
 
+
+	/* CUBE */
 	std::vector<Vertex> verts;
 	for (int i = 0; i < _countof(_SXMcube); i++)
 	{
@@ -181,9 +192,28 @@ void Game::_loadMeshes()
 
 	}
 	m_playerMesh = verts;
-	
+	/* CUBE _ END*/
+
+	/* PLANE */
+	std::vector<Vertex> plane(6);
+	Vertex v;
+	v.Normal = DirectX::XMFLOAT4A(0, 1, 0, 0);
+	v.UV = DirectX::XMFLOAT2A(0, 0);
+	for (int i = 0; i < 6; i++)
+	{
+		v.Position = _SXMPlane[i];
+		plane[i] = v;
+	}
+
+	m_XZPlane = plane;
+	/* PLANE _ END*/
+
 	m_player.SetVertices(&m_playerMesh);
 	m_player.SetColor(1.0f, 0.0f, 0.0f);
+	m_water.SetVertices(&m_XZPlane);
+	m_water.SetColor(0, 0, 1, 0.5f);
+	m_water.SetScale(TERRAIN_SIZE, 1.0f, TERRAIN_SIZE);
+	m_water.SetPosition(TERRAIN_SIZE / 2, m_terrainCreator.WATER_START, TERRAIN_SIZE / 2);
 }
 
 void Game::_randomizeBuildings()
@@ -194,7 +224,7 @@ void Game::_setupGame()
 {
 	const auto & startPos = m_terrainMesh.front().Position;
 	m_player.SetPosition(startPos.x, startPos.y + 0.5f, startPos.z);
-	m_camera.SetDirection(1, -2, 1);
+	m_camera.SetDirection(1, -1, 1);
 
 	const DirectX::XMFLOAT4 camDir = m_camera.GetDirectionVector();
 

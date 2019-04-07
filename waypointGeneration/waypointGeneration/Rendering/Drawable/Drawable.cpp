@@ -51,9 +51,9 @@ void Drawable::SetTexture(ID3D11ShaderResourceView * texture)
 	m_texture = texture;
 }
 
-void Drawable::SetColor(float r, float g, float b)
+void Drawable::SetColor(float r, float g, float b, float a)
 {
-	m_color = DirectX::XMFLOAT4A(r, g, b, 1.0f);
+	m_color = DirectX::XMFLOAT4A(r, g, b, a);
 }
 
 void Drawable::SetColor(const DirectX::XMFLOAT3 & color)
@@ -62,6 +62,14 @@ void Drawable::SetColor(const DirectX::XMFLOAT3 & color)
 	m_color.y = color.y;
 	m_color.z = color.z;
 	m_color.w = 1.0f;
+}
+
+void Drawable::SetColor(const DirectX::XMFLOAT4 & color)
+{
+	m_color.x = color.x;
+	m_color.y = color.y;
+	m_color.z = color.z;
+	m_color.w = color.w;
 }
 
 const DirectX::XMFLOAT4A & Drawable::GetColor() const

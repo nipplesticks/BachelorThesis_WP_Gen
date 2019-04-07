@@ -27,9 +27,7 @@ bool float4Equal(const DirectX::XMFLOAT4 & a, const DirectX::XMFLOAT4 & b)
 
 std::vector<Vertex> TerrainCreator::CreateTerrainFromFloatList(std::vector<float> heightValues, int mapSize, ID3D11ShaderResourceView *& srv, ID3D11Texture2D *& tex2D)
 {
-	static const float SNOW_START = 20.0f;
-	static const float WATER_START = -5.0f;
-	static const float UNWALKABLE_SURFACE = 0.8f;
+	
 
 	srv = nullptr;
 	tex2D = nullptr;
@@ -39,7 +37,7 @@ std::vector<Vertex> TerrainCreator::CreateTerrainFromFloatList(std::vector<float
 
 	DirectX::XMFLOAT4 colors[] = {
 		{1.0f, 1.0f, 1.0f, 1.0f},
-		{0.0f, 0.0f, 1.0f, 1.0f},
+		{0.496875f, 0.4734375f, 0.3953125f, 1.0f},
 		{0.37647f, 0.5019f, 0.219607f, 1.0f},
 		//{0.0f, 1.0f, 0.0f, 1.0f},
 		//{1.0f, 0.0f, 0.0f, 1.0f}

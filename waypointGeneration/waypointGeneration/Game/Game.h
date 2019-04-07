@@ -8,7 +8,7 @@
 #define MOUSE_SESITIVITY_Y	0.05
 #define CAMERA_XZ_SPEED		100.0
 #define CAMERA_ZOOM_SPEED	3000.0
-#define TERRAIN_SIZE		2049
+#define TERRAIN_SIZE		257
 
 class Game
 {
@@ -24,6 +24,7 @@ private:
 
 	std::vector<Vertex> m_playerMesh;
 	std::vector<Vertex> m_terrainMesh;
+	std::vector<Vertex> m_XZPlane;
 	std::vector<Vertex> m_buildingMeshBox;
 	std::vector<Vertex> m_buildingMeshCylinder;
 
@@ -31,6 +32,7 @@ private:
 	TerrainCreator m_terrainCreator;
 	Drawable m_terrain;
 	Drawable m_player;
+	Drawable m_water;
 
 	ID3D11Texture2D *			m_terrainTex2D = nullptr;
 	ID3D11ShaderResourceView *	m_terrainTexture = nullptr;

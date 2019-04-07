@@ -10,8 +10,9 @@ public:
 
 	void SetVertices(std::vector<Vertex> * vertices);
 	void SetTexture(ID3D11ShaderResourceView * texture);
-	void SetColor(float r, float g, float b);
+	void SetColor(float r, float g, float b, float a = 1.0f);
 	void SetColor(const DirectX::XMFLOAT3 &color);
+	void SetColor(const DirectX::XMFLOAT4 &color);
 
 	const DirectX::XMFLOAT4A & GetColor() const;
 	const std::vector<Vertex> * GetVertices() const;

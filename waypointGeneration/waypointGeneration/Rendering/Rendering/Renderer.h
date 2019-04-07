@@ -45,6 +45,8 @@ private:
 	ID3D11DepthStencilState*	m_depthStencilState;
 	D3D11_VIEWPORT				m_viewport;
 
+
+
 	UINT m_sampleCount = 1;
 
 private:

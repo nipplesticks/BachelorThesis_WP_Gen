@@ -16,5 +16,5 @@ float4 main(VS_OUTPUT input) : SV_Target
     float4 ambient = 0.3f * albedo;
     float diffuseFactor = abs(min(dot(LIGHT_DIR, input.normal.xyz), 0.0f));
     float4 diffuse = diffuseFactor * albedo;
-    return saturate(float4(ambient.rgb + diffuse.rgb, 1.0f));
+    return saturate(ambient + diffuse);
 }

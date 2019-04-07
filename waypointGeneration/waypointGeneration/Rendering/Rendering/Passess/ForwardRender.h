@@ -23,6 +23,8 @@ private:
 	ID3D11DepthStencilState*	m_depthStencilState = nullptr;
 	D3D11_VIEWPORT				m_viewport;
 
+	ID3D11BlendState *			m_blendState = nullptr;
+
 	ID3D11Buffer * m_cameraBuffer = nullptr;
 	CameraBuffer m_cameraValues;
 
@@ -34,5 +36,6 @@ private:
 private:
 	void _createConstantBuffers();
 	void _createShaders();
-	
+	void _createBlendState();
+
 };

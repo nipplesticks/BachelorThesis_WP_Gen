@@ -4,6 +4,10 @@
 class TerrainCreator
 {
 public:
+	const float SNOW_START = 20.0f;
+	const float WATER_START = -5.0f;
+	const float UNWALKABLE_SURFACE = 0.8f;
+
 	TerrainCreator();
 	~TerrainCreator();
 	

@@ -27,6 +27,7 @@ void ForwardRender::Init()
 
 	_createConstantBuffers();
 	_createShaders();
+	_createBlendState();
 }
 
 void ForwardRender::Update()
@@ -38,12 +39,14 @@ void ForwardRender::Draw()
 {
 	Renderer * r = Renderer::GetInstance();
 	ID3D11DeviceContext * dc = r->GetDeviceContext();
+	dc->OMSetBlendState(m_blendState, 0, 0xffffffff);
 	dc->RSSetViewports(1, &m_viewport);
 	dc->OMSetDepthStencilState(m_depthStencilState, NULL);
 	dc->PSSetSamplers(1, 1, &m_samplerState);
 	m_forwardShaders.SetShaders(dc);
 	dc->OMSetRenderTargets(1, &m_backBufferRTV, m_depthStencilView);
 	
+
 	DirectX::XMFLOAT4 camPos = Camera::GetActiveCamera()->GetPosition();
 	m_cameraValues.cameraPosition.x = camPos.x;
 	m_cameraValues.cameraPosition.y = camPos.y;
@@ -93,6 +96,10 @@ void ForwardRender::Release()
 		m_objectBuffer->Release();
 	m_objectBuffer = nullptr;
 
+	if (m_blendState)
+		m_blendState->Release();
+	m_blendState = nullptr;
+
 	m_forwardShaders.Release();
 
 }
@@ -128,4 +135,19 @@ void ForwardRender::_createShaders()
 	dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	m_forwardShaders.LoadVertexShader(L"Rendering\\Rendering\\Shaders\\ForwardVertex.hlsl", inputDesc, _countof(inputDesc));
 	m_forwardShaders.LoadPixelShader(L"Rendering\\Rendering\\Shaders\\ForwardPixel.hlsl");
+}
+
+void ForwardRender::_createBlendState()
+{
+	D3D11_BLEND_DESC omDesc = {};
+	omDesc.RenderTarget[0].BlendEnable = true;
+	omDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	omDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	omDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	omDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	omDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	omDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	omDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	Renderer::GetInstance()->GetDevice()->CreateBlendState(&omDesc, &m_blendState);
 }
