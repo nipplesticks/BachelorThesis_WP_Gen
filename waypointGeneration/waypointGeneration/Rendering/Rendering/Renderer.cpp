@@ -106,10 +106,15 @@ void Renderer::Init()
 	}
 }
 
+bool Renderer::GetMousePicking(DirectX::XMFLOAT3 & worldPos)
+{
+	return m_forwardRenderer.GetMousePicking(worldPos);
+}
+
 void Renderer::Clear()
 {
 	IRender::Clear();
-	const float c[4] = { .15f,.15f,.15f,1.0f };
+	const float c[4] = { .0f,.0f,.0f,1.0f };
 
 	m_deviceContext->ClearRenderTargetView(m_backBufferRTV, c);
 	m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -117,6 +122,7 @@ void Renderer::Clear()
 
 void Renderer::Flush()
 {
+	m_forwardRenderer.Update();
 	m_forwardRenderer.Draw();
 }
 

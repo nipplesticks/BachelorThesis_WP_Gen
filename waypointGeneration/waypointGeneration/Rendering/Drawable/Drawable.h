@@ -10,8 +10,12 @@ public:
 
 	void SetVertices(std::vector<Vertex> * vertices);
 	void SetTexture(ID3D11ShaderResourceView * texture);
-	void SetColor(float r, float g, float b);
+	void SetColor(float r, float g, float b, float a = 1.0f);
 	void SetColor(const DirectX::XMFLOAT3 &color);
+	void SetColor(const DirectX::XMFLOAT4 &color);
+
+	D3D11_PRIMITIVE_TOPOLOGY GetTopology() const;
+	void SetTopology(D3D11_PRIMITIVE_TOPOLOGY topology);
 
 	const DirectX::XMFLOAT4A & GetColor() const;
 	const std::vector<Vertex> * GetVertices() const;
@@ -20,6 +24,9 @@ public:
 	const DirectX::XMFLOAT2 & GetSize() const;
 	const DirectX::BoundingBox & GetBoundingBox() const;
 
+	void SetPickable(bool isPickable);
+	bool IsPickable() const;
+
 	ID3D11ShaderResourceView * GetTexture() const;
 
 
@@ -27,6 +34,10 @@ public:
 
 private:
 	DirectX::XMFLOAT4A m_color = {1,1,1,1};
+
+	bool m_isPickable = false;
+
+	D3D11_PRIMITIVE_TOPOLOGY m_topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
 	std::vector<Vertex> * m_vertices = nullptr;
 

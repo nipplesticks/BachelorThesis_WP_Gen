@@ -13,8 +13,10 @@ public:
 	virtual void Release() = 0;
 
 	static void Queue(Drawable * drawable);
+	static void QueueAlpha(Drawable * drawable);
 	static void Clear();
 
 protected:
 	static std::vector<Drawable*> p_drawQueue;
+	static std::vector<Drawable*> p_drawQueueTransparent;
 };

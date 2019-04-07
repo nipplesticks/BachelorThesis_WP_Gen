@@ -13,6 +13,9 @@ public:
 
 	void Init();
 
+	/* Returns true if mouseray hit something */
+	bool GetMousePicking(DirectX::XMFLOAT3 & worldPos);
+
 	void Clear();
 	void Flush();
 	void Present();
