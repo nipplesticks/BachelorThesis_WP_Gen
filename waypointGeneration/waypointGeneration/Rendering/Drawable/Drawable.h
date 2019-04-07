@@ -14,6 +14,9 @@ public:
 	void SetColor(const DirectX::XMFLOAT3 &color);
 	void SetColor(const DirectX::XMFLOAT4 &color);
 
+	D3D11_PRIMITIVE_TOPOLOGY GetTopology() const;
+	void SetTopology(D3D11_PRIMITIVE_TOPOLOGY topology);
+
 	const DirectX::XMFLOAT4A & GetColor() const;
 	const std::vector<Vertex> * GetVertices() const;
 	ID3D11Buffer * GetBuffer() const;
@@ -28,6 +31,8 @@ public:
 
 private:
 	DirectX::XMFLOAT4A m_color = {1,1,1,1};
+
+	D3D11_PRIMITIVE_TOPOLOGY m_topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
 	std::vector<Vertex> * m_vertices = nullptr;
 

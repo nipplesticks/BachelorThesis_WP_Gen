@@ -20,6 +20,7 @@ struct VS_INPUT
 struct VS_OUTPUT
 {
     float4 position : SV_POSITION;
+    float4 worldPosition : WORLDPOS;
     float4 normal : NORMAL;
     float4 color : COLOR;
     float2 uv : TEXCOORD;
@@ -30,8 +31,8 @@ VS_OUTPUT main(VS_INPUT input)
 {
     VS_OUTPUT output;
     
-    output.position = mul(WorldMatrix, input.position);
-    output.position = mul(ViewProjectionMatrix, output.position);
+    output.worldPosition = mul(WorldMatrix, input.position);
+    output.position = mul(ViewProjectionMatrix, output.worldPosition);
     output.normal = float4(normalize(mul(WorldMatrix, input.normal).xyz),0.0f);
     output.color = ObjectColor;
     output.uv = input.uv;

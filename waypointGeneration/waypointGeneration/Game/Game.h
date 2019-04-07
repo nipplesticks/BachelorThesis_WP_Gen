@@ -34,6 +34,9 @@ private:
 	Drawable m_player;
 	Drawable m_water;
 
+	std::vector<Vertex> m_edgeMeshes[4];
+	Drawable m_edges[4];
+
 	ID3D11Texture2D *			m_terrainTex2D = nullptr;
 	ID3D11ShaderResourceView *	m_terrainTexture = nullptr;
 

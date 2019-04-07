@@ -40,19 +40,25 @@ void Game::Update(double dt)
 	m_terrain.Update();
 	m_water.Update();
 
+	for (int i = 0; i < 4; i++)
+		m_edges[i].Update();
+
 	for (auto & b : m_buildings)
 		b.Update();
 }
 
 void Game::Draw()
 {
-	
 	m_terrain.Draw();
-	m_water.Draw();
+	for (int i = 0; i < 4; i++)
+		m_edges[i].Draw();
+
 	m_player.Draw();
 
 	for (auto & b : m_buildings)
 		b.Draw();
+
+	m_water.Draw();
 }
 
 void Game::_playerFixYPosition()
@@ -64,7 +70,7 @@ void Game::_cameraControl(double dt)
 {
 	Window * wnd = Window::GetInstance();
 	POINT mp = wnd->GetMousePosition();
-	
+	wnd->MouseToCenter();
 	DirectX::XMFLOAT3 translation(0, 0, 0);
 
 	if (wnd->IsKeyPressed(Input::UP_ARROW) || mp.y < 50)
@@ -101,25 +107,63 @@ void Game::_cameraControl(double dt)
 	if (wnd->IsKeyPressed(Input::C))
 		translation.y -= CAMERA_ZOOM_SPEED * dt;
 
-	/*float mouseDeltaX = (float)mousePos.x - (float)m_mousePosLastFrame.x;
-	float mouseDeltaY = (float)mousePos.y - (float)m_mousePosLastFrame.y;*/
+	float mouseDeltaX = (float)mp.x - (float)m_mouseReferencePosition.x;
+	float mouseDeltaY = (float)mp.y - (float)m_mouseReferencePosition.y;
 
-	//DirectX::XMFLOAT2 camRotation(DirectX::XMConvertToRadians(mouseDeltaX) * MOUSE_SESITIVITY_X, DirectX::XMConvertToRadians(mouseDeltaY) * MOUSE_SESITIVITY_Y);
+	DirectX::XMFLOAT2 camRotation(DirectX::XMConvertToRadians(mouseDeltaX) * MOUSE_SESITIVITY_X, DirectX::XMConvertToRadians(mouseDeltaY) * MOUSE_SESITIVITY_Y);
 
-	//m_camera.Rotate(camRotation.y, camRotation.x, 0.0f);
+	m_camera.Rotate(camRotation.y, camRotation.x, 0.0f);
 
 	m_camera.Translate(translation);
 }
 
 void Game::_loadTerrain()
 {
-	m_terrainMesh = m_terrainCreator.CreateTerrainFromFloatList(
-		m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, TERRAIN_SIZE, 25.0f, -15, 15, 1),
-
+	const int MIN = -15;
+	const int MAX = 15;
+	const float NOICE = 25.0f;
+	
+	m_terrainMesh = m_terrainCreator.CreateTerrainFromFloatList2(
+		m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, TERRAIN_SIZE, NOICE, MIN, MAX, 1),
 		TERRAIN_SIZE,
 		m_terrainTexture,
-		m_terrainTex2D
+		m_terrainTex2D,
+		m_edgeMeshes
 	);
+
+
+	for (int i = 0; i < 4; i++)
+	{
+		int size = m_edgeMeshes[i].size();
+		int v = 0;
+		int moreSize = 0;
+
+		if (i == 0 || i == 3)
+		{
+			v = 1;
+			moreSize = 1;
+		}
+
+		for (v; v < size + moreSize; v += 2)
+		{
+			int add = 0;
+			if (moreSize == 1)
+				add = -1;
+
+			Vertex ver = m_edgeMeshes[i][v + add];
+			ver.Position.y = MIN - NOICE;
+
+			m_edgeMeshes[i].insert(m_edgeMeshes[i].begin() + v, ver);
+
+			size++;
+		}
+
+
+		
+		m_edges[i].SetVertices(&m_edgeMeshes[i]);
+		m_edges[i].SetTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		m_edges[i].SetColor(0.1, 0.2f, 0.1f, 1.0f);
+	}
 
 	m_terrain.SetVertices(&m_terrainMesh);
 	//m_terrain.SetPosition(-TERRAIN_SIZE / 2, 0.0f, -TERRAIN_SIZE / 2);
@@ -211,9 +255,9 @@ void Game::_loadMeshes()
 	m_player.SetVertices(&m_playerMesh);
 	m_player.SetColor(1.0f, 0.0f, 0.0f);
 	m_water.SetVertices(&m_XZPlane);
-	m_water.SetColor(0, 0, 1, 0.5f);
-	m_water.SetScale(TERRAIN_SIZE, 1.0f, TERRAIN_SIZE);
-	m_water.SetPosition(TERRAIN_SIZE / 2, m_terrainCreator.WATER_START, TERRAIN_SIZE / 2);
+	m_water.SetColor(0.0, 0.0, 1, 0.5f);
+	m_water.SetScale((float)TERRAIN_SIZE - 1.5f, 1.0f, (float)TERRAIN_SIZE - 1.5f);
+	m_water.SetPosition((float)(TERRAIN_SIZE - 1) * 0.5f, m_terrainCreator.WATER_START, (float)(TERRAIN_SIZE - 1) * 0.5f);
 }
 
 void Game::_randomizeBuildings()

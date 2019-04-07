@@ -109,7 +109,7 @@ void Renderer::Init()
 void Renderer::Clear()
 {
 	IRender::Clear();
-	const float c[4] = { .15f,.15f,.15f,1.0f };
+	const float c[4] = { .0f,.0f,.0f,1.0f };
 
 	m_deviceContext->ClearRenderTargetView(m_backBufferRTV, c);
 	m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);

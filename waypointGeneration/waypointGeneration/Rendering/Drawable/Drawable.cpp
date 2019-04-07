@@ -72,6 +72,16 @@ void Drawable::SetColor(const DirectX::XMFLOAT4 & color)
 	m_color.w = color.w;
 }
 
+D3D11_PRIMITIVE_TOPOLOGY Drawable::GetTopology() const
+{
+	return m_topology;
+}
+
+void Drawable::SetTopology(D3D11_PRIMITIVE_TOPOLOGY topology)
+{
+	m_topology = topology;
+}
+
 const DirectX::XMFLOAT4A & Drawable::GetColor() const
 {
 	return m_color;
@@ -104,5 +114,8 @@ ID3D11ShaderResourceView * Drawable::GetTexture() const
 
 void Drawable::Draw()
 {
-	IRender::Queue(this);
+	if (m_color.w > 0.999f)
+		IRender::Queue(this);
+	else
+		IRender::QueueAlpha(this);
 }

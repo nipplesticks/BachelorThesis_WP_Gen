@@ -39,7 +39,7 @@ void ForwardRender::Draw()
 {
 	Renderer * r = Renderer::GetInstance();
 	ID3D11DeviceContext * dc = r->GetDeviceContext();
-	dc->OMSetBlendState(m_blendState, 0, 0xffffffff);
+	dc->OMSetBlendState(nullptr, 0, 0xffffffff);
 	dc->RSSetViewports(1, &m_viewport);
 	dc->OMSetDepthStencilState(m_depthStencilState, NULL);
 	dc->PSSetSamplers(1, 1, &m_samplerState);
@@ -59,12 +59,12 @@ void ForwardRender::Draw()
 	memcpy(dataPtr.pData, &m_cameraValues, sizeof(m_cameraValues));
 	dc->Unmap(m_cameraBuffer, 0);
 	dc->VSSetConstantBuffers(1, 1, &m_cameraBuffer);
-
+	dc->PSSetConstantBuffers(1, 1, &m_cameraBuffer);
 	
-	dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	size_t drawQueueSize = p_drawQueue.size();
 	for (size_t i = 0; i < drawQueueSize; i++)
 	{
+		dc->IASetPrimitiveTopology(p_drawQueue[i]->GetTopology());
 		m_objectValues.color = p_drawQueue[i]->GetColor();
 		m_objectValues.worldMatrix = p_drawQueue[i]->GetWorldMatrix();
 
@@ -83,6 +83,31 @@ void ForwardRender::Draw()
 		UINT offset = 0;
 		dc->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 		dc->Draw((UINT)p_drawQueue[i]->GetVertices()->size(), 0);
+	}
+
+	dc->OMSetBlendState(m_blendState, 0, 0xffffffff);
+	drawQueueSize = p_drawQueueTransparent.size();
+	for (size_t i = 0; i < drawQueueSize; i++)
+	{
+		dc->IASetPrimitiveTopology(p_drawQueueTransparent[i]->GetTopology());
+		m_objectValues.color = p_drawQueueTransparent[i]->GetColor();
+		m_objectValues.worldMatrix = p_drawQueueTransparent[i]->GetWorldMatrix();
+
+		dc->Map(m_objectBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dataPtr);
+		memcpy(dataPtr.pData, &m_objectValues, sizeof(m_objectValues));
+		dc->Unmap(m_objectBuffer, 0);
+
+		dc->VSSetConstantBuffers(0, 1, &m_objectBuffer);
+
+		ID3D11ShaderResourceView * tex = p_drawQueueTransparent[i]->GetTexture();
+
+		dc->PSSetShaderResources(0, 1, &tex);
+
+		ID3D11Buffer * vertexBuffer = p_drawQueueTransparent[i]->GetBuffer();
+		UINT stride = sizeof(Vertex);
+		UINT offset = 0;
+		dc->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+		dc->Draw((UINT)p_drawQueueTransparent[i]->GetVertices()->size(), 0);
 	}
 }
 
