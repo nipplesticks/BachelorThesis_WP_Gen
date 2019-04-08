@@ -99,7 +99,6 @@ void Game::_cameraControl(double dt)
 	if (!wnd->IsMousePressed(Input::MOUSE_CODE::MBUTTON))
 		m_camera.Translate(translation);
 	
-
 	INT scrollDelta;
 	if (scrollDelta = wnd->GetMouseWheelDelta(Input::VERTICAL))
 	{
@@ -141,7 +140,6 @@ void Game::_cameraControl(double dt)
 		static POINT _sMouseRef;
 		static DirectX::XMFLOAT3 _sWorldPosRef;
 		static DirectX::XMVECTOR _sCameraPosOffset;
-		
 
 		if (!PressedLastFrame)
 		{
@@ -167,7 +165,6 @@ void Game::_cameraControl(double dt)
 			camPos.w = 0.0f;
 
 			float length = DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&_sWorldPosRef), DirectX::XMLoadFloat4(&camPos))));
-			std::cout << length << std::endl;
 			DirectX::XMFLOAT4 dir = m_camera.GetDirectionVector();
 			DirectX::XMVECTOR vDir = DirectX::XMLoadFloat4(&dir);
 			DirectX::XMVECTOR vWPos = DirectX::XMLoadFloat3(&_sWorldPosRef);
@@ -176,7 +173,6 @@ void Game::_cameraControl(double dt)
 			if (!SampleOffset)
 			{
 				_sCameraPosOffset = DirectX::XMVectorSubtract(DirectX::XMLoadFloat4(&camPos), vNewCamPos);
-				
 				SampleOffset = true;
 			}
 
@@ -194,7 +190,7 @@ void Game::_cameraControl(double dt)
 
 	if (wnd->IsKeyPressed(Input::BACKSPACE)) // Reset The Camera
 	{
-		m_camera.SetDirection(1, -1, 1);
+		m_camera.SetDirection(1, -2, 1);
 	}
 
 	if (wnd->IsMousePressed(Input::MOUSE_CODE::LBUTTON))
@@ -206,16 +202,36 @@ void Game::_cameraControl(double dt)
 		}
 	}
 
+
+
+	float distanceToCenter = 
+		DirectX::XMVectorGetX(DirectX::XMVector3Length
+		(DirectX::XMVectorSubtract(DirectX::XMVectorSet((float)TERRAIN_SIZE / 2, 0, (float)TERRAIN_SIZE / 2, 0),
+			DirectX::XMLoadFloat4(&m_camera.GetPosition()))));
+
+	float a2 = pow(((float)TERRAIN_SIZE - 1) / 2, 2);
+
+	float c = sqrt(a2 + a2);
+	float ma = max(c, m_maxHeight);
+	float mi = max(c, m_minHeight);
+	
+	float farPlane = distanceToCenter + ma;
+	float nearPlane = distanceToCenter - mi;
+
+	m_camera.CreateProjectionMatrix(max(nearPlane, 0.01f), farPlane);
 }
 
 void Game::_loadTerrain()
 {
 	const int MIN = -15;
 	const int MAX = 15;
-	const float NOICE = 25.0f;
+	const float NOISE = 25.0f;
 	
+	m_maxHeight = MAX * NOISE;
+	m_minHeight = abs(MIN * NOISE);
+
 	m_terrainMesh = m_terrainCreator.CreateTerrainFromFloatList2(
-		m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, TERRAIN_SIZE, NOICE, MIN, MAX, 1),
+		m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, TERRAIN_SIZE, NOISE, MIN, MAX, 1),
 		TERRAIN_SIZE,
 		m_terrainTexture,
 		m_terrainTex2D,
@@ -242,7 +258,7 @@ void Game::_loadTerrain()
 				add = -1;
 
 			Vertex ver = m_edgeMeshes[i][v + add];
-			ver.Position.y = MIN - NOICE;
+			ver.Position.y = MIN * NOISE;
 
 			m_edgeMeshes[i].insert(m_edgeMeshes[i].begin() + v, ver);
 
@@ -347,14 +363,15 @@ void Game::_loadMeshes()
 	m_player.SetVertices(&m_playerMesh);
 	m_player.SetColor(1.0f, 0.0f, 0.0f);
 	m_water.SetVertices(&m_XZPlane);
-	m_water.SetColor(0.0f, 0.26015625f, 0.3265625f, 0.999f);
+	m_water.SetColor(0.0f, 0.26015625f, 0.3265625f, 0.6f);
+	//m_water.SetColor(0.0f, 0.26015625f, 0.3265625f, 1.0f);
+	
 	m_water.SetScale((float)TERRAIN_SIZE - 1.5f, 1.0f, (float)TERRAIN_SIZE - 1.5f);
 	m_water.SetPosition((float)(TERRAIN_SIZE - 1) * 0.5f, m_terrainCreator.WATER_START, (float)(TERRAIN_SIZE - 1) * 0.5f);
 
 
-
 	m_terrain.SetPickable(true);
-	m_water.SetPickable(true);
+	
 }
 
 void Game::_randomizeBuildings()
@@ -365,7 +382,7 @@ void Game::_setupGame()
 {
 	const auto & startPos = m_terrainMesh.front().Position;
 	m_player.SetPosition(startPos.x, startPos.y + 0.5f, startPos.z);
-	m_camera.SetDirection(1, -1, 1);
+	m_camera.SetDirection(1, -2, 1);
 
 	const DirectX::XMFLOAT4 camDir = m_camera.GetDirectionVector();
 

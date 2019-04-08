@@ -18,7 +18,7 @@ struct VS_OUTPUT
 
 float4 main(VS_OUTPUT input) : SV_Target
 {
-    const float3 LIGHT_DIR = normalize(float3(1.0f, -0.5f, 1.0f));
+    const float3 LIGHT_DIR = normalize(float3(-1.0f, -1.f, -1.0f));
     const float3 LIGHT_COLOR = float3(99, 37, 33) / 256;
 
     float4 albedo = albedoTexture.Sample(defaultSampler, input.uv) * input.color * (float4(LIGHT_COLOR, 1.0f) + float4(1,1,1,0));
@@ -30,7 +30,7 @@ float4 main(VS_OUTPUT input) : SV_Target
     float3 viewer = normalize(WorldPosition.xyz - input.worldPosition.xyz);
     float3 objectToLight = LIGHT_DIR * -1;
     float3 halfDir = normalize(objectToLight + viewer);
-    float specular = pow(max(dot(input.normal.xyz, halfDir), 0.0f), 256.0f);
+    float specular = pow(max(dot(input.normal.xyz, halfDir), 0.0f), 512.0f);
     
     float4 diffuse = diffuseFactor * albedo;
     float4 specColor = specular * (float4(LIGHT_COLOR, 1.0f) + float4(0.5, 0.5, 0.5, 0));

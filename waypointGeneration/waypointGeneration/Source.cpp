@@ -12,6 +12,7 @@ void _alocConsole() {
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
+	srand(time(0));
 	_alocConsole();
 	Window * wnd = Window::GetInstance();
 	wnd->Create(hInstance, nCmdShow, 1920, 1080, 0);
