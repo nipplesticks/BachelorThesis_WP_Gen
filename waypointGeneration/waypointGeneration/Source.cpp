@@ -26,6 +26,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 	while (wnd->IsOpen())
 	{
+		if (wnd->IsKeyPressed(Input::R))
+		{
+			delete game;
+			game = new Game();
+		}
+
+
 		double dt = deltaTime.Stop();
 
 		if (wnd->IsKeyPressed(Input::ESCAPE))
