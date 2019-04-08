@@ -169,7 +169,19 @@ void QuadTree::_traverseAndPlace(Waypoint * e, int quadIndex)
 
 void QuadTree::_traverseAndPlace(Triangle * e, int quadIndex)
 {
-	// Todo Triangle
+	if (m_quadTree[quadIndex].Intersects(*e))
+	{
+		int nrOfChildren = m_quadTree[quadIndex].GetNrOfChildren();
+
+		if (nrOfChildren > 0)
+		{
+			const unsigned int * children = m_quadTree[quadIndex].GetChildren();
+			for (int i = 0; i < nrOfChildren; i++)
+				_traverseAndPlace(e, children[i]);
+		}
+		else
+			m_quadTree[quadIndex].SetObject(e);
+	}
 }
 
 void QuadTree::_pointTraverse(const DirectX::XMFLOAT2 & point, int quadIndex, Drawable *& ePtr) const
@@ -312,15 +324,49 @@ bool QuadTree::_insideRay(const DirectX::XMFLOAT2 & rayStart, const DirectX::XMF
 
 bool QuadTree::_insideRay(const DirectX::XMFLOAT2 & rayStart, const DirectX::XMFLOAT2 & rayEnd, const Drawable * e, float & t) const
 {
-	return false;
+	DirectX::XMFLOAT2 points[4];
+	DirectX::XMFLOAT2 eSize = e->GetSize();
+	DirectX::XMFLOAT3 ePos = e->GetPosition();
+	points[0] = DirectX::XMFLOAT2(ePos.x, ePos.z);
+	points[1] = DirectX::XMFLOAT2(ePos.x + eSize.x, ePos.z);
+	points[2] = DirectX::XMFLOAT2(ePos.x + eSize.x, ePos.z + eSize.y);
+	points[3] = DirectX::XMFLOAT2(ePos.x, ePos.z + eSize.y);
+
+	if (rayStart.x > points[0].x && rayStart.x < points[2].x
+		&&
+		rayStart.y > points[0].y && rayStart.y < points[2].y)
+	{
+		t = 0.0f;
+		return true;
+	}
+
+	float tTemp = 0.0f;
+	bool returnVal = false;
+	for (int i = 0; i < 4; i++)
+	{
+		DirectX::XMFLOAT2 edgeStart = points[i];
+		DirectX::XMFLOAT2 edgeEnd = points[(i + 1) % 4];
+
+		if (_lineWithLineIntersection(rayStart, rayEnd, edgeStart, edgeEnd, tTemp) && tTemp < t)
+		{
+			t = tTemp;
+			returnVal = true;
+		}
+	}
+
+	return returnVal;
 }
 
 bool QuadTree::_insideAABB(const DirectX::XMFLOAT2 & min, const DirectX::XMFLOAT2 & size, const Quadrant & quadrant) const
 {
-	return false;
+	DirectX::BoundingBox bb;
+	DirectX::XMVECTOR max = DirectX::XMVectorAdd(DirectX::XMLoadFloat2(&min), DirectX::XMLoadFloat2(&size));
+	bb.CreateFromPoints(bb, DirectX::XMLoadFloat2(&min), max);
+
+	return quadrant.Intersects(bb) || quadrant.Intersects(min);
 }
 
 bool QuadTree::_insideAABB(const DirectX::XMFLOAT2 & min, const Quadrant & quadrant) const
 {
-	return false;
+	return quadrant.Intersects(min);
 }

@@ -3,6 +3,9 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Passess/IRender.h"
 
+// remove
+#include <vector>
+
 Drawable::Drawable() : Transform()
 {
 	m_texture = Renderer::GetInstance()->GetDefaultTexture();
@@ -24,11 +27,29 @@ void Drawable::SetVertices(std::vector<Vertex>* vertices)
 		m_vertexBuffer->Release();
 	m_vertexBuffer = nullptr;
 
-	// Calculate mesh size
-	// TODO
+	size_t size = vertices->size();
+	Vertex v = (*vertices)[0];
+	DirectX::XMFLOAT2 min = DirectX::XMFLOAT2(v.Position.x, v.Position.z);
+	DirectX::XMFLOAT2 max = DirectX::XMFLOAT2(v.Position.x, v.Position.z);
+
+	for (size_t i = 1; i < size; i++)
+	{
+		Vertex tempV = (*vertices)[i];
+		DirectX::XMFLOAT2 tempPos = DirectX::XMFLOAT2(tempV.Position.x, tempV.Position.z);
+		// Mesh min
+		if (tempPos.x < min.x) min.x = tempPos.x;
+		if (tempPos.y < min.y) min.y = tempPos.y;
+		// Mesh max
+		if (tempPos.x > max.x) max.x = tempPos.x;
+		if (tempPos.y > max.y) max.y = tempPos.y;
+	}
+
+	m_min = min;
+	m_max = max;
+	DirectX::XMVECTOR vec = DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&max), DirectX::XMLoadFloat2(&min));
+	DirectX::XMStoreFloat2(&m_size, vec);
 
 	/* Create Vertex Buffer */
-
 	UINT32 vertexSize = sizeof(Vertex);
 	UINT32 offset = 0;
 	m_vertices->shrink_to_fit();
