@@ -13,6 +13,7 @@ struct ObjectBuffer
 {
 	DirectX::XMFLOAT4X4A worldMatrix;
 	DirectX::XMFLOAT4A color;
+	DirectX::XMFLOAT2A uvOffset;
 };
 
 struct MouseBuffer

@@ -116,6 +116,9 @@
     <ClInclude Include="Game\Pathfinding\Waypoint.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Game\water_texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Rendering\Rendering\Shaders\ForwardVertex.hlsl" />

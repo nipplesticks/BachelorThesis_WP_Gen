@@ -32,6 +32,8 @@ public:
 	const DirectX::XMFLOAT4 GetPosition() const;
 	const DirectX::XMFLOAT4 GetUpVector() const;
 	const DirectX::XMFLOAT4 GetDirectionVector() const;
+	const DirectX::XMFLOAT4 GetRightVector() const;
+	const DirectX::XMFLOAT4 GetForwardVector() const;
 
 	const DirectX::XMFLOAT4X4A & GetViewMatrix() const;
 	const DirectX::XMFLOAT4X4A & GetProjectionMatrix() const;

@@ -239,6 +239,7 @@ void ForwardRender::_prePass()
 			dc->IASetPrimitiveTopology(p_drawQueue[i]->GetTopology());
 			m_objectValues.color = p_drawQueue[i]->GetColor();
 			m_objectValues.worldMatrix = p_drawQueue[i]->GetWorldMatrix();
+			m_objectValues.uvOffset = p_drawQueue[i]->GetUVOffset();
 
 			dc->Map(m_objectBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dataPtr);
 			memcpy(dataPtr.pData, &m_objectValues, sizeof(m_objectValues));
@@ -302,6 +303,7 @@ void ForwardRender::_forwardPass()
 		dc->IASetPrimitiveTopology(p_drawQueue[i]->GetTopology());
 		m_objectValues.color = p_drawQueue[i]->GetColor();
 		m_objectValues.worldMatrix = p_drawQueue[i]->GetWorldMatrix();
+		m_objectValues.uvOffset = p_drawQueue[i]->GetUVOffset();
 
 		dc->Map(m_objectBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dataPtr);
 		memcpy(dataPtr.pData, &m_objectValues, sizeof(m_objectValues));
@@ -327,6 +329,7 @@ void ForwardRender::_forwardPass()
 		dc->IASetPrimitiveTopology(p_drawQueueTransparent[i]->GetTopology());
 		m_objectValues.color = p_drawQueueTransparent[i]->GetColor();
 		m_objectValues.worldMatrix = p_drawQueueTransparent[i]->GetWorldMatrix();
+		m_objectValues.uvOffset = p_drawQueueTransparent[i]->GetUVOffset();
 
 		dc->Map(m_objectBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dataPtr);
 		memcpy(dataPtr.pData, &m_objectValues, sizeof(m_objectValues));
@@ -345,8 +348,6 @@ void ForwardRender::_forwardPass()
 		dc->Draw((UINT)p_drawQueueTransparent[i]->GetVertices()->size(), 0);
 	}
 }
-
-
 
 void ForwardRender::_pickingPass()
 {

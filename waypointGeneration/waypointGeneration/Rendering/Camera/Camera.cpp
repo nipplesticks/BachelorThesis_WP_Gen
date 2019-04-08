@@ -160,6 +160,16 @@ const DirectX::XMFLOAT4 Camera::GetDirectionVector() const
 	return m_direction;
 }
 
+const DirectX::XMFLOAT4 Camera::GetRightVector() const
+{
+	return m_right;
+}
+
+const DirectX::XMFLOAT4 Camera::GetForwardVector() const
+{
+	return m_forward;
+}
+
 const DirectX::XMFLOAT4X4A & Camera::GetViewMatrix() const
 {
 	return m_viewMatrix;

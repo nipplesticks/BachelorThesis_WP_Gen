@@ -93,6 +93,17 @@ void Drawable::SetColor(const DirectX::XMFLOAT4 & color)
 	m_color.w = color.w;
 }
 
+const DirectX::XMFLOAT2A & Drawable::GetUVOffset() const
+{
+	return m_uvOffset;
+}
+
+void Drawable::SetUVOffset(float x, float y)
+{
+	m_uvOffset.x = x;
+	m_uvOffset.y = y;
+}
+
 D3D11_PRIMITIVE_TOPOLOGY Drawable::GetTopology() const
 {
 	return m_topology;
