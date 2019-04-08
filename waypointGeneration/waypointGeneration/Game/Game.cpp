@@ -4,8 +4,8 @@
 Game::Game()
 {
 	_createWaterTexture();
-	_loadTerrain();
 	_loadMeshes();
+	_loadTerrain();
 	_randomizeBuildings();
 
 	m_camera.CreateProjectionMatrix(0.01f, 10000);
@@ -72,6 +72,9 @@ void Game::Draw()
 
 	for (auto & b : m_buildings)
 		b.Draw();
+
+	for (auto & d : m_wp)
+		d.Draw();
 
 	m_water.Draw();
 }
@@ -297,6 +300,8 @@ void Game::_loadTerrain()
 		m_edgeMeshes
 	);
 
+	long int lastX = 0;
+	long int lastY = 0;
 	DirectX::XMVECTOR up = DirectX::XMVectorSet(0, -1, 0, 0);
 	for (int i = 0; i < m_terrainMesh.size(); i+=3)
 	{
@@ -312,10 +317,6 @@ void Game::_loadTerrain()
 		DirectX::XMVECTOR e1 = DirectX::XMVectorSubtract(DirectX::XMLoadFloat4A(&v2), DirectX::XMLoadFloat4A(&v0));
 		DirectX::XMVECTOR normal = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(e0, e1));
 
-		DirectX::XMStoreFloat4A(&m_terrainMesh[i].Normal, normal);
-		DirectX::XMStoreFloat4A(&m_terrainMesh[i + 1].Normal, normal);
-		DirectX::XMStoreFloat4A(&m_terrainMesh[i + 2].Normal, normal);
-
 		float dot = fabs(DirectX::XMVectorGetX(DirectX::XMVector3Dot(normal, up)));
 		if (dot < m_terrainCreator.UNWALKABLE_SURFACE)
 		{
@@ -324,14 +325,73 @@ void Game::_loadTerrain()
 				DirectX::XMFLOAT4A pos = m_terrainMesh[k].Position;
 
 				Waypoint wp(pos.x, pos.z);
-				
-				long int key = ((long int)pos.x) + ((long int)pos.z) * (TERRAIN_SIZE);
+				wp.SetHeightVal(pos.y);
+
+				long int xPos = pos.x;
+				long int yPos = pos.z;
+
+				if (xPos > lastX)
+					lastX = xPos;
+
+				if (yPos > lastY)
+					lastY = yPos;
+
+				long int key = xPos + yPos * (TERRAIN_SIZE);
 
 				auto it = m_waypoints.find(key);
 
 				if (it == m_waypoints.end())
+				{
 					m_waypoints.insert(std::make_pair(key, wp));
+
+				}
 			}
+		}
+	}
+
+	std::map<long int, long int> ereasedVals;
+
+	for (long int i = 0; i < lastY; i++)
+	{
+		for (long int j = 0; j < lastX; j++)
+		{
+			long int key = j + i * TERRAIN_SIZE;
+
+			bool erase = true;
+
+			for (int y = i - 1; y <= i + 1 && erase; y++)
+			{
+				for (int x = j - 1; x <= j + 1 && erase; x++)
+				{
+					if (y == i && x == j)
+						continue;
+
+					int tKey = x + y * TERRAIN_SIZE;
+
+					auto tIt = m_waypoints.find(tKey);
+					auto eIt = ereasedVals.find(tKey);
+					erase = tIt != m_waypoints.end() || eIt != ereasedVals.end();
+				}
+			}
+			if (erase)
+			{
+				m_waypoints.erase(key);
+				ereasedVals.insert(std::make_pair(key, key));
+			}
+		}
+	}
+
+	if (DRAW_WAYPOINT)
+	{
+		m_wp = std::vector<Drawable>(m_waypoints.size());
+		int counter = 0;
+		for (auto & w : m_waypoints)
+		{
+			m_wp[counter].SetPosition(w.second.GetPosition().x, w.second.GetHeightVal(), w.second.GetPosition().y);
+			m_wp[counter].SetVertices(&m_playerMesh);
+			m_wp[counter].SetScale(0.5f, 0.5f, 0.5f);
+			m_wp[counter].Update();
+			m_wp[counter++].SetColor(1, 0, 0);
 		}
 	}
 

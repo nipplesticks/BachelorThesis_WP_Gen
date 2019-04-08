@@ -10,6 +10,16 @@ Waypoint::~Waypoint()
 {
 }
 
+void Waypoint::SetHeightVal(float height)
+{
+	m_heightValue = height;
+}
+
+float Waypoint::GetHeightVal() const
+{
+	return m_heightValue;
+}
+
 void Waypoint::SetPosition(float x, float y)
 {
 	m_position.x = x;

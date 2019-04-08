@@ -462,7 +462,7 @@ std::vector<Vertex> TerrainCreator::CreateTerrainFromFloatList2(std::vector<floa
 		}
 	}
 
-	/*for (int y = 0; y < mapSize; y++)
+	for (int y = 0; y < mapSize; y++)
 	{
 		for (int x = 0; x < mapSize; x++)
 		{
@@ -502,7 +502,7 @@ std::vector<Vertex> TerrainCreator::CreateTerrainFromFloatList2(std::vector<floa
 			}
 
 		}
-	}*/
+	}
 
 	D3D11_TEXTURE2D_DESC desc = {};
 	desc.ArraySize = 1;

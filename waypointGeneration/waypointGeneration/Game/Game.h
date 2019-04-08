@@ -6,11 +6,13 @@
 #include "../MapGeneration/DiamondSquare.h"
 #include "Pathfinding/Waypoint.h"
 
+#define DRAW_WAYPOINT false
+
 #define MOUSE_SESITIVITY_X	0.05
 #define MOUSE_SESITIVITY_Y	0.05
 #define CAMERA_XZ_SPEED		100.0
 #define CAMERA_ZOOM_SPEED	10.0
-#define TERRAIN_SIZE		1025
+#define TERRAIN_SIZE		2049
 //#define TERRAIN_SIZE		65
 
 class Game
@@ -37,7 +39,7 @@ private:
 	Drawable m_player;
 	Drawable m_water;
 
-	std::vector<Waypoint> m_wp;
+	std::vector<Drawable> m_wp;
 
 	std::vector<Vertex> m_edgeMeshes[4];
 	Drawable m_edges[4];
