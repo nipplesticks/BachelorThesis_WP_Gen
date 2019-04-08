@@ -47,6 +47,8 @@ private:
 
 	DirectX::XMFLOAT2 m_size;
 	DirectX::BoundingBox m_boundingBox;
+	DirectX::XMFLOAT2 m_min = { FLT_MAX, FLT_MAX };
+	DirectX::XMFLOAT2 m_max = { FLT_MIN, FLT_MIN };
 
 	// D3D11 stuff
 	ID3D11Buffer * m_vertexBuffer = nullptr;

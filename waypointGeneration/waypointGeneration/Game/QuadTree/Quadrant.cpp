@@ -61,12 +61,12 @@ unsigned int Quadrant::GetNrOfChildren() const
 	return m_nrOfChildren;
 }
 
-bool Quadrant::Intersects(const DirectX::BoundingOrientedBox & OBB)
+bool Quadrant::Intersects(const DirectX::BoundingOrientedBox & OBB) const
 {
 	return m_aabb.Intersects(OBB);
 }
 
-bool Quadrant::Intersects(const DirectX::BoundingBox & AABB)
+bool Quadrant::Intersects(const DirectX::BoundingBox & AABB) const
 {
 	return m_aabb.Intersects(AABB);
 }
@@ -76,7 +76,7 @@ bool Quadrant::Intersects(const DirectX::XMFLOAT2 & ray, const DirectX::XMFLOAT2
 	return m_aabb.Intersects(DirectX::XMLoadFloat2(&origin), DirectX::XMVector2Normalize(DirectX::XMLoadFloat2(&ray)), t);
 }
 
-bool Quadrant::Intersects(const DirectX::XMFLOAT2 & point)
+bool Quadrant::Intersects(const DirectX::XMFLOAT2 & point) const
 {
 	return m_aabb.Contains(DirectX::XMLoadFloat2(&point));
 }
