@@ -289,6 +289,8 @@ void Game::_loadTerrain()
 	const int MAX = 15;
 	const float NOISE = 25.0f;
 	
+	bool placedPlayer = false;
+
 	m_maxHeight = MAX * NOISE;
 	m_minHeight = abs(MIN * NOISE);
 
@@ -346,6 +348,21 @@ void Game::_loadTerrain()
 
 				}
 			}
+		}
+		else if (!placedPlayer && i > TERRAIN_SIZE * TERRAIN_SIZE * 0.5f - 10)
+		{
+			DirectX::XMFLOAT3 playerPos;
+			playerPos.x = m_terrainMesh[i].Position.x + m_terrainMesh[i + 1].Position.x + m_terrainMesh[i + 2].Position.x;
+			playerPos.y = m_terrainMesh[i].Position.y + m_terrainMesh[i + 1].Position.y + m_terrainMesh[i + 2].Position.y;
+			playerPos.z = m_terrainMesh[i].Position.z + m_terrainMesh[i + 1].Position.z + m_terrainMesh[i + 2].Position.z;
+
+			playerPos.x /= 3.0f;
+			playerPos.y /= 3.0f;
+			playerPos.z /= 3.0f;
+			playerPos.y += 0.5f;
+
+			m_player.SetPosition(playerPos);
+			placedPlayer = true;
 		}
 	}
 
@@ -422,8 +439,6 @@ void Game::_loadTerrain()
 
 			size++;
 		}
-
-
 		
 		m_edges[i].SetVertices(&m_edgeMeshes[i]);
 		m_edges[i].SetTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
@@ -432,7 +447,6 @@ void Game::_loadTerrain()
 	}
 
 	m_terrain.SetVertices(&m_terrainMesh);
-	//m_terrain.SetPosition(-TERRAIN_SIZE / 2, 0.0f, -TERRAIN_SIZE / 2);
 	m_terrain.SetTexture(m_terrainTexture);
 }
 
@@ -551,8 +565,8 @@ void Game::_randomizeBuildings()
 
 void Game::_setupGame()
 {
-	const auto & startPos = m_terrainMesh.front().Position;
-	m_player.SetPosition(startPos.x, startPos.y + 0.5f, startPos.z);
+	//const auto & startPos = m_terrainMesh.front().Position;
+	//m_player.SetPosition(startPos.x, startPos.y + 0.5f, startPos.z);
 	m_camera.SetDirection(1, -2, 1);
 
 	const DirectX::XMFLOAT4 camDir = m_camera.GetDirectionVector();
