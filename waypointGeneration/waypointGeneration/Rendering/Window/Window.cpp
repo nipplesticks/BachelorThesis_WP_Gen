@@ -166,12 +166,17 @@ LRESULT Window::_WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_MBUTTONDOWN:
 	case WM_RBUTTONDOWN:
 		wnd->m_mousePress[wParam] = true;
+		
 		return 0;
 
 	case WM_LBUTTONUP:
+		wnd->m_mousePress[1] = false;
+		return 0;
 	case WM_MBUTTONUP:
+		wnd->m_mousePress[16] = false;
+		return 0;
 	case WM_RBUTTONUP:
-		wnd->m_mousePress[wParam] = false;
+		wnd->m_mousePress[2] = false;
 		return 0;
 
 	case WM_DESTROY:

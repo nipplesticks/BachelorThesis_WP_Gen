@@ -72,7 +72,15 @@ void Game::_cameraControl(double dt)
 {
 	Window * wnd = Window::GetInstance();
 	POINT mp = wnd->GetMousePosition();
-	wnd->MouseToCenter();
+
+	//wnd->MouseToCenter();
+	/*float mouseDeltaX = (float)mp.x - (float)m_mouseReferencePosition.x;
+	float mouseDeltaY = (float)mp.y - (float)m_mouseReferencePosition.y;
+
+	DirectX::XMFLOAT2 camRotation(DirectX::XMConvertToRadians(mouseDeltaX) * MOUSE_SESITIVITY_X, DirectX::XMConvertToRadians(mouseDeltaY) * MOUSE_SESITIVITY_Y);
+
+	m_camera.Rotate(camRotation.y, camRotation.x, 0.0f);*/
+
 	DirectX::XMFLOAT3 translation(0, 0, 0);
 
 	if (wnd->IsKeyPressed(Input::UP_ARROW) || mp.y < 50)
@@ -83,7 +91,15 @@ void Game::_cameraControl(double dt)
 		translation.x += CAMERA_XZ_SPEED * dt;
 	if (wnd->IsKeyPressed(Input::LEFT_ARROW) || mp.x < 75)
 		translation.x -= CAMERA_XZ_SPEED * dt;
+	if (wnd->IsKeyPressed(Input::SPACE))
+		translation.y += CAMERA_XZ_SPEED * dt;
+	if (wnd->IsKeyPressed(Input::C))
+		translation.y -= CAMERA_XZ_SPEED * dt;
+
+	if (!wnd->IsMousePressed(Input::MOUSE_CODE::MBUTTON))
+		m_camera.Translate(translation);
 	
+
 	INT scrollDelta;
 	if (scrollDelta = wnd->GetMouseWheelDelta(Input::VERTICAL))
 	{
@@ -93,33 +109,95 @@ void Game::_cameraControl(double dt)
 		center.x = m_mouseReferencePosition.x;
 		center.y = m_mouseReferencePosition.y;
 
-		DirectX::XMFLOAT2 zoomDir;
-		DirectX::XMStoreFloat2(&zoomDir, DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&mousePos), DirectX::XMLoadFloat2(&center)));
+		DirectX::XMFLOAT3 worldPos;
+		if (Renderer::GetInstance()->GetMousePicking(worldPos))
+		{
+			DirectX::XMFLOAT4 camPos = m_camera.GetPosition();
+			camPos.w = 0.0f;
 
-		float x = zoomDir.x * dt * scrollDelta * 9;
-		float y = zoomDir.y * dt * scrollDelta * -16;
-		float z = CAMERA_ZOOM_SPEED * dt * scrollDelta;
+			DirectX::XMVECTOR direction = DirectX::XMVector3Normalize(DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&worldPos), DirectX::XMLoadFloat4(&camPos)));
 
-		m_camera.Translate(0, 0, CAMERA_ZOOM_SPEED * dt * scrollDelta, false);
-		m_camera.Translate(x, 0, y);
+			direction = DirectX::XMVectorScale(direction, scrollDelta * CAMERA_ZOOM_SPEED);
+
+			DirectX::XMFLOAT3 trans;
+			DirectX::XMStoreFloat3(&trans, direction);
+			
+			camPos.x += trans.x;
+			camPos.y += trans.y;
+			camPos.z += trans.z;
+			m_camera.SetPosition(camPos.x, camPos.y, camPos.z);
+		}
+		else
+		{
+			m_camera.Translate(0, 0, CAMERA_ZOOM_SPEED * scrollDelta, false);
+		}
+		
 	}
 
-	if (wnd->IsKeyPressed(Input::SPACE))
-		translation.y += CAMERA_ZOOM_SPEED * dt;
-	if (wnd->IsKeyPressed(Input::C))
-		translation.y -= CAMERA_ZOOM_SPEED * dt;
+	static bool PressedLastFrame = false;
+	static bool SampleOffset = false;
+	if (wnd->IsMousePressed(Input::MOUSE_CODE::MBUTTON)) // Rotate The camera;
+	{
+		static POINT _sMouseRef;
+		static DirectX::XMFLOAT3 _sWorldPosRef;
+		static DirectX::XMVECTOR _sCameraPosOffset;
+		
 
-	float mouseDeltaX = (float)mp.x - (float)m_mouseReferencePosition.x;
-	float mouseDeltaY = (float)mp.y - (float)m_mouseReferencePosition.y;
+		if (!PressedLastFrame)
+		{
+			_sMouseRef = mp;
 
-	DirectX::XMFLOAT2 camRotation(DirectX::XMConvertToRadians(mouseDeltaX) * MOUSE_SESITIVITY_X, DirectX::XMConvertToRadians(mouseDeltaY) * MOUSE_SESITIVITY_Y);
+			
+			if (Renderer::GetInstance()->GetMousePicking(_sWorldPosRef))
+			{
+				PressedLastFrame = true;
+				
+			}
+		}
+		else
+		{
+			float mouseDeltaX = (float)mp.x - (float)_sMouseRef.x;
+			float mouseDeltaY = (float)mp.y - (float)_sMouseRef.y;
 
-	m_camera.Rotate(camRotation.y, camRotation.x, 0.0f);
+			DirectX::XMFLOAT2 camRotation(DirectX::XMConvertToRadians(mouseDeltaX) * dt * MOUSE_SESITIVITY_X * 2.0f, DirectX::XMConvertToRadians(mouseDeltaY) * dt * MOUSE_SESITIVITY_Y * 2.0f);
 
-	m_camera.Translate(translation);
+			m_camera.Rotate(camRotation.y, camRotation.x, 0.0f);
 
+			DirectX::XMFLOAT4 camPos = m_camera.GetPosition();
+			camPos.w = 0.0f;
 
-	if (wnd->IsKeyPressed(Input::E))
+			float length = DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&_sWorldPosRef), DirectX::XMLoadFloat4(&camPos))));
+			std::cout << length << std::endl;
+			DirectX::XMFLOAT4 dir = m_camera.GetDirectionVector();
+			DirectX::XMVECTOR vDir = DirectX::XMLoadFloat4(&dir);
+			DirectX::XMVECTOR vWPos = DirectX::XMLoadFloat3(&_sWorldPosRef);
+			DirectX::XMVECTOR vNewCamPos = DirectX::XMVectorAdd(vWPos, DirectX::XMVectorScale(vDir, -length));
+
+			if (!SampleOffset)
+			{
+				_sCameraPosOffset = DirectX::XMVectorSubtract(DirectX::XMLoadFloat4(&camPos), vNewCamPos);
+				
+				SampleOffset = true;
+			}
+
+			//DirectX::XMStoreFloat4(&camPos, DirectX::XMVectorAdd(vNewCamPos, _sCameraPosOffset));
+			DirectX::XMStoreFloat4(&camPos, vNewCamPos);
+			m_camera.SetPosition(camPos.x, camPos.y, camPos.z);
+		}
+
+	}
+	else
+	{
+		PressedLastFrame = false;
+		SampleOffset = false;
+	}
+
+	if (wnd->IsKeyPressed(Input::BACKSPACE)) // Reset The Camera
+	{
+		m_camera.SetDirection(1, -1, 1);
+	}
+
+	if (wnd->IsMousePressed(Input::MOUSE_CODE::LBUTTON))
 	{
 		DirectX::XMFLOAT3 worldPos;
 		if (Renderer::GetInstance()->GetMousePicking(worldPos))
