@@ -2,6 +2,7 @@ cbuffer OBJECT_DATA : register(b0)
 {
     float4x4    WorldMatrix;
     float4      ObjectColor;
+	float2		UVOffset;
 }
 
 cbuffer CAMERA_DATA : register(b1)
@@ -35,6 +36,6 @@ VS_OUTPUT main(VS_INPUT input)
     output.position = mul(ViewProjectionMatrix, output.worldPosition);
     output.normal = float4(normalize(mul(WorldMatrix, input.normal).xyz),0.0f);
     output.color = ObjectColor;
-    output.uv = input.uv;
+    output.uv = input.uv + UVOffset;
     return output;
 }

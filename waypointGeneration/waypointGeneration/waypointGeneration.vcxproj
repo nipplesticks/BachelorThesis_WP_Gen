@@ -146,6 +146,7 @@
     <ClInclude Include="Game\Pathfinding\Waypoint.h" />
     <ClInclude Include="Game\QuadTree\Quadrant.h" />
     <ClInclude Include="Game\QuadTree\QuadTree.h" />
+    <ClInclude Include="Game\water_texture.h" />
     <ClInclude Include="MapGeneration\DiamondSquare.h" />
     <ClInclude Include="MapGeneration\TerrainCreator.h" />
     <ClInclude Include="Rendering\Drawable\Drawable.h" />

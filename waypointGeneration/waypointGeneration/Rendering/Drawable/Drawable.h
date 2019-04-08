@@ -14,6 +14,9 @@ public:
 	void SetColor(const DirectX::XMFLOAT3 &color);
 	void SetColor(const DirectX::XMFLOAT4 &color);
 
+	const DirectX::XMFLOAT2A & GetUVOffset() const;
+	void SetUVOffset(float x, float y);
+
 	D3D11_PRIMITIVE_TOPOLOGY GetTopology() const;
 	void SetTopology(D3D11_PRIMITIVE_TOPOLOGY topology);
 
@@ -34,6 +37,7 @@ public:
 
 private:
 	DirectX::XMFLOAT4A m_color = {1,1,1,1};
+	DirectX::XMFLOAT2A m_uvOffset = { 0,0 };
 
 	bool m_isPickable = false;
 

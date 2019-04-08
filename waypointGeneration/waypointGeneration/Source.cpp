@@ -15,7 +15,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	srand(time(0));
 	_alocConsole();
 	Window * wnd = Window::GetInstance();
-	wnd->Create(hInstance, nCmdShow, 1920, 1080, 0);
+	wnd->Create(hInstance, nCmdShow, 1280, 720, 0);
 
 	Renderer * renderer = Renderer::GetInstance();
 	renderer->Init();
@@ -42,6 +42,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		renderer->Present();
 
 	}
+	delete game;
 
 	renderer->Release();
 	

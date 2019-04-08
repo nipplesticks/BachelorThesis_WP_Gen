@@ -8,7 +8,8 @@
 #define MOUSE_SESITIVITY_Y	0.05
 #define CAMERA_XZ_SPEED		100.0
 #define CAMERA_ZOOM_SPEED	10.0
-#define TERRAIN_SIZE		1025
+//#define TERRAIN_SIZE		1025
+#define TERRAIN_SIZE		65
 
 class Game
 {
@@ -40,8 +41,8 @@ private:
 	ID3D11Texture2D *			m_terrainTex2D = nullptr;
 	ID3D11ShaderResourceView *	m_terrainTexture = nullptr;
 
-	ID3D11Texture2D *			m_whiteTex2D = nullptr;
-	ID3D11ShaderResourceView *	m_whiteTexture = nullptr;
+	ID3D11ShaderResourceView * m_waterTexture = nullptr;
+	ID3D11Texture2D * m_waterTex2D = nullptr;
 
 	POINT m_mouseReferencePosition;
 
@@ -54,6 +55,7 @@ private:
 	void _cameraControl(double dt);
 
 private:
+	void _createWaterTexture();
 	void _loadTerrain();
 	void _loadMeshes();
 	void _randomizeBuildings();
