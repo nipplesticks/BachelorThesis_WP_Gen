@@ -24,6 +24,8 @@ Game::~Game()
 	m_terrainTexture->Release();
 	m_waterTex2D->Release();
 	m_waterTexture->Release();
+
+	m_wp.clear();
 }
 
 void Game::Update(double dt)
@@ -295,6 +297,45 @@ void Game::_loadTerrain()
 		m_edgeMeshes
 	);
 
+	DirectX::XMVECTOR up = DirectX::XMVectorSet(0, -1, 0, 0);
+	for (int i = 0; i < m_terrainMesh.size(); i+=3)
+	{
+		if (i % 1000 == 0)
+			std::cout << "\r" << ((double)i / (double)m_terrainMesh.size() )* 100.0;
+
+		DirectX::XMFLOAT4A v0, v1, v2;
+		v0 = m_terrainMesh[i].Position;
+		v1 = m_terrainMesh[i + 1].Position;
+		v2 = m_terrainMesh[i + 2].Position;
+
+		DirectX::XMVECTOR e0 = DirectX::XMVectorSubtract(DirectX::XMLoadFloat4A(&v1), DirectX::XMLoadFloat4A(&v0));
+		DirectX::XMVECTOR e1 = DirectX::XMVectorSubtract(DirectX::XMLoadFloat4A(&v2), DirectX::XMLoadFloat4A(&v0));
+		DirectX::XMVECTOR normal = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(e0, e1));
+
+		DirectX::XMStoreFloat4A(&m_terrainMesh[i].Normal, normal);
+		DirectX::XMStoreFloat4A(&m_terrainMesh[i + 1].Normal, normal);
+		DirectX::XMStoreFloat4A(&m_terrainMesh[i + 2].Normal, normal);
+
+		float dot = fabs(DirectX::XMVectorGetX(DirectX::XMVector3Dot(normal, up)));
+		if (dot < m_terrainCreator.UNWALKABLE_SURFACE)
+		{
+			for (int k = i; k < i + 3; k++)
+			{
+				DirectX::XMFLOAT4A pos = m_terrainMesh[k].Position;
+
+				Waypoint wp(pos.x, pos.z);
+				
+				long int key = ((long int)pos.x) + ((long int)pos.z) * (TERRAIN_SIZE);
+
+				auto it = m_waypoints.find(key);
+
+				if (it == m_waypoints.end())
+					m_waypoints.insert(std::make_pair(key, wp));
+			}
+		}
+	}
+
+	std::cout << "\n" << m_waypoints.size() << std::endl;
 
 	for (int i = 0; i < 4; i++)
 	{

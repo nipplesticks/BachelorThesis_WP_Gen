@@ -1,8 +1,10 @@
 #pragma once
+#include <map>
 #include "../Rendering/Drawable/Drawable.h"
 #include "../Rendering/Camera/Camera.h"
 #include "../MapGeneration/TerrainCreator.h"
 #include "../MapGeneration/DiamondSquare.h"
+#include "Pathfinding/Waypoint.h"
 
 #define MOUSE_SESITIVITY_X	0.05
 #define MOUSE_SESITIVITY_Y	0.05
@@ -35,6 +37,8 @@ private:
 	Drawable m_player;
 	Drawable m_water;
 
+	std::vector<Waypoint> m_wp;
+
 	std::vector<Vertex> m_edgeMeshes[4];
 	Drawable m_edges[4];
 
@@ -48,6 +52,8 @@ private:
 
 	float m_maxHeight = 0.0f;
 	float m_minHeight = 0.0f;
+
+	std::map<long int, Waypoint> m_waypoints;
 
 	std::vector<Drawable> m_buildings;
 private:
