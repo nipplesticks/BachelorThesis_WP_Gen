@@ -285,6 +285,8 @@ void Game::_createWaterTexture()
 
 void Game::_loadTerrain()
 {
+	Timer t;
+
 	const int MIN = -15;
 	const int MAX = 15;
 	const float NOISE = 25.0f;
@@ -294,6 +296,7 @@ void Game::_loadTerrain()
 	m_maxHeight = MAX * NOISE;
 	m_minHeight = abs(MIN * NOISE);
 
+	t.Start();
 	m_terrainMesh = m_terrainCreator.CreateTerrainFromFloatList2(
 		m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, TERRAIN_SIZE, NOISE, MIN, MAX, 1),
 		TERRAIN_SIZE,
@@ -301,10 +304,12 @@ void Game::_loadTerrain()
 		m_terrainTex2D,
 		m_edgeMeshes
 	);
-
+	double time = t.Stop(Timer::MILLISECONDS);
+	std::cout << "\nTime to generate terrain mesh: " << time << " ms\n";
 	long int lastX = 0;
 	long int lastY = 0;
 	DirectX::XMVECTOR up = DirectX::XMVectorSet(0, -1, 0, 0);
+	std::cout << "\nGenerating waypoints\n";
 	for (int i = 0; i < m_terrainMesh.size(); i+=3)
 	{
 		if (i % 1000 == 0)
@@ -366,6 +371,9 @@ void Game::_loadTerrain()
 		}
 	}
 
+	time = t.Stop(Timer::MILLISECONDS);
+	std::cout << "\nTime to generate waypoints: " << time << " ms\n";
+	std::cout << "\nNumber of waypoints:" << m_waypoints.size() << std::endl;
 	std::map<long int, long int> ereasedVals;
 
 	for (long int i = 0; i < lastY; i++)
@@ -398,6 +406,10 @@ void Game::_loadTerrain()
 		}
 	}
 
+	time = t.Stop(Timer::MILLISECONDS);
+	std::cout << "\nTime to cleanup the waypoints: " << time << " ms\n";
+	std::cout << "\nNumber of waypoints after cleanup: " << m_waypoints.size() << std::endl;
+
 	if (DRAW_WAYPOINT)
 	{
 		m_wp = std::vector<Drawable>(m_waypoints.size());
@@ -410,9 +422,11 @@ void Game::_loadTerrain()
 			m_wp[counter].Update();
 			m_wp[counter++].SetColor(1, 0, 0);
 		}
+
+		time = t.Stop(Timer::MILLISECONDS);
+		std::cout << "Time to create Drawables: " << time << " ms\n";
 	}
 
-	std::cout << "\n" << m_waypoints.size() << std::endl;
 
 	for (int i = 0; i < 4; i++)
 	{
