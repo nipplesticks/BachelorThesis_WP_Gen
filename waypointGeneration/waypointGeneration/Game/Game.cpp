@@ -279,10 +279,10 @@ void Game::_createWaterTexture()
 void Game::_loadTerrain()
 {
 	Timer t;
-
-	const int MIN = -10;
-	const int MAX = 15;
-	const float NOISE = 15.0f;
+	
+	int MIN = -10;
+	int MAX = 15;
+	float NOISE = (rand() % 6) + 15;
 	
 	bool placedPlayer = false;
 
@@ -359,7 +359,7 @@ void Game::_loadTerrain()
 				}
 			}
 		}
-		else if (!placedPlayer && i > TERRAIN_SIZE * TERRAIN_SIZE * 0.5f - 10)
+		else if (!placedPlayer && i >= TERRAIN_SIZE * TERRAIN_SIZE * 0.5f)
 		{
 			DirectX::XMFLOAT3 playerPos;
 			playerPos.x = m_terrainMesh[i].Position.x + m_terrainMesh[i + 1].Position.x + m_terrainMesh[i + 2].Position.x;
@@ -638,7 +638,7 @@ void Game::_setupGame()
 
 	DirectX::XMVECTOR camPosDir = DirectX::XMVectorScale(DirectX::XMLoadFloat4(&camDir), -1.0f);
 	DirectX::XMVECTOR playerPos = DirectX::XMLoadFloat3(&m_player.GetPosition());
-	DirectX::XMVECTOR camPos = DirectX::XMVectorAdd(playerPos, DirectX::XMVectorScale(camPosDir, 100.0f));
+	DirectX::XMVECTOR camPos = DirectX::XMVectorAdd(playerPos, DirectX::XMVectorScale(camPosDir, TERRAIN_SIZE));
 
 	DirectX::XMFLOAT3 xmCamPos;
 	DirectX::XMStoreFloat3(&xmCamPos, camPos);
