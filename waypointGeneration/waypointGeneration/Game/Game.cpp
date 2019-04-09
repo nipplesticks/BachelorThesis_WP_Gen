@@ -280,9 +280,9 @@ void Game::_loadTerrain()
 {
 	Timer t;
 
-	const int MIN = -15;
+	const int MIN = -10;
 	const int MAX = 15;
-	const float NOISE = 25.0f;
+	const float NOISE = 15.0f;
 	
 	bool placedPlayer = false;
 
@@ -291,7 +291,7 @@ void Game::_loadTerrain()
 
 	t.Start();
 	m_terrainMesh = m_terrainCreator.CreateTerrainFromFloatList2(
-		m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, TERRAIN_SIZE / 2, NOISE, MIN, MAX, 0),
+		m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, TERRAIN_SIZE - 1, NOISE, MIN, MAX, 1),
 		TERRAIN_SIZE,
 		m_terrainTexture,
 		m_terrainTex2D,

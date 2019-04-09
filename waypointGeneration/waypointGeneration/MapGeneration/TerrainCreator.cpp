@@ -380,11 +380,11 @@ std::vector<Vertex> TerrainCreator::CreateTerrainFromFloatList2(std::vector<floa
 			float dot = fabs(DirectX::XMVectorGetX(DirectX::XMVector3Dot(normal, DirectX::XMVectorSet(0, 1, 0, 0))));
 			if (dot < UNWALKABLE_SURFACE)
 			{
-				if (float4Equal(texture[j + i * mapSize], colors[2]))
+				//if (float4Equal(texture[j + i * mapSize], colors[2]))
 					texture[j + i * mapSize] = colors[3];
-				if (float4Equal(texture[j + (i + 1) * mapSize], colors[2]))
+				//if (float4Equal(texture[j + (i + 1) * mapSize], colors[2]))
 					texture[j + (i + 1) * mapSize] = colors[3];
-				if (float4Equal(texture[(j + 1) + i * mapSize], colors[2]))
+				//if (float4Equal(texture[(j + 1) + i * mapSize], colors[2]))
 					texture[(j + 1) + i * mapSize] = colors[3];
 			}
 
@@ -442,11 +442,11 @@ std::vector<Vertex> TerrainCreator::CreateTerrainFromFloatList2(std::vector<floa
 			dot = fabs(DirectX::XMVectorGetX(DirectX::XMVector3Dot(normal, DirectX::XMVectorSet(0, 1, 0, 0))));
 			if (dot < UNWALKABLE_SURFACE)
 			{
-				if (float4Equal(texture[j + (i + 1) * mapSize], colors[2]))
+				//if (float4Equal(texture[j + (i + 1) * mapSize], colors[2]))
 					texture[j + (i + 1) * mapSize] = colors[3];
-				if (float4Equal(texture[(j + 1) + (i + 1) * mapSize], colors[2]))
+				//if (float4Equal(texture[(j + 1) + (i + 1) * mapSize], colors[2]))
 					texture[(j + 1) + (i + 1) * mapSize] = colors[3];
-				if (float4Equal(texture[(j + 1) + i * mapSize], colors[2]))
+				//if (float4Equal(texture[(j + 1) + i * mapSize], colors[2]))
 					texture[(j + 1) + i * mapSize] = colors[3];
 			}
 		}
