@@ -291,7 +291,7 @@ void Game::_loadTerrain()
 
 	t.Start();
 	m_terrainMesh = m_terrainCreator.CreateTerrainFromFloatList2(
-		m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, TERRAIN_SIZE / 2, NOISE, MIN, MAX, 4),
+		m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, TERRAIN_SIZE / 2, NOISE, MIN, MAX, 0),
 		TERRAIN_SIZE,
 		m_terrainTexture,
 		m_terrainTex2D,

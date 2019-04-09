@@ -26,7 +26,7 @@ std::vector<float> DiamondSquare::CreateDiamondSquare(int mapSize, int stepSize,
 		noise *= 0.5;
 	}
 
-	//_smoothValues((int)pow(2, smoothingIterations) + 1);
+	_smoothValues((int)pow(2, smoothingIterations) + 1);
 	
 	return m_diamondSquare;
 }
