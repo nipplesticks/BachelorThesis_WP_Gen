@@ -26,8 +26,7 @@ std::vector<float> DiamondSquare::CreateDiamondSquare(int mapSize, int stepSize,
 		noise *= 0.5;
 	}
 
-	_smoothValues((int)pow(2, smoothingIterations) + 1);
-	_smoothValues((int)pow(2, 0) + 1);
+	//_smoothValues((int)pow(2, smoothingIterations) + 1);
 	
 	return m_diamondSquare;
 }
@@ -65,13 +64,16 @@ void DiamondSquare::_diamondStep(int x, int z, int stepSize, int halfStep, float
 
 void DiamondSquare::_squareStep(int x, int z, int stepSize, int halfStep, float noise)
 {
-	float corner1 = _getValue(x - halfStep, z);
-	float corner2 = _getValue(x + halfStep, z);
-	float corner3 = _getValue(x, z - halfStep);
-	float corner4 = _getValue(x, z + halfStep);
-	float diamondValue = ((corner1 + corner2 + corner3 + corner4) * 0.25) + noise;
+	if (x < m_mapSize && z < m_mapSize)
+	{
+		float corner1 = _getValue(x - halfStep, z);
+		float corner2 = _getValue(x + halfStep, z);
+		float corner3 = _getValue(x, z - halfStep);
+		float corner4 = _getValue(x, z + halfStep);
+		float diamondValue = ((corner1 + corner2 + corner3 + corner4) * 0.25) + noise;
 
-	_setValue(x, z, diamondValue);
+		_setValue(x, z, diamondValue);
+	}
 }
 
 void DiamondSquare::_diamondSquareAlgorithm(int stepSize, float noise, int min, int max)
@@ -116,7 +118,8 @@ void DiamondSquare::_smoothValues(int filtersize)
 						count++;
 				}
 			}
-			m_diamondSquare[z + (m_mapSize * x)] = total / (float)count;
+			if (count != 0)
+				m_diamondSquare[z + (m_mapSize * x)] = total / (float)count;
 		}
 	}
 }
