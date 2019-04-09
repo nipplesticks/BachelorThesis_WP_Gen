@@ -17,7 +17,7 @@ std::vector<float> DiamondSquare::CreateDiamondSquare(int mapSize, int stepSize,
 	for (int z = 0; z < m_mapSize; z += stepSize)
 		for (int x = 0; x < m_mapSize; x += stepSize)
 			_setValue(x, z, _fRand(min, max));
-			
+
 	while (stepSize > 1)
 	{
 		_diamondSquareAlgorithm(stepSize, noise, min, max);
@@ -27,7 +27,8 @@ std::vector<float> DiamondSquare::CreateDiamondSquare(int mapSize, int stepSize,
 	}
 
 	_smoothValues((int)pow(2, smoothingIterations) + 1);
-
+	_smoothValues((int)pow(2, 0) + 1);
+	
 	return m_diamondSquare;
 }
 
@@ -85,7 +86,7 @@ void DiamondSquare::_diamondSquareAlgorithm(int stepSize, float noise, int min, 
 		for (int x = 0; x < m_mapSize - 1; x += stepSize)
 		{
 			_squareStep(x + halfStep, z, stepSize, halfStep, _fRand(min, max) * noise);
-			_squareStep(x + halfStep, z, stepSize, halfStep, _fRand(min, max) * noise);
+			_squareStep(x, z + halfStep, stepSize, halfStep, _fRand(min, max) * noise);
 		}
 }
 
@@ -115,8 +116,7 @@ void DiamondSquare::_smoothValues(int filtersize)
 						count++;
 				}
 			}
-			if (count != 0 && total != 0)
-				m_diamondSquare[z + (m_mapSize * x)] = total / (float)count;
+			m_diamondSquare[z + (m_mapSize * x)] = total / (float)count;
 		}
 	}
 }
