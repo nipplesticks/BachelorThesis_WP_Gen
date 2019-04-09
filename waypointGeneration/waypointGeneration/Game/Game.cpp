@@ -218,23 +218,16 @@ void Game::_cameraControl(double dt)
 		}
 	}
 
-
-
 	float distanceToCenter = 
 		DirectX::XMVectorGetX(DirectX::XMVector3Length
 		(DirectX::XMVectorSubtract(DirectX::XMVectorSet((float)TERRAIN_SIZE / 2, 0, (float)TERRAIN_SIZE / 2, 0),
 			DirectX::XMLoadFloat4(&m_camera.GetPosition()))));
 
-	float a2 = pow(((float)TERRAIN_SIZE - 1) / 2, 2);
+	float a2 = pow(((float)TERRAIN_SIZE), 2);
 
-	float c = sqrt(a2 + a2);
-	float ma = max(c, m_maxHeight);
-	float mi = max(c, m_minHeight);
+	float c = sqrt(a2 + a2) / 2;
 	
-	float farPlane = distanceToCenter + ma;
-	float nearPlane = distanceToCenter - mi;
-
-	m_camera.CreateProjectionMatrix(max(nearPlane, 0.01f), farPlane);
+	m_camera.CreateProjectionMatrix(max(distanceToCenter - c, 0.01f), distanceToCenter + c);
 }
 
 #include "water_texture.h"
@@ -328,9 +321,9 @@ void Game::_loadTerrain()
 		DirectX::XMVECTOR e1 = DirectX::XMVectorSubtract(DirectX::XMLoadFloat4A(&v2), DirectX::XMLoadFloat4A(&v0));
 		DirectX::XMVECTOR normal = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(e0, e1));
 
-		DirectX::XMStoreFloat4A(&m_terrainMesh[i].Normal, normal);
+		/*DirectX::XMStoreFloat4A(&m_terrainMesh[i].Normal, normal);
 		DirectX::XMStoreFloat4A(&m_terrainMesh[i + 1].Normal, normal);
-		DirectX::XMStoreFloat4A(&m_terrainMesh[i + 2].Normal, normal);
+		DirectX::XMStoreFloat4A(&m_terrainMesh[i + 2].Normal, normal);*/
 
 		float dot = fabs(DirectX::XMVectorGetX(DirectX::XMVector3Dot(normal, up)));
 		if (dot < m_terrainCreator.UNWALKABLE_SURFACE)
@@ -339,7 +332,8 @@ void Game::_loadTerrain()
 			{
 				DirectX::XMFLOAT4A pos = m_terrainMesh[k].Position;
 				
-
+				if (pos.y < m_terrainCreator.WATER_START)
+					continue;
 
 				Waypoint wp(pos.x, pos.z);
 				wp.SetHeightVal(pos.y);
@@ -588,6 +582,7 @@ void Game::_loadMeshes()
 
 	/* PLANE */
 	m_water.SetScale((float)TERRAIN_SIZE - 1.5f, 1.0f, (float)TERRAIN_SIZE - 1.5f);
+	m_water.SetPickable(1);
 
 	std::vector<Vertex> plane(6);
 	Vertex v;
@@ -617,7 +612,8 @@ void Game::_loadMeshes()
 	m_player.SetVertices(&m_playerMesh);
 	m_player.SetColor(1.0f, 0.0f, 0.0f);
 	m_water.SetVertices(&m_XZPlane);
-	m_water.SetColor(1.0f, 1.0f, 1.0f, 0.6f);
+	m_water.SetColor(1.0f, 1.0f, 1.0f, 0.8f);
+	
 	m_water.SetTexture(m_waterTexture);
 	
 	m_water.SetPosition((float)(TERRAIN_SIZE - 1) * 0.5f, m_terrainCreator.WATER_START, (float)(TERRAIN_SIZE - 1) * 0.5f);
