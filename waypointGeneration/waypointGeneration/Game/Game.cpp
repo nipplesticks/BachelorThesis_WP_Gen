@@ -310,6 +310,10 @@ void Game::_loadTerrain()
 	long int lastY = 0;
 	DirectX::XMVECTOR up = DirectX::XMVectorSet(0, -1, 0, 0);
 	std::cout << "\nGenerating waypoints\n";
+
+	// TODO :: Remove Waypoints under water
+	// TODO :: Push Blocked triangles to Terrain Quad Tree
+
 	for (int i = 0; i < m_terrainMesh.size(); i+=3)
 	{
 		if (i % 1000 == 0)
@@ -324,12 +328,18 @@ void Game::_loadTerrain()
 		DirectX::XMVECTOR e1 = DirectX::XMVectorSubtract(DirectX::XMLoadFloat4A(&v2), DirectX::XMLoadFloat4A(&v0));
 		DirectX::XMVECTOR normal = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(e0, e1));
 
+		DirectX::XMStoreFloat4A(&m_terrainMesh[i].Normal, normal);
+		DirectX::XMStoreFloat4A(&m_terrainMesh[i + 1].Normal, normal);
+		DirectX::XMStoreFloat4A(&m_terrainMesh[i + 2].Normal, normal);
+
 		float dot = fabs(DirectX::XMVectorGetX(DirectX::XMVector3Dot(normal, up)));
 		if (dot < m_terrainCreator.UNWALKABLE_SURFACE)
 		{
 			for (int k = i; k < i + 3; k++)
 			{
 				DirectX::XMFLOAT4A pos = m_terrainMesh[k].Position;
+				
+
 
 				Waypoint wp(pos.x, pos.z);
 				wp.SetHeightVal(pos.y);
@@ -374,6 +384,7 @@ void Game::_loadTerrain()
 	time = t.Stop(Timer::MILLISECONDS);
 	std::cout << "\nTime to generate waypoints: " << time << " ms\n";
 	std::cout << "\nNumber of waypoints:" << m_waypoints.size() << std::endl;
+
 	std::map<long int, long int> ereasedVals;
 
 	for (long int i = 0; i < lastY; i++)
@@ -405,6 +416,49 @@ void Game::_loadTerrain()
 			}
 		}
 	}
+	ereasedVals.clear();
+
+	for (long int i = 0; i < lastY; i++)
+	{
+		for (long int j = 0; j < lastX; j++)
+		{
+			long int key = j + i * TERRAIN_SIZE;
+
+			bool erase = true;
+
+			for (int y = i - 1; y <= i + 1 && erase; y++)
+			{
+				if (y == i)
+					continue;
+				int tKey = j + y * TERRAIN_SIZE;
+				auto tIt = m_waypoints.find(tKey);
+				auto eIt = ereasedVals.find(tKey);
+				erase = tIt != m_waypoints.end() || eIt != ereasedVals.end();
+
+			}
+			if (!erase)
+			{
+				erase = true;
+				for (int x = j - 1; x <= j + 1 && erase; x++)
+				{
+					if (x == j)
+						continue;
+
+					int tKey = x + i * TERRAIN_SIZE;
+
+					auto tIt = m_waypoints.find(tKey);
+					auto eIt = ereasedVals.find(tKey);
+					erase = tIt != m_waypoints.end() || eIt != ereasedVals.end();
+				}
+			}
+			if (erase)
+			{
+				m_waypoints.erase(key);
+				ereasedVals.insert(std::make_pair(key, key));
+			}
+		}
+	}
+
 
 	time = t.Stop(Timer::MILLISECONDS);
 	std::cout << "\nTime to cleanup the waypoints: " << time << " ms\n";

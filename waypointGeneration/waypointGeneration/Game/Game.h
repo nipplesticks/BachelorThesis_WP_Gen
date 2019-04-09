@@ -6,7 +6,7 @@
 #include "../MapGeneration/DiamondSquare.h"
 #include "Pathfinding/Waypoint.h"
 
-#define DRAW_WAYPOINT false
+#define DRAW_WAYPOINT true
 
 #define MOUSE_SESITIVITY_X	0.05
 #define MOUSE_SESITIVITY_Y	0.05
