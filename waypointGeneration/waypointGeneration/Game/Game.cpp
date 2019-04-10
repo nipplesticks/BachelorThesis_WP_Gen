@@ -282,7 +282,7 @@ void Game::_loadTerrain()
 
 	const int MIN = -10;
 	const int MAX = 15;
-	const float NOISE = 15.0f;
+	const float NOISE = 20.0f;
 	
 	bool placedPlayer = false;
 
@@ -291,7 +291,7 @@ void Game::_loadTerrain()
 
 	t.Start();
 	m_terrainMesh = m_terrainCreator.CreateTerrainFromFloatList2(
-		m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, TERRAIN_SIZE - 1, NOISE, MIN, MAX, 1),
+		m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, TERRAIN_SIZE - 1, NOISE, MIN, MAX, 2),
 		TERRAIN_SIZE,
 		m_terrainTexture,
 		m_terrainTex2D,
@@ -638,7 +638,7 @@ void Game::_setupGame()
 
 	DirectX::XMVECTOR camPosDir = DirectX::XMVectorScale(DirectX::XMLoadFloat4(&camDir), -1.0f);
 	DirectX::XMVECTOR playerPos = DirectX::XMLoadFloat3(&m_player.GetPosition());
-	DirectX::XMVECTOR camPos = DirectX::XMVectorAdd(playerPos, DirectX::XMVectorScale(camPosDir, 100.0f));
+	DirectX::XMVECTOR camPos = DirectX::XMVectorAdd(playerPos, DirectX::XMVectorScale(camPosDir, TERRAIN_SIZE));
 
 	DirectX::XMFLOAT3 xmCamPos;
 	DirectX::XMStoreFloat3(&xmCamPos, camPos);
