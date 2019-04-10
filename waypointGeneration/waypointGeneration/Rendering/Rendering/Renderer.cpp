@@ -117,7 +117,7 @@ void Renderer::Clear()
 	const float c[4] = { .0f,.0f,.0f,1.0f };
 
 	m_deviceContext->ClearRenderTargetView(m_backBufferRTV, c);
-	m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 0, 0);
 }
 
 void Renderer::Flush()
@@ -249,7 +249,7 @@ void Renderer::_createDepthStencil(UINT width, UINT hight)
 	depthStencilDesc.Height = hight;
 	depthStencilDesc.MipLevels = 1;
 	depthStencilDesc.ArraySize = 1;
-	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
 	depthStencilDesc.SampleDesc.Count = m_sampleCount;
 	depthStencilDesc.SampleDesc.Quality = 0;
 	depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -260,8 +260,8 @@ void Renderer::_createDepthStencil(UINT width, UINT hight)
 	D3D11_DEPTH_STENCIL_DESC dpd{};
 	dpd.DepthEnable = TRUE;
 	dpd.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	dpd.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
-	dpd.StencilEnable = TRUE;
+	dpd.DepthFunc = D3D11_COMPARISON_GREATER;
+	dpd.StencilEnable = FALSE;
 
 	dpd.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
 	dpd.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;

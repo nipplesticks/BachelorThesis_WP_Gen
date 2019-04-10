@@ -294,6 +294,8 @@ void ForwardRender::_forwardPass()
 	Renderer * r = Renderer::GetInstance();
 	ID3D11DeviceContext * dc = r->GetDeviceContext();
 	m_forwardShaders.SetShaders(dc);
+
+	dc->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 0, 0);
 	dc->OMSetRenderTargets(1, &m_backBufferRTV, m_depthStencilView);
 	dc->OMSetBlendState(nullptr, 0, 0xffffffff);
 	D3D11_MAPPED_SUBRESOURCE dataPtr;

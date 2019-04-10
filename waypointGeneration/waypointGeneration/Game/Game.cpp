@@ -8,7 +8,7 @@ Game::Game()
 	_loadTerrain();
 	_randomizeBuildings();
 
-	m_camera.CreateProjectionMatrix(0.01f, 10000);
+	m_camera.CreateProjectionMatrix(5000.0f, 0.1f);
 	m_camera.SetAsActiveCamera();
 
 	Window * wnd = Window::GetInstance();
@@ -218,16 +218,18 @@ void Game::_cameraControl(double dt)
 		}
 	}
 
-	float distanceToCenter = 
-		DirectX::XMVectorGetX(DirectX::XMVector3Length
-		(DirectX::XMVectorSubtract(DirectX::XMVectorSet((float)TERRAIN_SIZE / 2, 0, (float)TERRAIN_SIZE / 2, 0),
-			DirectX::XMLoadFloat4(&m_camera.GetPosition()))));
+	//static const DirectX::XMFLOAT3 centerPoint = { (float)TERRAIN_SIZE / 2 , 0.0f, (float)TERRAIN_SIZE / 2 };
 
-	float a2 = pow(((float)TERRAIN_SIZE), 2);
+	//float distanceToCenter = 
+	//	DirectX::XMVectorGetX(DirectX::XMVector3Length
+	//	(DirectX::XMVectorSubtract(DirectX::XMVectorSet((float)TERRAIN_SIZE / 2, 0, (float)TERRAIN_SIZE / 2, 0),
+	//		DirectX::XMLoadFloat4(&m_camera.GetPosition()))));
 
-	float c = sqrt(a2 + a2) / 2;
-	
-	m_camera.CreateProjectionMatrix(max(distanceToCenter - c, 0.01f), distanceToCenter + c);
+	//float a2 = pow(((float)TERRAIN_SIZE), 2);
+
+	//float c = sqrt(a2 + a2) / 2;
+	//
+	//m_camera.CreateProjectionMatrix(max(distanceToCenter - c, 0.01f), distanceToCenter + c);
 }
 
 #include "water_texture.h"
