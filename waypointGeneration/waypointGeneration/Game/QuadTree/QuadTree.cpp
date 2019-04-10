@@ -105,15 +105,174 @@ unsigned int QuadTree::GetMaxTreeLevel() const
 	return m_maximumLevel;
 }
 
-/*Drawable * QuadTree::LineIntersection(const DirectX::XMFLOAT2 & origin, const DirectX::XMFLOAT2 & direction, float & t, Drawable * avoidThis)
+Triangle * QuadTree::LineIntersectionTriangle(const DirectX::XMFLOAT2 & lineStart, const DirectX::XMFLOAT2 & lineEnd, bool firstHitFound, DirectX::XMFLOAT2 & interSectionPoint)
 {
-	return nullptr;
+	DirectX::XMVECTOR lStart = DirectX::XMLoadFloat2(&lineStart);
+	DirectX::XMVECTOR lEnd = DirectX::XMLoadFloat2(&lineEnd);
+	interSectionPoint = DirectX::XMFLOAT2(FLT_MAX, FLT_MAX);
+
+	float t = FLT_MAX;
+	Triangle * tri = nullptr;
+	
+
+	_triangleTraversalLine(tri, interSectionPoint, lStart, lEnd, DirectX::XMVector2Normalize(DirectX::XMVectorSubtract(lEnd, lStart)), firstHitFound, 0, t);
+
+	return tri;
 }
 
-Triangle * QuadTree::PointIntersection(const DirectX::XMFLOAT2 & point, Drawable * avoidThis)
+Triangle * QuadTree::RayIntersectionTriangle3D(const DirectX::XMFLOAT3 & rayOrigin, const DirectX::XMFLOAT3 & rayDir, bool firstHitFound, DirectX::XMFLOAT3 & interSectionPoint)
 {
-	return nullptr;
-}*/
+	DirectX::XMVECTOR origin = DirectX::XMLoadFloat3(&rayOrigin);
+	DirectX::XMFLOAT2 o2D = { rayOrigin.x, rayOrigin.z };
+	DirectX::XMVECTOR origin2D = DirectX::XMLoadFloat2(&o2D);
+
+	DirectX::XMVECTOR dir = DirectX::XMVector2Normalize(DirectX::XMLoadFloat3(&rayDir));
+
+	DirectX::XMFLOAT2 d2D = { rayDir.x, rayDir.z };
+	DirectX::XMVECTOR dir2D = DirectX::XMVector2Normalize(DirectX::XMLoadFloat2(&d2D));
+
+	interSectionPoint = DirectX::XMFLOAT3(FLT_MAX, FLT_MAX, FLT_MAX);
+	float t = FLT_MAX;
+	Triangle * tri = nullptr;
+
+	_triangleTraversalRay3D(tri, interSectionPoint, origin, origin2D, dir, dir2D, firstHitFound, 0, t);
+
+	return tri;
+}
+
+void QuadTree::_triangleTraversalLine(Triangle *& outPtr, DirectX::XMFLOAT2 & interSectionPoint, const DirectX::XMVECTOR & lineStart, const DirectX::XMVECTOR & lineEnd, const DirectX::XMVECTOR & dir, bool firstHitFound, int quadIndex, float & t)
+{
+	if (((firstHitFound && outPtr == nullptr) || !firstHitFound) && t > 0.0f)
+	{
+		float tempT = 0.0f;
+		if (m_quadTree[quadIndex].Intersects(lineStart, dir))
+		{
+			int nrOfChildren = m_quadTree[quadIndex].GetNrOfChildren();
+
+			if (nrOfChildren > 0)
+			{
+				const unsigned int * children = m_quadTree[quadIndex].GetChildren();
+				for (int i = 0; i < nrOfChildren; i++)
+					_triangleTraversalLine(outPtr, interSectionPoint, lineStart, lineEnd, dir, firstHitFound, children[i], t);
+			}
+			else
+			{
+				const std::vector<Triangle*> & triangles = m_quadTree[quadIndex].GetTriangles();
+				size_t size = triangles.size();
+
+				float tTemp = FLT_MAX;
+				DirectX::XMFLOAT2 interSectionPointTemp;
+
+				bool canContinue = true;
+
+				for (int i = 0; i < size && canContinue; i++)
+				{
+					if (_lineTriangleIntersection(triangles[i], interSectionPointTemp, lineStart, lineEnd, tTemp) && tTemp < t)
+					{
+						outPtr = triangles[i];
+						t = tTemp;
+						interSectionPoint = interSectionPointTemp;
+						canContinue = !firstHitFound;
+					}
+				}
+			}
+		}
+	}
+}
+
+void QuadTree::_triangleTraversalRay3D(Triangle *& outPtr, DirectX::XMFLOAT3 & interSectionPoint, const DirectX::XMVECTOR & rayOrigin, const DirectX::XMVECTOR & rayOrigin2D, const DirectX::XMVECTOR & ray, const DirectX::XMVECTOR & ray2D, bool firstHitFound, int quadIndex, float & t)
+{
+	if (((firstHitFound && outPtr == nullptr) || !firstHitFound) && t > 0.0f)
+	{
+		float tempT = 0.0f;
+		if (m_quadTree[quadIndex].Intersects(rayOrigin2D) || m_quadTree[quadIndex].Intersects(rayOrigin2D, ray2D))
+		{
+			int nrOfChildren = m_quadTree[quadIndex].GetNrOfChildren();
+
+			if (nrOfChildren > 0)
+			{
+				const unsigned int * children = m_quadTree[quadIndex].GetChildren();
+				for (int i = 0; i < nrOfChildren; i++)
+					_triangleTraversalRay3D(outPtr, interSectionPoint, rayOrigin, rayOrigin2D, ray, ray2D, firstHitFound, children[i], t);
+			}
+			else
+			{
+				const std::vector<Triangle*> & triangles = m_quadTree[quadIndex].GetTriangles();
+				size_t size = triangles.size();
+
+				float tTemp = FLT_MAX;
+
+				bool canContinue = true;
+
+				for (int i = 0; i < size && canContinue; i++)
+				{
+					if (_Ray3DTriangleIntersection(triangles[i], rayOrigin, ray, tTemp) && tTemp < t)
+					{
+						outPtr = triangles[i];
+						t = tTemp;
+
+						
+						DirectX::XMVECTOR ip = DirectX::XMVectorAdd(rayOrigin, DirectX::XMVectorScale(ray, t));
+
+						DirectX::XMStoreFloat3(&interSectionPoint, ip);
+						
+						canContinue = !firstHitFound;
+					}
+				}
+			}
+		}
+	}
+}
+
+bool QuadTree::_lineTriangleIntersection(const Triangle * tri, DirectX::XMFLOAT2 & interSectionPoint, const DirectX::XMVECTOR & lineStart, const DirectX::XMVECTOR & lineEnd, float & t)
+{
+	t = FLT_MAX;
+	bool hit = false;
+
+	DirectX::XMVECTOR isPoint;
+	
+	float lSq = FLT_MAX;
+
+	DirectX::XMFLOAT2 l1, l2;
+	for (int i = 0; i < 3; i++)
+	{
+		int oIndex = (i + 1) % 3;
+		l1.x = tri->points[i].x;
+		l1.y = tri->points[i].z;
+		l2.x = tri->points[oIndex].x;
+		l2.y = tri->points[oIndex].z;
+
+		DirectX::XMVECTOR tPoint = DirectX::XMVector2IntersectLine(lineStart, lineEnd, DirectX::XMLoadFloat2(&l1), DirectX::XMLoadFloat2(&l2));
+
+		if (DirectX::XMVectorGetX(DirectX::XMVectorIsNaN(tPoint)) != 0xFFFFFFFF)
+		{
+			hit = true;
+
+			float lSqTemp = DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(DirectX::XMVectorSubtract(tPoint, lineStart)));
+
+			if (lSqTemp < lSq)
+			{
+				lSq = lSqTemp;
+				isPoint = tPoint;
+			}
+		}
+	}
+
+	if (hit)
+	{
+		t = sqrt(lSq);
+		DirectX::XMStoreFloat2(&interSectionPoint, isPoint);
+	}
+
+	return hit;
+}
+
+bool QuadTree::_Ray3DTriangleIntersection(const Triangle * tri, const DirectX::XMVECTOR & origin, const DirectX::XMVECTOR & dir, float & t)
+{
+	return DirectX::TriangleTests::Intersects(origin, dir,
+		DirectX::XMLoadFloat3(&tri->points[0]), DirectX::XMLoadFloat3(&tri->points[1]), DirectX::XMLoadFloat3(&tri->points[2]),
+		t);
+}
 
 size_t QuadTree::_GetQuadrantIndex(const DirectX::XMFLOAT2 & worldPos, unsigned int level)
 {

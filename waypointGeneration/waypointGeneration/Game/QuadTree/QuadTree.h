@@ -17,8 +17,10 @@ public:
 	unsigned int GetWorldSize() const;
 	unsigned int GetMaxTreeLevel() const;
 
-	Triangle * LineIntersectionTriangle(const DirectX::XMFLOAT2 & lineStart, const DirectX::XMFLOAT2 & lineEnd);
-	Triangle * RayIntersectionTriangle3D(const DirectX::XMFLOAT3 & rayOrigin, const DirectX::XMFLOAT3 & rayDir, __out DirectX::XMFLOAT3 & interSectionPoint);
+	Triangle * LineIntersectionTriangle(const DirectX::XMFLOAT2 & lineStart, const DirectX::XMFLOAT2 & lineEnd,
+		bool firstHitFound, __out DirectX::XMFLOAT2 & interSectionPoint);
+	Triangle * RayIntersectionTriangle3D(const DirectX::XMFLOAT3 & rayOrigin, const DirectX::XMFLOAT3 & rayDir,
+		bool firstHitFound, __out DirectX::XMFLOAT3 & interSectionPoint);
 
 	//Drawable * LineIntersection(const DirectX::XMFLOAT2 & origin, const DirectX::XMFLOAT2 & direction, float & t, Drawable * avoidThis);
 	//Triangle * PointIntersection(const DirectX::XMFLOAT2 & point, Drawable * avoidThis);
@@ -28,6 +30,19 @@ private:
 	std::vector<Quadrant*> m_leafs;
 	unsigned int m_worldSize;
 	unsigned int m_maximumLevel;
+
+private:
+	void _triangleTraversalLine(__out Triangle *& outPtr, __out DirectX::XMFLOAT2 & interSectionPoint,
+		const DirectX::XMVECTOR & lineStart, const DirectX::XMVECTOR & lineEnd, const DirectX::XMVECTOR & dir, bool firstHitFound, int quadIndex, float & t);
+	void _triangleTraversalRay3D(__out Triangle *& outPtr, __out DirectX::XMFLOAT3 & interSectionPoint,
+		const DirectX::XMVECTOR & rayOrigin, const DirectX::XMVECTOR & rayOrigin2D,
+		const DirectX::XMVECTOR & ray, const DirectX::XMVECTOR & ray2D,
+		bool firstHitFound, int quadIndex, float & t);
+
+	bool _lineTriangleIntersection(const Triangle * tri, __out DirectX::XMFLOAT2 & interSectionPoint,
+		const DirectX::XMVECTOR & lineStart, const DirectX::XMVECTOR & lineEnd, float & t);
+	bool _Ray3DTriangleIntersection(const Triangle * tri,
+		const DirectX::XMVECTOR & origin, const DirectX::XMVECTOR & dir, float & t);
 
 private:
 	size_t _GetQuadrantIndex(const DirectX::XMFLOAT2 & worldPos, unsigned int level);

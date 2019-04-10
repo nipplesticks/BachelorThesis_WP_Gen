@@ -7,8 +7,8 @@
 #include "Pathfinding/Waypoint.h"
 #include "QuadTree/QuadTree.h"
 
-#define DRAW_WAYPOINT true
-#define DRAW_TRIANGLES true
+#define DRAW_WAYPOINT false
+#define DRAW_TRIANGLES false
 
 #define MOUSE_SESITIVITY_X	0.05
 #define MOUSE_SESITIVITY_Y	0.05
@@ -68,7 +68,8 @@ private:
 	POINT m_mouseReferencePosition;
 
 	bool m_isFollowingPlayer = false;
-	
+	float m_distanceToPlayer;
+
 	float m_maxHeight = 0.0f;
 	float m_minHeight = 0.0f;
 
@@ -76,12 +77,12 @@ private:
 
 	std::vector<Drawable> m_buildings;
 private:
-	void _playerFixYPosition();
+	void _playerFixYPosition(double dt);
 	void _cameraControl(double dt);
 
 private:
 	void _createWaterTexture();
-	void _loadTerrain();
+	void _createWorld();
 	void _loadMeshes();
 	void _randomizeBuildings();
 	void _setupGame();

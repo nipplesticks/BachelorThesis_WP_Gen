@@ -92,6 +92,24 @@ bool Quadrant::Intersects(const Triangle & tri)
 	return m_aabb.Intersects(p[0], p[1], p[2]);
 }
 
+bool Quadrant::Intersects(const DirectX::XMVECTOR & rayOrigin, const DirectX::XMVECTOR & rayDirection)
+{
+	DirectX::XMVECTOR result = DirectX::XMVectorEqual(rayDirection, DirectX::XMVectorZero());
+
+	if (DirectX::XMVectorGetX(result) == DirectX::XMVectorGetY(result) == DirectX::XMVectorGetZ(result) == 0xFFFFFFFF)
+	{
+		float t;
+		return m_aabb.Intersects(rayOrigin, rayDirection, t);
+	}
+
+	return false;
+}
+
+bool Quadrant::Intersects(const DirectX::XMVECTOR & point)
+{
+	return m_aabb.Contains(point);
+}
+
 const DirectX::XMFLOAT2 & Quadrant::GetMin() const
 {
 	return m_min;

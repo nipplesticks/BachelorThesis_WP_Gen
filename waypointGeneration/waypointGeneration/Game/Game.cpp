@@ -6,7 +6,7 @@ Game::Game()
 {
 	_createWaterTexture();
 	_loadMeshes();
-	_loadTerrain();
+	_createWorld();
 	_randomizeBuildings();
 
 	m_camera.CreateProjectionMatrix(5000.0f, 0.1f);
@@ -45,7 +45,7 @@ void Game::Update(double dt)
 	
 	*/
 
-	_playerFixYPosition();
+	_playerFixYPosition(dt);
 	_cameraControl(dt);
 
 	m_camera.Update();
@@ -73,9 +73,13 @@ void Game::Update(double dt)
 
 void Game::Draw()
 {
-	m_blockedtrianglesDraw.Draw();
-	m_unblockedtrianglesDraw.Draw();
-	m_terrain.Draw();
+	if (DRAW_TRIANGLES)
+	{
+		m_blockedtrianglesDraw.Draw();
+		m_unblockedtrianglesDraw.Draw();
+	}
+	else
+		m_terrain.Draw();
 	for (int i = 0; i < 4; i++)
 		m_edges[i].Draw();
 
@@ -90,9 +94,59 @@ void Game::Draw()
 	m_water.Draw();
 }
 
-void Game::_playerFixYPosition()
+void Game::_playerFixYPosition(double dt)
 {
+	Window * wnd = Window::GetInstance();
+	float speed = 10;
+	auto forward = m_camera.GetForwardVector();
+	auto right = m_camera.GetRightVector();
 
+	DirectX::XMFLOAT3 translate = { 0.0f, 0.0f, 0.0f };
+
+	if (wnd->IsKeyPressed(Input::W))
+	{
+		translate.x += forward.x * speed * dt;
+		translate.y += forward.y * speed * dt;
+		translate.z += forward.z * speed * dt;
+	}
+	if (wnd->IsKeyPressed(Input::S))
+	{
+		translate.x -= forward.x * speed * dt;
+		translate.y -= forward.y * speed * dt;
+		translate.z -= forward.z * speed * dt;
+	}
+	if (wnd->IsKeyPressed(Input::A))
+	{
+		translate.x -= right.x * speed * dt;
+		translate.y -= right.y * speed * dt;
+		translate.z -= right.z * speed * dt;
+	}
+	if (wnd->IsKeyPressed(Input::D))
+	{
+		translate.x += right.x * speed * dt;
+		translate.y += right.y * speed * dt;
+		translate.z += right.z * speed * dt;
+	}
+
+	m_player.Translate(translate);
+
+	DirectX::XMFLOAT3 iPoint;
+	Triangle * tri = m_unblockedTriangleTree.RayIntersectionTriangle3D(m_player.GetPosition(), DirectX::XMFLOAT3(0, -1, 0), true, iPoint);
+
+	if (tri == nullptr)
+	{
+		tri = m_blockedTriangleTree.RayIntersectionTriangle3D(m_player.GetPosition(), DirectX::XMFLOAT3(0, -1, 0), true, iPoint);
+	}
+
+	if (tri)
+	{
+		//DirectX::XMVECTOR normal = DirectX::XMLoadFloat3(&tri->normal);
+
+		m_player.SetRotation(tri->normal);
+		auto pos = m_player.GetPosition();
+		pos.y = iPoint.y + 0.5f;
+		m_player.SetPosition(pos);
+	}
 }
 
 void Game::_cameraControl(double dt)
@@ -115,21 +169,20 @@ void Game::_cameraControl(double dt)
 	if (!FollowPlayerPressedLastFrame && FollowPlayerPressed)
 	{
 		m_isFollowingPlayer = !m_isFollowingPlayer;
+		DirectX::XMVECTOR playerPos = DirectX::XMLoadFloat3(&m_player.GetPosition());
+		m_distanceToPlayer = DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSubtract(playerPos, DirectX::XMLoadFloat4(&m_camera.GetPosition()))));
 	}
 
+	FollowPlayerPressedLastFrame = FollowPlayerPressed;
 
 	if (m_isFollowingPlayer)
 	{
 		const DirectX::XMFLOAT4 camDir = m_camera.GetDirectionVector();
 
-		
-
 		DirectX::XMVECTOR camPosDir = DirectX::XMVectorScale(DirectX::XMLoadFloat4(&camDir), -1.0f);
 		DirectX::XMVECTOR playerPos = DirectX::XMLoadFloat3(&m_player.GetPosition());
 
-		float distance = DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSubtract(playerPos, DirectX::XMLoadFloat4(&m_camera.GetPosition()))));
-
-		DirectX::XMVECTOR camPos = DirectX::XMVectorAdd(playerPos, DirectX::XMVectorScale(camPosDir, distance));
+		DirectX::XMVECTOR camPos = DirectX::XMVectorAdd(playerPos, DirectX::XMVectorScale(camPosDir, m_distanceToPlayer));
 
 		DirectX::XMFLOAT3 xmCamPos;
 		DirectX::XMStoreFloat3(&xmCamPos, camPos);
@@ -184,6 +237,9 @@ void Game::_cameraControl(double dt)
 		DirectX::XMFLOAT3 worldPos;
 		if (Renderer::GetInstance()->GetMousePicking(worldPos))
 		{
+			if (m_isFollowingPlayer)
+				worldPos = m_player.GetPosition();
+
 			DirectX::XMFLOAT4 camPos = m_camera.GetPosition();
 			camPos.w = 0.0f;
 
@@ -198,6 +254,13 @@ void Game::_cameraControl(double dt)
 			camPos.y += trans.y;
 			camPos.z += trans.z;
 			m_camera.SetPosition(camPos.x, camPos.y, camPos.z);
+
+			if (m_isFollowingPlayer)
+			{
+				DirectX::XMVECTOR playerPos = DirectX::XMLoadFloat3(&m_player.GetPosition());
+				m_distanceToPlayer = DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSubtract(playerPos, DirectX::XMLoadFloat4(&m_camera.GetPosition()))));
+			}
+
 		}
 		else
 		{
@@ -233,6 +296,10 @@ void Game::_cameraControl(double dt)
 		}
 		else
 		{
+			if (m_isFollowingPlayer)
+			{
+				_sWorldPosRef = m_player.GetPosition();
+			}
 			float mouseDeltaX = (float)mp.x - (float)_sMouseRef.x;
 			float mouseDeltaY = (float)mp.y - (float)_sMouseRef.y;
 
@@ -329,12 +396,14 @@ void Game::_createWaterTexture()
 	int lol = 32;
 }
 
-void Game::_loadTerrain()
+void Game::_createWorld()
 {
 	Timer t;
 
 	const int MIN = -10;
 	const int MAX = 15;
+	//const int MIN = 0;
+	//const int MAX = 0;
 	float NOISE = (rand() % 6) + 15;
 	
 	bool placedPlayer = false;
@@ -351,6 +420,11 @@ void Game::_loadTerrain()
 		m_edgeMeshes
 	);
 
+	double time = t.Stop(Timer::MILLISECONDS);
+	std::cout << "\nTime to generate terrain mesh: " << time << " ms\n";
+
+
+	std::cout << "\nBuilding Trees...\n";
 	DirectX::XMFLOAT2 worldStart = DirectX::XMFLOAT2(m_terrainMesh[0].Position.x, m_terrainMesh[0].Position.z);
 
 	// Calculate tree depth and build quad tree for triangles
@@ -367,12 +441,13 @@ void Game::_loadTerrain()
 	m_blockedTriangleTree.BuildTree(treeLevels, TERRAIN_SIZE, worldStart);
 	m_unblockedTriangleTree.BuildTree(treeLevels, TERRAIN_SIZE, worldStart);
 
-	double time = t.Stop(Timer::MILLISECONDS);
-	std::cout << "\nTime to generate terrain mesh: " << time << " ms\n";
+	time = t.Stop(Timer::MILLISECONDS);
+	std::cout << "\nTime to build trees: " << time << " ms\n";
+
 	long int lastX = 0;
 	long int lastY = 0;
 	DirectX::XMVECTOR up = DirectX::XMVectorSet(0, -1, 0, 0);
-	std::cout << "\nGenerating waypoints\n";
+	std::cout << "\nGenerating waypoints and create triangles for trees\n";
 
 	for (int i = 0; i < m_terrainMesh.size(); i+=3)
 	{
@@ -452,14 +527,22 @@ void Game::_loadTerrain()
 		}*/
 	}
 
-	m_blockedTriangleTree.PlaceObjects(m_blockedTriangles);
-	m_unblockedTriangleTree.PlaceObjects(m_unblockedTriangles);
 
 	time = t.Stop(Timer::MILLISECONDS);
-	std::cout << "\nTime to generate waypoints: " << time << " ms\n";
-	std::cout << "\nNumber of waypoints:" << m_waypoints.size() << std::endl;
-	std::cout << "\nNumber of triangles:" << m_blockedTriangles.size() << std::endl;
+	std::cout << "\nTime to generate waypoints and triangles: " << time << " ms\n";
+	std::cout << "\nNumber of waypoints before cleanup:" << m_waypoints.size() << std::endl;
+	std::cout << "\nNumber of blocked triangles:" << m_blockedTriangles.size() << std::endl;
+	std::cout << "\nNumber of unblocked triangles:" << m_unblockedTriangles.size() << std::endl;
 
+
+	std::cout << "\nPlaceing triangles in trees...\n";
+	m_blockedTriangleTree.PlaceObjects(m_blockedTriangles);
+	m_unblockedTriangleTree.PlaceObjects(m_unblockedTriangles);
+	time = t.Stop(Timer::MILLISECONDS);
+	std::cout << "\nTime to placing triangles in trees: " << time << " ms\n";
+
+
+	std::cout << "\nCleaning waypoints...\n";
 	std::map<long int, long int> ereasedVals;
 
 	for (long int i = 0; i < lastY; i++)
@@ -541,6 +624,7 @@ void Game::_loadTerrain()
 
 	if (DRAW_WAYPOINT)
 	{
+		std::cout << "Create drawables for wp..\n";
 		m_wp = std::vector<Drawable>(m_waypoints.size());
 		int counter = 0;
 		for (auto & w : m_waypoints)
@@ -558,7 +642,7 @@ void Game::_loadTerrain()
 
 	if (DRAW_TRIANGLES)
 	{
-		//int counter = 0;
+		std::cout << "Create drawables for tree triangles..\n";
 		for (auto & t : m_blockedTriangles)
 		{
 			Vertex v;
@@ -587,8 +671,12 @@ void Game::_loadTerrain()
 		m_unblockedtrianglesDraw.SetVertices(&m_unblockedTrianglesVertices);
 		m_unblockedtrianglesDraw.SetColor(0.0f, 1.0f, 0.0f);
 		m_unblockedtrianglesDraw.Update();
+		time = t.Stop(Timer::MILLISECONDS);
+		std::cout << "Time to create Drawables: " << time << " ms\n";
 	}
 
+
+	std::cout << "\nGenerating sides..\n";
 	for (int i = 0; i < 4; i++)
 	{
 		int size = m_edgeMeshes[i].size();
@@ -620,7 +708,8 @@ void Game::_loadTerrain()
 		m_edges[i].SetColor(0.1, 0.2f, 0.1f, 1.0f);
 		m_edges[i].SetPickable(true);
 	}
-
+	time = t.Stop(Timer::MILLISECONDS);
+	std::cout << "Time to generate sides: " << time << " ms\n";
 	m_terrain.SetVertices(&m_terrainMesh);
 	m_terrain.SetTexture(m_terrainTexture);
 }
@@ -744,6 +833,8 @@ void Game::_setupGame()
 {
 	//const auto & startPos = m_terrainMesh.front().Position;
 	//m_player.SetPosition(startPos.x, startPos.y + 0.5f, startPos.z);
+
+	//m_player.SetPosition(5, 500, 5);
 	m_camera.SetDirection(1, -2, 1);
 
 	const DirectX::XMFLOAT4 camDir = m_camera.GetDirectionVector();
