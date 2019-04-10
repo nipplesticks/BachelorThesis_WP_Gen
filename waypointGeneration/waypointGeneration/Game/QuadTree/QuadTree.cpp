@@ -3,6 +3,7 @@
 
 QuadTree::QuadTree()
 {
+	
 }
 
 QuadTree::~QuadTree()

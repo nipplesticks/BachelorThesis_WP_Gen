@@ -17,6 +17,9 @@ public:
 	unsigned int GetWorldSize() const;
 	unsigned int GetMaxTreeLevel() const;
 
+	Triangle * LineIntersectionTriangle(const DirectX::XMFLOAT2 & lineStart, const DirectX::XMFLOAT2 & lineEnd);
+	Triangle * RayIntersectionTriangle3D(const DirectX::XMFLOAT3 & rayOrigin, const DirectX::XMFLOAT3 & rayDir, __out DirectX::XMFLOAT3 & interSectionPoint);
+
 	//Drawable * LineIntersection(const DirectX::XMFLOAT2 & origin, const DirectX::XMFLOAT2 & direction, float & t, Drawable * avoidThis);
 	//Triangle * PointIntersection(const DirectX::XMFLOAT2 & point, Drawable * avoidThis);
 

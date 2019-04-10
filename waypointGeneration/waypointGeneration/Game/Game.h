@@ -42,10 +42,17 @@ private:
 	Drawable m_player;
 	Drawable m_water;
 
-	QuadTree m_triangleTree;
-	std::vector<Triangle*> m_triangles;
-	std::vector<Vertex> m_trianglesVertices;
-	Drawable m_trianglesDraw;
+	QuadTree m_blockedTriangleTree;
+	QuadTree m_unblockedTriangleTree;
+
+	std::vector<Triangle*> m_blockedTriangles;
+	std::vector<Vertex> m_blockedTrianglesVertices;
+	Drawable m_blockedtrianglesDraw;
+
+	std::vector<Triangle*> m_unblockedTriangles;
+	std::vector<Vertex> m_unblockedTrianglesVertices;
+	Drawable m_unblockedtrianglesDraw;
+
 
 	std::vector<Drawable> m_wp;
 

@@ -26,6 +26,14 @@ Game::~Game()
 	m_waterTex2D->Release();
 	m_waterTexture->Release();
 
+	for (auto & t : m_blockedTriangles)
+		delete t;
+	for (auto & t : m_unblockedTriangles)
+		delete t;
+
+	m_blockedTriangles.clear();
+	m_unblockedTriangles.clear();
+	
 	m_wp.clear();
 }
 
@@ -65,7 +73,8 @@ void Game::Update(double dt)
 
 void Game::Draw()
 {
-	m_trianglesDraw.Draw();
+	m_blockedtrianglesDraw.Draw();
+	m_unblockedtrianglesDraw.Draw();
 	m_terrain.Draw();
 	for (int i = 0; i < 4; i++)
 		m_edges[i].Draw();
@@ -355,7 +364,8 @@ void Game::_loadTerrain()
 	}
 
 	std::cout << "Tree Level: " << treeLevels << " Size: " << reversedTreeSize << std::endl;
-	m_triangleTree.BuildTree(treeLevels, TERRAIN_SIZE, worldStart);
+	m_blockedTriangleTree.BuildTree(treeLevels, TERRAIN_SIZE, worldStart);
+	m_unblockedTriangleTree.BuildTree(treeLevels, TERRAIN_SIZE, worldStart);
 
 	double time = t.Stop(Timer::MILLISECONDS);
 	std::cout << "\nTime to generate terrain mesh: " << time << " ms\n";
@@ -419,7 +429,11 @@ void Game::_loadTerrain()
 			}
 		}
 		if (createBlockedTriangleLocation)
-			m_triangles.push_back(new Triangle(v0, v1, v2));
+			m_blockedTriangles.push_back(new Triangle(v0, v1, v2));
+		else
+		{
+			m_unblockedTriangles.push_back(new Triangle(v0, v1, v2));
+		}
 
 		/*if (!placedPlayer && i >= TERRAIN_SIZE * TERRAIN_SIZE * 0.5f)
 		{
@@ -438,12 +452,13 @@ void Game::_loadTerrain()
 		}*/
 	}
 
-	m_triangleTree.PlaceObjects(m_triangles);
+	m_blockedTriangleTree.PlaceObjects(m_blockedTriangles);
+	m_unblockedTriangleTree.PlaceObjects(m_unblockedTriangles);
 
 	time = t.Stop(Timer::MILLISECONDS);
 	std::cout << "\nTime to generate waypoints: " << time << " ms\n";
 	std::cout << "\nNumber of waypoints:" << m_waypoints.size() << std::endl;
-	std::cout << "\nNumber of triangles:" << m_triangles.size() << std::endl;
+	std::cout << "\nNumber of triangles:" << m_blockedTriangles.size() << std::endl;
 
 	std::map<long int, long int> ereasedVals;
 
@@ -543,8 +558,8 @@ void Game::_loadTerrain()
 
 	if (DRAW_TRIANGLES)
 	{
-		int counter = 0;
-		for (auto & t : m_triangles)
+		//int counter = 0;
+		for (auto & t : m_blockedTriangles)
 		{
 			Vertex v;
 			v.Normal = DirectX::XMFLOAT4A(t->normal.x, t->normal.y, t->normal.z, 0.0f);
@@ -552,12 +567,26 @@ void Game::_loadTerrain()
 			for (int i = 0; i < 3; i++)
 			{
 				v.Position = DirectX::XMFLOAT4A(t->points[i].x, t->points[i].y, t->points[i].z, 1.0f);
-				m_trianglesVertices.push_back(v);
+				m_blockedTrianglesVertices.push_back(v);
 			}
 		}
-		m_trianglesDraw.SetVertices(&m_trianglesVertices);
-		m_trianglesDraw.SetColor(0.0f, 1.0f, 1.0f);
-		m_trianglesDraw.Update();
+		for (auto & t : m_unblockedTriangles)
+		{
+			Vertex v;
+			v.Normal = DirectX::XMFLOAT4A(t->normal.x, t->normal.y, t->normal.z, 0.0f);
+
+			for (int i = 0; i < 3; i++)
+			{
+				v.Position = DirectX::XMFLOAT4A(t->points[i].x, t->points[i].y, t->points[i].z, 1.0f);
+				m_unblockedTrianglesVertices.push_back(v);
+			}
+		}
+		m_blockedtrianglesDraw.SetVertices(&m_blockedTrianglesVertices);
+		m_blockedtrianglesDraw.SetColor(1.0f, 0.0f, 0.0f);
+		m_blockedtrianglesDraw.Update();
+		m_unblockedtrianglesDraw.SetVertices(&m_unblockedTrianglesVertices);
+		m_unblockedtrianglesDraw.SetColor(0.0f, 1.0f, 0.0f);
+		m_unblockedtrianglesDraw.Update();
 	}
 
 	for (int i = 0; i < 4; i++)
