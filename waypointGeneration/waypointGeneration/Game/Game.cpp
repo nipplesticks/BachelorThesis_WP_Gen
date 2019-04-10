@@ -1,6 +1,7 @@
 #include "waypointGenerationPCH.h"
 #include "Game.h"
 #include "../Rendering/Rendering/Renderer.h"
+
 Game::Game()
 {
 	_createWaterTexture();
@@ -64,6 +65,7 @@ void Game::Update(double dt)
 
 void Game::Draw()
 {
+	m_trianglesDraw.Draw();
 	m_terrain.Draw();
 	for (int i = 0; i < 4; i++)
 		m_edges[i].Draw();
@@ -299,15 +301,28 @@ void Game::_loadTerrain()
 		m_terrainTex2D,
 		m_edgeMeshes
 	);
+
+	DirectX::XMFLOAT2 worldStart = DirectX::XMFLOAT2(m_terrainMesh[0].Position.x, m_terrainMesh[0].Position.z);
+
+	// Calculate tree depth and build quad tree for triangles
+	int reversedTreeSize = 1;
+	int treeLevels = 0;
+
+	while (reversedTreeSize < TERRAIN_SIZE)
+	{
+		treeLevels++;
+		reversedTreeSize *= 2;
+	}
+
+	std::cout << "Tree Level: " << treeLevels << " Size: " << reversedTreeSize << std::endl;
+	m_triangleTree.BuildTree(treeLevels, TERRAIN_SIZE, worldStart);
+
 	double time = t.Stop(Timer::MILLISECONDS);
 	std::cout << "\nTime to generate terrain mesh: " << time << " ms\n";
 	long int lastX = 0;
 	long int lastY = 0;
 	DirectX::XMVECTOR up = DirectX::XMVectorSet(0, -1, 0, 0);
 	std::cout << "\nGenerating waypoints\n";
-
-	// TODO :: Remove Waypoints under water
-	// TODO :: Push Blocked triangles to Terrain Quad Tree
 
 	for (int i = 0; i < m_terrainMesh.size(); i+=3)
 	{
@@ -329,8 +344,13 @@ void Game::_loadTerrain()
 
 
 		float dot = fabs(DirectX::XMVectorGetX(DirectX::XMVector3Dot(normal, up)));
+		bool createBlockedTriangleLocation = false;
+		if (v0.y < m_terrainCreator.WATER_START || v1.y < m_terrainCreator.WATER_START || v2.y < m_terrainCreator.WATER_START)
+			createBlockedTriangleLocation = true;
+
 		if (dot < m_terrainCreator.UNWALKABLE_SURFACE)
 		{
+			createBlockedTriangleLocation = true;
 			for (int k = i; k < i + 3; k++)
 			{
 				DirectX::XMFLOAT4A pos = m_terrainMesh[k].Position;
@@ -355,13 +375,13 @@ void Game::_loadTerrain()
 				auto it = m_waypoints.find(key);
 
 				if (it == m_waypoints.end())
-				{
 					m_waypoints.insert(std::make_pair(key, wp));
-
-				}
 			}
 		}
-		else if (!placedPlayer && i >= TERRAIN_SIZE * TERRAIN_SIZE * 0.5f)
+		if (createBlockedTriangleLocation)
+			m_triangles.push_back(new Triangle(v0, v1, v2));
+
+		/*if (!placedPlayer && i >= TERRAIN_SIZE * TERRAIN_SIZE * 0.5f)
 		{
 			DirectX::XMFLOAT3 playerPos;
 			playerPos.x = m_terrainMesh[i].Position.x + m_terrainMesh[i + 1].Position.x + m_terrainMesh[i + 2].Position.x;
@@ -375,12 +395,15 @@ void Game::_loadTerrain()
 
 			m_player.SetPosition(playerPos);
 			placedPlayer = true;
-		}
+		}*/
 	}
+
+	m_triangleTree.PlaceObjects(m_triangles);
 
 	time = t.Stop(Timer::MILLISECONDS);
 	std::cout << "\nTime to generate waypoints: " << time << " ms\n";
 	std::cout << "\nNumber of waypoints:" << m_waypoints.size() << std::endl;
+	std::cout << "\nNumber of triangles:" << m_triangles.size() << std::endl;
 
 	std::map<long int, long int> ereasedVals;
 
@@ -478,6 +501,24 @@ void Game::_loadTerrain()
 		std::cout << "Time to create Drawables: " << time << " ms\n";
 	}
 
+	if (DRAW_TRIANGLES)
+	{
+		int counter = 0;
+		for (auto & t : m_triangles)
+		{
+			Vertex v;
+			v.Normal = DirectX::XMFLOAT4A(t->normal.x, t->normal.y, t->normal.z, 0.0f);
+			
+			for (int i = 0; i < 3; i++)
+			{
+				v.Position = DirectX::XMFLOAT4A(t->points[i].x, t->points[i].y, t->points[i].z, 1.0f);
+				m_trianglesVertices.push_back(v);
+			}
+		}
+		m_trianglesDraw.SetVertices(&m_trianglesVertices);
+		m_trianglesDraw.SetColor(0.0f, 1.0f, 1.0f);
+		m_trianglesDraw.Update();
+	}
 
 	for (int i = 0; i < 4; i++)
 	{

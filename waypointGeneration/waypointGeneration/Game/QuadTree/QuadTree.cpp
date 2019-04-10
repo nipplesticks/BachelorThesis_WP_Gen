@@ -104,7 +104,7 @@ unsigned int QuadTree::GetMaxTreeLevel() const
 	return m_maximumLevel;
 }
 
-Drawable * QuadTree::LineIntersection(const DirectX::XMFLOAT2 & origin, const DirectX::XMFLOAT2 & direction, float & t, Drawable * avoidThis)
+/*Drawable * QuadTree::LineIntersection(const DirectX::XMFLOAT2 & origin, const DirectX::XMFLOAT2 & direction, float & t, Drawable * avoidThis)
 {
 	return nullptr;
 }
@@ -112,7 +112,7 @@ Drawable * QuadTree::LineIntersection(const DirectX::XMFLOAT2 & origin, const Di
 Triangle * QuadTree::PointIntersection(const DirectX::XMFLOAT2 & point, Drawable * avoidThis)
 {
 	return nullptr;
-}
+}*/
 
 size_t QuadTree::_GetQuadrantIndex(const DirectX::XMFLOAT2 & worldPos, unsigned int level)
 {
@@ -164,7 +164,19 @@ void QuadTree::_traverseAndPlace(Drawable * e, int quadIndex)
 
 void QuadTree::_traverseAndPlace(Waypoint * e, int quadIndex)
 {
-	// TODO Waypoints
+	if (m_quadTree[quadIndex].Intersects(e->GetPosition()))
+	{
+		int nrOfChildren = m_quadTree[quadIndex].GetNrOfChildren();
+
+		if (nrOfChildren > 0)
+		{
+			const unsigned int * children = m_quadTree[quadIndex].GetChildren();
+			for (int i = 0; i < nrOfChildren; i++)
+				_traverseAndPlace(e, children[i]);
+		}
+		else
+			m_quadTree[quadIndex].SetObject(e);
+	}
 }
 
 void QuadTree::_traverseAndPlace(Triangle * e, int quadIndex)

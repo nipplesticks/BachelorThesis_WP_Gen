@@ -2,7 +2,7 @@
 #include "Rendering/Rendering/Renderer.h"
 #include "Game/Game.h"
 
-void _alocConsole() {
+void _allocConsole() {
 	AllocConsole();
 	FILE* fp;
 	freopen_s(&fp, "CONIN$", "r", stdin);
@@ -13,9 +13,9 @@ void _alocConsole() {
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
 	srand(time(0));
-	_alocConsole();
+	_allocConsole();
 	Window * wnd = Window::GetInstance();
-	wnd->Create(hInstance, nCmdShow, 1280, 720, 1);
+	wnd->Create(hInstance, nCmdShow, 1280, 720, 0);
 
 	Renderer * renderer = Renderer::GetInstance();
 	renderer->Init();

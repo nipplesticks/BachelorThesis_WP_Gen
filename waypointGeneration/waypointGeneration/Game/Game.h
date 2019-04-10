@@ -5,8 +5,10 @@
 #include "../MapGeneration/TerrainCreator.h"
 #include "../MapGeneration/DiamondSquare.h"
 #include "Pathfinding/Waypoint.h"
+#include "QuadTree/QuadTree.h"
 
 #define DRAW_WAYPOINT true
+#define DRAW_TRIANGLES true
 
 #define MOUSE_SESITIVITY_X	0.05
 #define MOUSE_SESITIVITY_Y	0.05
@@ -38,6 +40,11 @@ private:
 	Drawable m_terrain;
 	Drawable m_player;
 	Drawable m_water;
+
+	QuadTree m_triangleTree;
+	std::vector<Triangle*> m_triangles;
+	std::vector<Vertex> m_trianglesVertices;
+	Drawable m_trianglesDraw;
 
 	std::vector<Drawable> m_wp;
 

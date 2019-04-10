@@ -17,8 +17,8 @@ public:
 	unsigned int GetWorldSize() const;
 	unsigned int GetMaxTreeLevel() const;
 
-	Drawable * LineIntersection(const DirectX::XMFLOAT2 & origin, const DirectX::XMFLOAT2 & direction, float & t, Drawable * avoidThis);
-	Triangle * PointIntersection(const DirectX::XMFLOAT2 & point, Drawable * avoidThis);
+	//Drawable * LineIntersection(const DirectX::XMFLOAT2 & origin, const DirectX::XMFLOAT2 & direction, float & t, Drawable * avoidThis);
+	//Triangle * PointIntersection(const DirectX::XMFLOAT2 & point, Drawable * avoidThis);
 
 private:
 	std::vector<Quadrant> m_quadTree;
