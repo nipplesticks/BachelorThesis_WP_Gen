@@ -16,6 +16,7 @@
 #define CAMERA_ZOOM_SPEED	10.0
 //#define TERRAIN_SIZE		2049
 #define TERRAIN_SIZE		1025
+//#define TERRAIN_SIZE		65
 
 class Game
 {
@@ -59,6 +60,8 @@ private:
 
 	POINT m_mouseReferencePosition;
 
+	bool m_isFollowingPlayer = false;
+	
 	float m_maxHeight = 0.0f;
 	float m_minHeight = 0.0f;
 

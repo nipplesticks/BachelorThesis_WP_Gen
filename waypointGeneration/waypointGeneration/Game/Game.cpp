@@ -99,22 +99,68 @@ void Game::_cameraControl(double dt)
 
 	m_camera.Rotate(camRotation.y, camRotation.x, 0.0f);*/
 
+	static bool FollowPlayerPressedLastFrame = false;
+	bool FollowPlayerPressed = wnd->IsKeyPressed(Input::SPACE);
+
+
+	if (!FollowPlayerPressedLastFrame && FollowPlayerPressed)
+	{
+		m_isFollowingPlayer = !m_isFollowingPlayer;
+	}
+
+
+	if (m_isFollowingPlayer)
+	{
+		const DirectX::XMFLOAT4 camDir = m_camera.GetDirectionVector();
+
+		
+
+		DirectX::XMVECTOR camPosDir = DirectX::XMVectorScale(DirectX::XMLoadFloat4(&camDir), -1.0f);
+		DirectX::XMVECTOR playerPos = DirectX::XMLoadFloat3(&m_player.GetPosition());
+
+		float distance = DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSubtract(playerPos, DirectX::XMLoadFloat4(&m_camera.GetPosition()))));
+
+		DirectX::XMVECTOR camPos = DirectX::XMVectorAdd(playerPos, DirectX::XMVectorScale(camPosDir, distance));
+
+		DirectX::XMFLOAT3 xmCamPos;
+		DirectX::XMStoreFloat3(&xmCamPos, camPos);
+		m_camera.SetPosition(xmCamPos);
+	}
+
 	DirectX::XMFLOAT3 translation(0, 0, 0);
 
-	if (wnd->IsKeyPressed(Input::UP_ARROW) || mp.y < 50)
+	if (wnd->IsKeyPressed(Input::UP_ARROW) || mp.y < 0.1 * wnd->GetResolutionSize().y)
+	{
 		translation.z += CAMERA_XZ_SPEED * dt;
-	if (wnd->IsKeyPressed(Input::DOWN_ARROW) || mp.y > wnd->GetWindowSize().y - 50)
+		m_isFollowingPlayer = false;
+	}
+	if (wnd->IsKeyPressed(Input::DOWN_ARROW) || mp.y > wnd->GetResolutionSize().y * 0.9)
+	{
 		translation.z -= CAMERA_XZ_SPEED * dt;
-	if (wnd->IsKeyPressed(Input::RIGHT_ARROW) || mp.x > wnd->GetWindowSize().x - 75)
+		m_isFollowingPlayer = false;
+	}
+	if (wnd->IsKeyPressed(Input::RIGHT_ARROW) || mp.x > wnd->GetResolutionSize().x * 0.9)
+	{
 		translation.x += CAMERA_XZ_SPEED * dt;
-	if (wnd->IsKeyPressed(Input::LEFT_ARROW) || mp.x < 75)
+		m_isFollowingPlayer = false;
+	}
+	if (wnd->IsKeyPressed(Input::LEFT_ARROW) || mp.x < wnd->GetResolutionSize().x * 0.1)
+	{
 		translation.x -= CAMERA_XZ_SPEED * dt;
-	if (wnd->IsKeyPressed(Input::SPACE))
+		m_isFollowingPlayer = false;
+	}
+	if (wnd->IsKeyPressed(Input::V))
+	{
 		translation.y += CAMERA_XZ_SPEED * dt;
+		m_isFollowingPlayer = false;
+	}
 	if (wnd->IsKeyPressed(Input::C))
+	{
 		translation.y -= CAMERA_XZ_SPEED * dt;
+		m_isFollowingPlayer = false;
+	}
 
-	if (!wnd->IsMousePressed(Input::MOUSE_CODE::MBUTTON))
+	if (!m_isFollowingPlayer && !wnd->IsMousePressed(Input::MOUSE_CODE::MBUTTON))
 		m_camera.Translate(translation);
 	
 	INT scrollDelta;
@@ -159,16 +205,22 @@ void Game::_cameraControl(double dt)
 		static DirectX::XMFLOAT3 _sWorldPosRef;
 		static DirectX::XMVECTOR _sCameraPosOffset;
 
+		
 		if (!PressedLastFrame)
 		{
+
 			_sMouseRef = mp;
 
-			
 			if (Renderer::GetInstance()->GetMousePicking(_sWorldPosRef))
 			{
-				PressedLastFrame = true;
-				
+				PressedLastFrame = true;				
 			}
+			if (m_isFollowingPlayer)
+			{
+				_sWorldPosRef = m_player.GetPosition();
+				PressedLastFrame = true;
+			}
+
 		}
 		else
 		{
@@ -220,18 +272,6 @@ void Game::_cameraControl(double dt)
 		}
 	}
 
-	//static const DirectX::XMFLOAT3 centerPoint = { (float)TERRAIN_SIZE / 2 , 0.0f, (float)TERRAIN_SIZE / 2 };
-
-	//float distanceToCenter = 
-	//	DirectX::XMVectorGetX(DirectX::XMVector3Length
-	//	(DirectX::XMVectorSubtract(DirectX::XMVectorSet((float)TERRAIN_SIZE / 2, 0, (float)TERRAIN_SIZE / 2, 0),
-	//		DirectX::XMLoadFloat4(&m_camera.GetPosition()))));
-
-	//float a2 = pow(((float)TERRAIN_SIZE), 2);
-
-	//float c = sqrt(a2 + a2) / 2;
-	//
-	//m_camera.CreateProjectionMatrix(max(distanceToCenter - c, 0.01f), distanceToCenter + c);
 }
 
 #include "water_texture.h"

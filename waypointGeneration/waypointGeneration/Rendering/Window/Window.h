@@ -152,6 +152,8 @@ public:
 
 	void ResetInput();
 
+	BOOL IsFocused();
+
 private:
 	HWND	m_hwnd;
 	UINT	m_height;

@@ -24,6 +24,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	Timer deltaTime;
 	deltaTime.Start();
 
+	bool first = true;
+
 	while (wnd->IsOpen())
 	{
 		if (wnd->IsKeyPressed(Input::R))
@@ -31,7 +33,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 			delete game;
 			game = new Game();
 		}
-
 
 		double dt = deltaTime.Stop();
 
@@ -47,7 +48,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 		renderer->Flush();
 		renderer->Present();
-
+		
 	}
 	delete game;
 

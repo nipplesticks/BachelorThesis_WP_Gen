@@ -114,6 +114,16 @@ POINT Window::GetMousePosition()
 
 	GetCursorPos(&p);
 	ScreenToClient(m_hwnd, &p);
+
+	if (m_width != m_resolution.x || m_height != m_resolution.y)
+	{
+		double x = (double)p.x / m_width;
+		double y = (double)p.y / m_height;
+
+		p.x = x * m_resolution.x;
+		p.y = y * m_resolution.y;
+	}
+
 	return p;
 
 }
@@ -126,13 +136,22 @@ void Window::MouseToCenter()
 	p.y = m_height / 2;
 
 	ClientToScreen(m_hwnd, &p);
+
 	SetCursorPos(p.x, p.y);
 }
 
 void Window::SetMousePosition(POINT mousePos, BOOL windowRelative)
 {
 	if (windowRelative)
+	{
 		ClientToScreen(m_hwnd, &mousePos);
+
+		double x = (double)mousePos.x / m_resolution.x;
+		double y = (double)mousePos.y / m_resolution.y;
+
+		mousePos.x = x * m_width;
+		mousePos.y = y * m_height;
+	}
 
 	SetCursorPos(mousePos.x, mousePos.y);
 }
@@ -141,6 +160,14 @@ void Window::ResetInput()
 {
 	m_scroll[0] = 0;
 	m_scroll[1] = 0;
+}
+
+BOOL Window::IsFocused()
+{
+	//HWND active = GetFocus();
+	HWND active = GetActiveWindow();
+	
+	return active == m_hwnd;
 }
 
 LRESULT Window::_WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -210,6 +237,38 @@ void Window::_run()
 {
 	while (m_isOpen)
 	{
+		if (m_fullscreen && IsFocused())
+		{
+			
+			POINT mp = GetMousePosition();
+
+			bool fixMouse = false;
+
+			if (mp.x < 0)
+			{
+				mp.x = 1;
+				fixMouse = true;
+			}
+			else if (mp.x > GetResolutionSize().x)
+			{
+				mp.x = GetResolutionSize().x - 1;
+				fixMouse = true;
+			}
+			if (mp.y < 0)
+			{
+				mp.y = 1;
+				fixMouse = true;
+			}
+			else if (mp.y > GetResolutionSize().y)
+			{
+				mp.y = GetResolutionSize().y - 1;
+				fixMouse = true;
+			}
+
+			if (fixMouse)
+				SetMousePosition(mp);
+		}
+
 		_procMessages();
 	}
 }
