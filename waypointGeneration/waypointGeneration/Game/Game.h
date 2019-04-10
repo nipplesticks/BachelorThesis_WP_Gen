@@ -53,6 +53,8 @@ private:
 
 	POINT m_mouseReferencePosition;
 
+	bool m_isFollowingPlayer = false;
+	
 	float m_maxHeight = 0.0f;
 	float m_minHeight = 0.0f;
 
