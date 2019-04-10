@@ -15,7 +15,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	srand(time(0));
 	_alocConsole();
 	Window * wnd = Window::GetInstance();
-	wnd->Create(hInstance, nCmdShow, 1280, 720, 1);
+	wnd->Create(hInstance, nCmdShow, 1280, 720, 0);
 
 	Renderer * renderer = Renderer::GetInstance();
 	renderer->Init();
@@ -24,6 +24,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	Timer deltaTime;
 	deltaTime.Start();
 
+	bool first = true;
+
 	while (wnd->IsOpen())
 	{
 		if (wnd->IsKeyPressed(Input::R))
@@ -31,7 +33,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 			delete game;
 			game = new Game();
 		}
-
 
 		double dt = deltaTime.Stop();
 
@@ -47,7 +48,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 		renderer->Flush();
 		renderer->Present();
-
+		
 	}
 	delete game;
 

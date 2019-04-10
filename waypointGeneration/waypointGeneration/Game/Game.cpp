@@ -99,13 +99,13 @@ void Game::_cameraControl(double dt)
 
 	DirectX::XMFLOAT3 translation(0, 0, 0);
 
-	if (wnd->IsKeyPressed(Input::UP_ARROW) || mp.y < 50)
+	if (wnd->IsKeyPressed(Input::UP_ARROW) || mp.y < 0.1 * wnd->GetResolutionSize().y)
 		translation.z += CAMERA_XZ_SPEED * dt;
-	if (wnd->IsKeyPressed(Input::DOWN_ARROW) || mp.y > wnd->GetWindowSize().y - 50)
+	if (wnd->IsKeyPressed(Input::DOWN_ARROW) || mp.y > wnd->GetResolutionSize().y * 0.9)
 		translation.z -= CAMERA_XZ_SPEED * dt;
-	if (wnd->IsKeyPressed(Input::RIGHT_ARROW) || mp.x > wnd->GetWindowSize().x - 75)
+	if (wnd->IsKeyPressed(Input::RIGHT_ARROW) || mp.x > wnd->GetResolutionSize().x * 0.9)
 		translation.x += CAMERA_XZ_SPEED * dt;
-	if (wnd->IsKeyPressed(Input::LEFT_ARROW) || mp.x < 75)
+	if (wnd->IsKeyPressed(Input::LEFT_ARROW) || mp.x < wnd->GetResolutionSize().x * 0.1)
 		translation.x -= CAMERA_XZ_SPEED * dt;
 	if (wnd->IsKeyPressed(Input::SPACE))
 		translation.y += CAMERA_XZ_SPEED * dt;
@@ -218,18 +218,6 @@ void Game::_cameraControl(double dt)
 		}
 	}
 
-	//static const DirectX::XMFLOAT3 centerPoint = { (float)TERRAIN_SIZE / 2 , 0.0f, (float)TERRAIN_SIZE / 2 };
-
-	//float distanceToCenter = 
-	//	DirectX::XMVectorGetX(DirectX::XMVector3Length
-	//	(DirectX::XMVectorSubtract(DirectX::XMVectorSet((float)TERRAIN_SIZE / 2, 0, (float)TERRAIN_SIZE / 2, 0),
-	//		DirectX::XMLoadFloat4(&m_camera.GetPosition()))));
-
-	//float a2 = pow(((float)TERRAIN_SIZE), 2);
-
-	//float c = sqrt(a2 + a2) / 2;
-	//
-	//m_camera.CreateProjectionMatrix(max(distanceToCenter - c, 0.01f), distanceToCenter + c);
 }
 
 #include "water_texture.h"
