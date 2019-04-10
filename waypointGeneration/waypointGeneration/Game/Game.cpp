@@ -282,7 +282,7 @@ void Game::_loadTerrain()
 
 	const int MIN = -10;
 	const int MAX = 15;
-	const float NOISE = 20.0f;
+	float NOISE = (rand() % 6) + 15;
 	
 	bool placedPlayer = false;
 
@@ -359,7 +359,7 @@ void Game::_loadTerrain()
 				}
 			}
 		}
-		else if (!placedPlayer && i > TERRAIN_SIZE * TERRAIN_SIZE * 0.5f - 10)
+		else if (!placedPlayer && i >= TERRAIN_SIZE * TERRAIN_SIZE * 0.5f)
 		{
 			DirectX::XMFLOAT3 playerPos;
 			playerPos.x = m_terrainMesh[i].Position.x + m_terrainMesh[i + 1].Position.x + m_terrainMesh[i + 2].Position.x;
