@@ -17,7 +17,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	//srand(time(0));
 	_allocConsole();
 	Window * wnd = Window::GetInstance();
-	wnd->Create(hInstance, nCmdShow, 1280, 720, 0);
+	wnd->Create(hInstance, nCmdShow, 1280, 720, 0, "Kandidatarbete", "Frametime: 0 ms Frame: 0");
 
 	HWND hwnd = wnd->GetHwnd();
 	SetWindowPos(hwnd, 0, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
@@ -35,6 +35,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	Game * game = new Game();
 	Timer deltaTime;
 	deltaTime.Start();
+
+	double totalTime = 0.0;
+	UINT frameCounter = 0;
 
 	bool first = true;
 
@@ -60,7 +63,18 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 		renderer->Flush();
 		renderer->Present();
-		
+		totalTime += dt;
+
+		if (totalTime > 1.0 && frameCounter > 0)
+		{
+			double ms = (totalTime / frameCounter) * 1000;
+			wnd->SetWindowTitle("Frametime: " + std::to_string(ms) + " ms" + " Frames: " + std::to_string(frameCounter));
+
+			totalTime -= 1.0;
+			frameCounter = 0;
+		}
+
+		frameCounter++;
 	}
 	delete game;
 
