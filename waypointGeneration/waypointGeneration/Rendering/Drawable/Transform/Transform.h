@@ -15,6 +15,7 @@ public:
 
 	void SetRotation(const DirectX::XMFLOAT3 & rotation);
 	void SetRotation(float x, float y, float z);
+	void SetRotation2(const DirectX::XMMATRIX & rot);
 	void Rotate(const DirectX::XMFLOAT3 & rotation);
 	void Rotate(float x, float y, float z);
 
@@ -32,6 +33,11 @@ private:
 	DirectX::XMFLOAT3 m_position = DirectX::XMFLOAT3(0, 0, 0);
 	DirectX::XMFLOAT3 m_scale = DirectX::XMFLOAT3(1, 1, 1);
 	DirectX::XMFLOAT3 m_rotation = DirectX::XMFLOAT3(0, 0, 0);
+	
+	DirectX::XMMATRIX m_forcedRot;
+
+	bool m_useForcedRot = false;
+
 
 	DirectX::XMFLOAT4X4A m_worldMatrix;
 };

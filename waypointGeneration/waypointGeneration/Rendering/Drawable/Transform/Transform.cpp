@@ -22,7 +22,14 @@ void Transform::Update()
 	using namespace DirectX;
 
 	const XMMATRIX scale = XMMatrixScalingFromVector(XMLoadFloat3(&this->m_scale));
-	const XMMATRIX rotation = XMMatrixRotationRollPitchYawFromVector(XMLoadFloat3(&this->m_rotation));
+	XMMATRIX rotation;
+	
+	if (m_useForcedRot)
+		rotation = m_forcedRot;
+	else
+		rotation = XMMatrixRotationRollPitchYawFromVector(XMLoadFloat3(&this->m_rotation));;
+
+	
 	const XMMATRIX translation = XMMatrixTranslationFromVector(XMLoadFloat3(&this->m_position));
 
 	XMStoreFloat4x4A(&this->m_worldMatrix, scale * rotation * translation);
@@ -55,11 +62,18 @@ void Transform::Translate(float x, float y, float z)
 void Transform::SetRotation(const DirectX::XMFLOAT3 & rotation)
 {
 	this->m_rotation = rotation;
+	m_useForcedRot = false;
 }
 
 void Transform::SetRotation(float x, float y, float z)
 {
 	this->SetRotation(DirectX::XMFLOAT3(x, y, z));
+}
+
+void Transform::SetRotation2(const DirectX::XMMATRIX & rotation)
+{
+	m_forcedRot = rotation;
+	m_useForcedRot = true;
 }
 
 void Transform::Rotate(const DirectX::XMFLOAT3 & rotation)

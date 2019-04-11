@@ -17,7 +17,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	//srand(time(0));
 	_allocConsole();
 	Window * wnd = Window::GetInstance();
-	wnd->Create(hInstance, nCmdShow, 1920, 1080, 1);
+	wnd->Create(hInstance, nCmdShow, 1280, 720, 0);
 
 	Renderer * renderer = Renderer::GetInstance();
 	renderer->Init();

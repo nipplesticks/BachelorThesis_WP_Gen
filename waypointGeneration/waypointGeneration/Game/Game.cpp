@@ -131,18 +131,45 @@ void Game::_playerFixYPosition(double dt)
 	m_player.Translate(translate);
 
 	DirectX::XMFLOAT3 iPoint;
-	Triangle * tri = m_unblockedTriangleTree.RayIntersectionTriangle3D(m_player.GetPosition(), DirectX::XMFLOAT3(0, -1, 0), true, iPoint);
+	Triangle * tri = m_unblockedTriangleTree.RayIntersectionTriangle3D(m_player.GetPosition(), DirectX::XMFLOAT3(0, -1, 0), false, iPoint);
 
 	if (tri == nullptr)
 	{
-		tri = m_blockedTriangleTree.RayIntersectionTriangle3D(m_player.GetPosition(), DirectX::XMFLOAT3(0, -1, 0), true, iPoint);
+		tri = m_blockedTriangleTree.RayIntersectionTriangle3D(m_player.GetPosition(), DirectX::XMFLOAT3(0, -1, 0), false, iPoint);
+	}
+	if (tri == nullptr)
+	{
+		tri = m_unblockedTriangleTree.RayIntersectionTriangle3D(m_player.GetPosition(), DirectX::XMFLOAT3(0, 1, 0), true, iPoint);
+	}
+	if (tri == nullptr)
+	{
+		tri = m_blockedTriangleTree.RayIntersectionTriangle3D(m_player.GetPosition(), DirectX::XMFLOAT3(0, 1, 0), true, iPoint);
 	}
 
 	if (tri)
 	{
-		//DirectX::XMVECTOR normal = DirectX::XMLoadFloat3(&tri->normal);
+		DirectX::XMVECTOR normal = DirectX::XMLoadFloat3(&tri->normal);
+		DirectX::XMVECTOR forward, right;
 
-		m_player.SetRotation(tri->normal);
+		if (tri->normal.y < 0.95f)
+		{
+			right = DirectX::XMVector3Cross(normal, DirectX::XMVectorSet(0, 1, 0, 0));
+		}
+		else
+		{
+			right = DirectX::XMVector3Cross(normal, DirectX::XMVectorSet(0, 0, 1, 0));
+		}
+
+		forward = DirectX::XMVector3Cross(normal, right);
+
+		DirectX::XMFLOAT3 xmf, xmr;
+
+		DirectX::XMStoreFloat3(&xmf, forward);
+		DirectX::XMStoreFloat3(&xmr, right);
+
+		auto m = DirectX::XMMatrixSet(xmr.x, xmr.y, xmr.z, 0.0f, xmf.x, xmf.y, xmf.z, 0.0f, tri->normal.x, tri->normal.y, tri->normal.z, 0.0f, 0, 0, 0, 1);
+		
+		m_player.SetRotation2(m);
 		auto pos = m_player.GetPosition();
 		pos.y = iPoint.y + 0.5f;
 		m_player.SetPosition(pos);
