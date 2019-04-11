@@ -14,7 +14,6 @@ void _allocConsole() {
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
-	//srand(time(0));
 	_allocConsole();
 	Window * wnd = Window::GetInstance();
 	wnd->Create(hInstance, nCmdShow, 1280, 720, 0, "Kandidatarbete", "Frametime: 0 ms Frame: 0");
@@ -27,7 +26,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	RECT r;
 	GetWindowRect(consoleWindow, &r);
 	MoveWindow(consoleWindow, r.left, r.top, 1920 - wnd->GetWindowSize().x, 1080, TRUE);
-
 
 	Renderer * renderer = Renderer::GetInstance();
 	renderer->Init();

@@ -223,6 +223,9 @@ void ForwardRender::_prePass()
 	Renderer * r = Renderer::GetInstance();
 	ID3D11DeviceContext * dc = r->GetDeviceContext();
 	
+	ID3D11ShaderResourceView *const pSRV[1] = { NULL };
+	dc->PSSetShaderResources(0, 1, pSRV);
+
 	m_depthPrePassShaders.SetShaders(dc);
 	dc->OMSetRenderTargets(1, &m_worldTexture.RTV, m_depthStencilView);
 
@@ -260,7 +263,6 @@ void ForwardRender::_prePass()
 		}
 	}
 
-	/*dc->OMSetBlendState(m_blendState, 0, 0xffffffff);
 	drawQueueSize = p_drawQueueTransparent.size();
 	for (size_t i = 0; i < drawQueueSize; i++)
 	{
@@ -286,7 +288,7 @@ void ForwardRender::_prePass()
 			dc->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 			dc->Draw((UINT)p_drawQueueTransparent[i]->GetVertices()->size(), 0);
 		}
-	}*/
+	}
 
 }
 
