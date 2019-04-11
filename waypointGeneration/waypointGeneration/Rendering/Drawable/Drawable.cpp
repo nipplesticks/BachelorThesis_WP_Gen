@@ -154,9 +154,16 @@ ID3D11ShaderResourceView * Drawable::GetTexture() const
 	return m_texture;
 }
 
+void Drawable::UseDepthBuffer(bool val)
+{
+	m_useDepth = val;
+}
+
 void Drawable::Draw()
 {
-	if (m_color.w > 0.999f)
+	if (!m_useDepth)
+		IRender::QueueNoDepth(this);
+	else if (m_color.w > 0.999f)
 		IRender::Queue(this);
 	else
 		IRender::QueueAlpha(this);

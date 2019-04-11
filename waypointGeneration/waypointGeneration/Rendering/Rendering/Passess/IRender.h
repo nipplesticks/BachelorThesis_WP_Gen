@@ -14,9 +14,11 @@ public:
 
 	static void Queue(Drawable * drawable);
 	static void QueueAlpha(Drawable * drawable);
+	static void QueueNoDepth(Drawable * drawable);
 	static void Clear();
 
 protected:
 	static std::vector<Drawable*> p_drawQueue;
 	static std::vector<Drawable*> p_drawQueueTransparent;
+	static std::vector<Drawable*> p_drawQueueNoDepthBuffer;
 };

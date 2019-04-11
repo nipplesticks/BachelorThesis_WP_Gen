@@ -1,9 +1,16 @@
 #include "waypointGenerationPCH.h"
 #include "Game.h"
 #include "../Rendering/Rendering/Renderer.h"
+#include <time.h>
 
 Game::Game()
 {
+	if (USE_RANDOM_SEED)
+	{
+		srand(static_cast<unsigned>(time(0)));
+	}
+
+
 	_createWaterTexture();
 	_loadMeshes();
 	_createWorld();
@@ -73,13 +80,17 @@ void Game::Update(double dt)
 
 void Game::Draw()
 {
+	if (DRAW_CONNECTIONS && !m_connectionMesh.empty())
+		m_connections.Draw();
+
 	if (DRAW_TRIANGLES)
 	{
 		m_blockedtrianglesDraw.Draw();
 		m_unblockedtrianglesDraw.Draw();
 	}
-	else
-		m_terrain.Draw();
+	
+	m_terrain.Draw();
+
 	for (int i = 0; i < 4; i++)
 		m_edges[i].Draw();
 
@@ -92,6 +103,7 @@ void Game::Draw()
 		d.Draw();
 
 	m_water.Draw();
+
 }
 
 void Game::_playerFixYPosition(double dt)
@@ -430,363 +442,45 @@ void Game::_createWaterTexture()
 
 void Game::_createWorld()
 {
+	std::cout << "****************************************\nCreatingWorld\n\n";
+
 	Timer t;
-
-	const int MIN = -10;
-	const int MAX = 15;
-	//const int MIN = 0;
-	//const int MAX = 0;
-	float NOISE = (rand() % 6) + 15;
-	NOISE = 3;
-	bool placedPlayer = false;
-
-	m_maxHeight = MAX * NOISE;
-	m_minHeight = abs(MIN * NOISE);
-
 	t.Start();
-	m_terrainMesh = m_terrainCreator.CreateTerrainFromFloatList2(
-		m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, TERRAIN_SIZE - 1, NOISE, MIN, MAX, 2),
-		TERRAIN_SIZE,
-		m_terrainTexture,
-		m_terrainTex2D,
-		m_edgeMeshes
-	);
-
-	double time = t.Stop(Timer::MILLISECONDS);
-	std::cout << "\nTime to generate terrain mesh: " << time << " ms\n";
-
-
-	std::cout << "\nBuilding Trees...\n";
-	DirectX::XMFLOAT2 worldStart = DirectX::XMFLOAT2(m_terrainMesh[0].Position.x, m_terrainMesh[0].Position.z);
-	/*worldStart.x -= 1.0f;
-	worldStart.y -= 1.0f;*/
-
-	// Calculate tree depth and build quad tree for triangles
-	int reversedTreeSize = 1;
-	int treeLevels = 0;
-
-	while (reversedTreeSize < TERRAIN_SIZE)
-	{
-		treeLevels++;
-		reversedTreeSize *= 2;
-	}
-
-	std::cout << "Tree Level: " << treeLevels << " Size: " << reversedTreeSize << std::endl;
-	m_blockedTriangleTree.BuildTree(treeLevels, TERRAIN_SIZE, worldStart);
-	m_unblockedTriangleTree.BuildTree(treeLevels, TERRAIN_SIZE, worldStart);
-
-	time = t.Stop(Timer::MILLISECONDS);
-	std::cout << "\nTime to build trees: " << time << " ms\n";
-
-	long int lastX = 0;
-	long int lastY = 0;
-	DirectX::XMVECTOR up = DirectX::XMVectorSet(0, -1, 0, 0);
-	std::cout << "\nGenerating waypoints and create triangles for trees\n";
-
-	for (int i = 0; i < m_terrainMesh.size(); i+=3)
-	{
-		if (i % 1000 == 0)
-			std::cout << "\r" << ((double)i / (double)m_terrainMesh.size() )* 100.0;
-
-		DirectX::XMFLOAT4A v0, v1, v2;
-		v0 = m_terrainMesh[i].Position;
-		v1 = m_terrainMesh[i + 1].Position;
-		v2 = m_terrainMesh[i + 2].Position;
-
-		DirectX::XMVECTOR e0 = DirectX::XMVectorSubtract(DirectX::XMLoadFloat4A(&v1), DirectX::XMLoadFloat4A(&v0));
-		DirectX::XMVECTOR e1 = DirectX::XMVectorSubtract(DirectX::XMLoadFloat4A(&v2), DirectX::XMLoadFloat4A(&v0));
-		DirectX::XMVECTOR normal = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(e0, e1));
-
-		DirectX::XMStoreFloat4A(&m_terrainMesh[i].Normal, normal);
-		DirectX::XMStoreFloat4A(&m_terrainMesh[i + 1].Normal, normal);
-		DirectX::XMStoreFloat4A(&m_terrainMesh[i + 2].Normal, normal);
-
-
-		float dot = fabs(DirectX::XMVectorGetX(DirectX::XMVector3Dot(normal, up)));
-		bool createBlockedTriangleLocation = false;
-		if (v0.y < m_terrainCreator.WATER_START || v1.y < m_terrainCreator.WATER_START || v2.y < m_terrainCreator.WATER_START)
-			createBlockedTriangleLocation = true;
-
-		if (dot < m_terrainCreator.UNWALKABLE_SURFACE)
-		{
-			createBlockedTriangleLocation = true;
-
-			DirectX::XMFLOAT2 middle;
-			middle.x = (m_terrainMesh[i].Position.x + m_terrainMesh[i + 1].Position.x + m_terrainMesh[i + 2].Position.x) * 0.333333f;
-			middle.y = (m_terrainMesh[i].Position.z + m_terrainMesh[i + 1].Position.z + m_terrainMesh[i + 2].Position.z) * 0.333333f;
-
-			DirectX::XMVECTOR vMiddle = DirectX::XMLoadFloat2(&middle);
-
-			for (int k = i; k < i + 3; k++)
-			{
-				DirectX::XMFLOAT4A pos = m_terrainMesh[k].Position;
-				DirectX::XMFLOAT2 pos2D = { pos.x, pos.z };
-				
-				DirectX::XMVECTOR vPos2D = DirectX::XMLoadFloat2(&pos2D);
-				DirectX::XMVECTOR vDir = DirectX::XMVector2Normalize(DirectX::XMVectorSubtract(vPos2D, vMiddle));
-
-				DirectX::XMFLOAT2 dir;
-				DirectX::XMStoreFloat2(&dir, vDir);
-
-
-				if (pos.y < m_terrainCreator.WATER_START)
-					continue;
-
-				Waypoint wp(pos.x + dir.x * 0.1f, pos.z + dir.y * 0.1f);
-				wp.SetHeightVal(pos.y);
-
-				long int xPos = pos.x;
-				long int yPos = pos.z;
-
-				if (xPos > lastX)
-					lastX = xPos + 0.5f;
-
-				if (yPos > lastY)
-					lastY = yPos + 0.5f;
-
-				long int key = int(xPos + 0.5f) + int(yPos + 0.5f) * (TERRAIN_SIZE);
-
-				auto it = m_waypoints.find(key);
-
-				if (it == m_waypoints.end())
-					m_waypoints.insert(std::make_pair(key, wp));
-			}
-		}
-		if (createBlockedTriangleLocation)
-			m_blockedTriangles.push_back(new Triangle(v0, v1, v2));
-		else
-		{
-			m_unblockedTriangles.push_back(new Triangle(v0, v1, v2));
-		}
-
-		/*if (!placedPlayer && i >= TERRAIN_SIZE * TERRAIN_SIZE * 0.5f)
-		{
-			DirectX::XMFLOAT3 playerPos;
-			playerPos.x = m_terrainMesh[i].Position.x + m_terrainMesh[i + 1].Position.x + m_terrainMesh[i + 2].Position.x;
-			playerPos.y = m_terrainMesh[i].Position.y + m_terrainMesh[i + 1].Position.y + m_terrainMesh[i + 2].Position.y;
-			playerPos.z = m_terrainMesh[i].Position.z + m_terrainMesh[i + 1].Position.z + m_terrainMesh[i + 2].Position.z;
-
-			playerPos.x /= 3.0f;
-			playerPos.y /= 3.0f;
-			playerPos.z /= 3.0f;
-			playerPos.y += 0.5f;
-
-			m_player.SetPosition(playerPos);
-			placedPlayer = true;
-		}*/
-	}
-
-
-	time = t.Stop(Timer::MILLISECONDS);
-	std::cout << "\nTime to generate waypoints and triangles: " << time << " ms\n";
-	std::cout << "\nNumber of waypoints before cleanup:" << m_waypoints.size() << std::endl;
-	std::cout << "\nNumber of blocked triangles:" << m_blockedTriangles.size() << std::endl;
-	std::cout << "\nNumber of unblocked triangles:" << m_unblockedTriangles.size() << std::endl;
-
-
-	std::cout << "\nPlaceing triangles in trees...\n";
-	m_blockedTriangleTree.PlaceObjects(m_blockedTriangles);
-	m_unblockedTriangleTree.PlaceObjects(m_unblockedTriangles);
-	time = t.Stop(Timer::MILLISECONDS);
-	std::cout << "\nTime to placing triangles in trees: " << time << " ms\n";
-
-
-	std::cout << "\nCleaning waypoints...\n";
-	std::map<long int, long int> ereasedVals;
-
-	for (long int i = 0; i < TERRAIN_SIZE; i++)
-	{
-		for (long int j = 0; j < TERRAIN_SIZE; j++)
-		{
-			long int key = j + i * TERRAIN_SIZE;
-
-			bool erase = true;
-
-			for (int y = i - 1; y <= i + 1 && erase; y++)
-			{
-				for (int x = j - 1; x <= j + 1 && erase; x++)
-				{
-					if (y == i && x == j)
-						continue;
-
-					int tKey = x + y * TERRAIN_SIZE;
-
-					auto tIt = m_waypoints.find(tKey);
-					auto eIt = ereasedVals.find(tKey);
-					erase = tIt != m_waypoints.end() || eIt != ereasedVals.end();
-				}
-			}
-			if (erase)
-			{
-				m_waypoints.erase(key);
-				ereasedVals.insert(std::make_pair(key, key));
-			}
-		}
-	}
-	ereasedVals.clear();
-
-	for (long int i = 0; i < TERRAIN_SIZE; i++)
-	{
-		for (long int j = 0; j < TERRAIN_SIZE; j++)
-		{
-			long int key = j + i * TERRAIN_SIZE;
-
-			bool erase = true;
-
-			for (int y = i - 1; y <= i + 1 && erase; y++)
-			{
-				if (y == i)
-					continue;
-				int tKey = j + y * TERRAIN_SIZE;
-				auto tIt = m_waypoints.find(tKey);
-				auto eIt = ereasedVals.find(tKey);
-				erase = tIt != m_waypoints.end() || eIt != ereasedVals.end();
-			}
-			if (!erase)
-			{
-				erase = true;
-				for (int x = j - 1; x <= j + 1 && erase; x++)
-				{
-					if (x == j)
-						continue;
-
-					int tKey = x + i * TERRAIN_SIZE;
-
-					auto tIt = m_waypoints.find(tKey);
-					auto eIt = ereasedVals.find(tKey);
-					erase = tIt != m_waypoints.end() || eIt != ereasedVals.end();
-				}
-			}
-			if (erase)
-			{
-				m_waypoints.erase(key);
-				ereasedVals.insert(std::make_pair(key, key));
-			}
-		}
-	}
-
-
-	time = t.Stop(Timer::MILLISECONDS);
-	std::cout << "\nTime to cleanup the waypoints: " << time << " ms\n";
-	std::cout << "\nNumber of waypoints after cleanup: " << m_waypoints.size() << std::endl;
-
-	if (DRAW_WAYPOINT)
-	{
-		std::cout << "Create drawables for wp..\n";
-		m_wp = std::vector<Drawable>(m_waypoints.size());
-		int counter = 0;
-		for (auto & w : m_waypoints)
-		{
-			m_wp[counter].SetPosition(w.second.GetPosition().x, w.second.GetHeightVal(), w.second.GetPosition().y);
-			m_wp[counter].SetVertices(&m_playerMesh);
-			m_wp[counter].SetScale(0.5f, 0.5f, 0.5f);
-			m_wp[counter].Update();
-			m_wp[counter++].SetColor(1, 0, 0);
-		}
-
-		time = t.Stop(Timer::MILLISECONDS);
-		std::cout << "Time to create Drawables: " << time << " ms\n";
-	}
+	_createTerrain();
+	std::cout << std::endl;
+	_buildTrees();
+	std::cout << std::endl;
+	_createBlockedTrianglesAndWaypoints();
+	std::cout << std::endl;
+	_cleanWaypoints();
+	std::cout << std::endl;
+	_placeTrianglesInTree();
+	std::cout << std::endl;
+	//_connectWaypoints();
+	std::cout << std::endl;
+	_generateWorldEdges();
+	std::cout << std::endl;
 
 	if (DRAW_TRIANGLES)
 	{
-		std::cout << "Create drawables for tree triangles..\n";
-		for (auto & t : m_blockedTriangles)
-		{
-			Vertex v;
-			v.Normal = DirectX::XMFLOAT4A(t->normal.x, t->normal.y, t->normal.z, 0.0f);
-			
-			for (int i = 0; i < 3; i++)
-			{
-				v.Position = DirectX::XMFLOAT4A(t->points[i].x, t->points[i].y, t->points[i].z, 1.0f);
-				m_blockedTrianglesVertices.push_back(v);
-			}
-		}
-		for (auto & t : m_unblockedTriangles)
-		{
-			Vertex v;
-			v.Normal = DirectX::XMFLOAT4A(t->normal.x, t->normal.y, t->normal.z, 0.0f);
-
-			for (int i = 0; i < 3; i++)
-			{
-				v.Position = DirectX::XMFLOAT4A(t->points[i].x, t->points[i].y, t->points[i].z, 1.0f);
-				m_unblockedTrianglesVertices.push_back(v);
-			}
-		}
-		m_blockedtrianglesDraw.SetVertices(&m_blockedTrianglesVertices);
-		m_blockedtrianglesDraw.SetColor(1.0f, 0.0f, 0.0f);
-		m_blockedtrianglesDraw.Update();
-		m_unblockedtrianglesDraw.SetVertices(&m_unblockedTrianglesVertices);
-		m_unblockedtrianglesDraw.SetColor(0.0f, 1.0f, 0.0f);
-		m_unblockedtrianglesDraw.Update();
-		time = t.Stop(Timer::MILLISECONDS);
-		std::cout << "Time to create Drawables: " << time << " ms\n";
-
+		_createViewableTriangles();
+		std::cout << std::endl;
 	}
 
-	// Connect Waypoints
-	std::cout << "\nCreate Connections\n..";
-	Timer t1;
-	t1.Start();
-	int counter123 = 0;
-	for (auto & wp1 : m_waypoints)
+	if (DRAW_WAYPOINT)
 	{
-		for (auto & wp2 : m_waypoints)
-		{
-			if (wp1.first == wp2.first)
-				continue;
-
-			DirectX::XMFLOAT2 dummy;
-			Triangle * tri = m_blockedTriangleTree.LineIntersectionTriangle(wp1.second.GetPosition(), wp2.second.GetPosition(), true, dummy);
-
-			if (tri == nullptr)
-			{
-				counter123++;
-				if (wp1.second.Connect(&m_waypoints[wp2.first]))
-					wp2.second.ForceConnection(&m_waypoints[wp1.first]);
-			}
-		}
+		_createViewableWaypoints();
+		std::cout << std::endl;
 	}
-	std::cout << "\nConnection time: " << t1.Stop(Timer::MILLISECONDS) << std::endl;
-	std::cout << "\nConnection(s): " << counter123 << std::endl;
 
-
-	std::cout << "\nGenerating sides..\n";
-	for (int i = 0; i < 4; i++)
+	if (DRAW_CONNECTIONS && !m_connectionMesh.empty())
 	{
-		int size = m_edgeMeshes[i].size();
-		int v = 0;
-		int moreSize = 0;
-
-		if (i == 0 || i == 3)
-		{
-			v = 1;
-			moreSize = 1;
-		}
-
-		for (v; v < size + moreSize; v += 2)
-		{
-			int add = 0;
-			if (moreSize == 1)
-				add = -1;
-
-			Vertex ver = m_edgeMeshes[i][v + add];
-			ver.Position.y = MIN * NOISE;
-
-			m_edgeMeshes[i].insert(m_edgeMeshes[i].begin() + v, ver);
-
-			size++;
-		}
-		
-		m_edges[i].SetVertices(&m_edgeMeshes[i]);
-		m_edges[i].SetTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-		m_edges[i].SetColor(0.1, 0.2f, 0.1f, 1.0f);
-		m_edges[i].SetPickable(true);
+		_createViewableConnections();
+		std::cout << std::endl;
 	}
-	time = t.Stop(Timer::MILLISECONDS);
-	std::cout << "Time to generate sides: " << time << " ms\n";
-	m_terrain.SetVertices(&m_terrainMesh);
-	m_terrain.SetTexture(m_terrainTexture);
+
+	std::cout << "Total Time: " << t.Stop() << " Seconds\n";
+	std::cout << "World Created\n****************************************\n";
 }
 
 void Game::_loadMeshes()
@@ -921,4 +615,378 @@ void Game::_setupGame()
 	DirectX::XMFLOAT3 xmCamPos;
 	DirectX::XMStoreFloat3(&xmCamPos, camPos);
 	m_camera.SetPosition(xmCamPos);
+}
+
+void Game::_createTerrain()
+{
+	std::cout << "Creating Terrain... ";
+
+	Timer t;
+	m_noise = (rand() % NOISE_RAND) + NOISE_MIN;
+	
+	m_maxHeight = MAX_HEIGHT * m_noise;
+	m_minHeight = abs(MIN_HEIGHT * m_noise);
+
+	t.Start();
+	m_terrainMesh = m_terrainCreator.CreateTerrainFromFloatList2(
+		m_diamondSquare.CreateDiamondSquare(TERRAIN_SIZE, TERRAIN_SIZE - 1, m_noise, MIN_HEIGHT, MAX_HEIGHT, 2),
+		TERRAIN_SIZE,
+		m_terrainTexture,
+		m_terrainTex2D,
+		m_edgeMeshes
+	);
+
+	m_terrain.SetVertices(&m_terrainMesh);
+	m_terrain.SetTexture(m_terrainTexture);
+
+	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
+}
+
+void Game::_buildTrees()
+{
+	std::cout << "Building Trees... ";
+
+	Timer t;
+
+	DirectX::XMFLOAT2 worldStart = DirectX::XMFLOAT2(m_terrainMesh[0].Position.x, m_terrainMesh[0].Position.z);
+
+	// Calculate tree depth and build quad tree for triangles
+	int reversedTreeSize = 2;
+	int treeLevels = 0;
+	t.Start();
+	while (reversedTreeSize < TERRAIN_SIZE)
+	{
+		treeLevels++;
+		reversedTreeSize *= 2;
+	}
+
+	std::cout << "Depth: " << treeLevels << "... ";
+	m_blockedTriangleTree.BuildTree(treeLevels, TERRAIN_SIZE, worldStart);
+	m_unblockedTriangleTree.BuildTree(treeLevels, TERRAIN_SIZE, worldStart);
+	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
+}
+
+void Game::_createBlockedTrianglesAndWaypoints()
+{
+	std::cout << "Detecting blocked/unblocked triangles and placing waypoints...\n";
+	Timer t;
+	DirectX::XMVECTOR up = DirectX::XMVectorSet(0, -1, 0, 0);
+	t.Start();
+	for (int i = 0; i < m_terrainMesh.size(); i += 3)
+	{
+		DirectX::XMFLOAT4A v0, v1, v2;
+		v0 = m_terrainMesh[i].Position;
+		v1 = m_terrainMesh[i + 1].Position;
+		v2 = m_terrainMesh[i + 2].Position;
+
+		DirectX::XMVECTOR e0 = DirectX::XMVectorSubtract(DirectX::XMLoadFloat4A(&v1), DirectX::XMLoadFloat4A(&v0));
+		DirectX::XMVECTOR e1 = DirectX::XMVectorSubtract(DirectX::XMLoadFloat4A(&v2), DirectX::XMLoadFloat4A(&v0));
+		DirectX::XMVECTOR normal = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(e0, e1));
+
+		DirectX::XMStoreFloat4A(&m_terrainMesh[i].Normal, normal);
+		DirectX::XMStoreFloat4A(&m_terrainMesh[i + 1].Normal, normal);
+		DirectX::XMStoreFloat4A(&m_terrainMesh[i + 2].Normal, normal);
+
+
+		float dot = fabs(DirectX::XMVectorGetX(DirectX::XMVector3Dot(normal, up)));
+		bool createBlockedTriangleLocation = false;
+		if (v0.y < m_terrainCreator.WATER_START || v1.y < m_terrainCreator.WATER_START || v2.y < m_terrainCreator.WATER_START)
+			createBlockedTriangleLocation = true;
+
+		if (dot < m_terrainCreator.UNWALKABLE_SURFACE)
+		{
+			createBlockedTriangleLocation = true;
+
+			DirectX::XMFLOAT2 middle;
+			middle.x = (m_terrainMesh[i].Position.x + m_terrainMesh[i + 1].Position.x + m_terrainMesh[i + 2].Position.x) / 3;
+			middle.y = (m_terrainMesh[i].Position.z + m_terrainMesh[i + 1].Position.z + m_terrainMesh[i + 2].Position.z) / 3;
+
+			DirectX::XMVECTOR vMiddle = DirectX::XMLoadFloat2(&middle);
+
+			for (int k = i; k < i + 3; k++)
+			{
+				DirectX::XMFLOAT4A pos = m_terrainMesh[k].Position;
+				DirectX::XMFLOAT2 pos2D = { pos.x, pos.z };
+
+				DirectX::XMVECTOR vPos2D = DirectX::XMLoadFloat2(&pos2D);
+				DirectX::XMVECTOR vDir = DirectX::XMVector2Normalize(DirectX::XMVectorSubtract(vPos2D, vMiddle));
+
+				DirectX::XMFLOAT2 dir;
+				DirectX::XMStoreFloat2(&dir, vDir);
+
+				if (pos.y < m_terrainCreator.WATER_START)
+					continue;
+
+				Waypoint wp(pos.x, pos.z);
+				wp.SetHeightVal(pos.y);
+
+				long int xPos = pos.x + 0.5f;
+				long int yPos = pos.z + 0.5f;
+
+				long int key = xPos + yPos * (TERRAIN_SIZE);
+
+				auto it = m_waypoints.find(key);
+
+				if (it == m_waypoints.end())
+					m_waypoints.insert(std::make_pair(key, wp));
+			}
+		}
+		if (createBlockedTriangleLocation)
+			m_blockedTriangles.push_back(new Triangle(v0, v1, v2));
+		else
+		{
+			m_unblockedTriangles.push_back(new Triangle(v0, v1, v2));
+		}
+	}
+
+	std::cout << "Waypoints: " << m_waypoints.size() << "...\n";
+	std::cout << "Blocked tri: " << m_blockedTriangles.size() << "...\n";
+	std::cout << "Unblocked tri:" << m_unblockedTriangles.size() << "...\nTime: " << t.Stop(Timer::MILLISECONDS) << " ms\n";
+}
+
+void Game::_cleanWaypoints()
+{
+	std::cout << "Cleaning waypoints Iteration1... ";
+	std::map<long int, long int> ereasedVals;
+	Timer t;
+	t.Start();
+	for (long int i = 0; i < TERRAIN_SIZE; i++)
+	{
+		for (long int j = 0; j < TERRAIN_SIZE; j++)
+		{
+			long int key = j + i * TERRAIN_SIZE;
+
+			bool erase = true;
+
+			for (int y = i - 1; y <= i + 1 && erase; y++)
+			{
+				for (int x = j - 1; x <= j + 1 && erase; x++)
+				{
+					if (y == i && x == j)
+						continue;
+
+					int tKey = x + y * TERRAIN_SIZE;
+
+					auto tIt = m_waypoints.find(tKey);
+					auto eIt = ereasedVals.find(tKey);
+					erase = tIt != m_waypoints.end() || eIt != ereasedVals.end();
+				}
+			}
+			if (erase)
+			{
+				m_waypoints.erase(key);
+				ereasedVals.insert(std::make_pair(key, key));
+			}
+		}
+	}
+	ereasedVals.clear();
+	std::cout << t.Stop(Timer::MILLISECONDS) << " ms...\n";
+	std::cout << "Cleaning waypoints Iteration2... ";
+	for (long int i = 0; i < TERRAIN_SIZE; i++)
+	{
+		for (long int j = 0; j < TERRAIN_SIZE; j++)
+		{
+			long int key = j + i * TERRAIN_SIZE;
+
+			bool erase = true;
+
+			for (int y = i - 1; y <= i + 1 && erase; y++)
+			{
+				if (y == i)
+					continue;
+				int tKey = j + y * TERRAIN_SIZE;
+				auto tIt = m_waypoints.find(tKey);
+				auto eIt = ereasedVals.find(tKey);
+				erase = tIt != m_waypoints.end() || eIt != ereasedVals.end();
+			}
+			if (!erase)
+			{
+				erase = true;
+				for (int x = j - 1; x <= j + 1 && erase; x++)
+				{
+					if (x == j)
+						continue;
+
+					int tKey = x + i * TERRAIN_SIZE;
+
+					auto tIt = m_waypoints.find(tKey);
+					auto eIt = ereasedVals.find(tKey);
+					erase = tIt != m_waypoints.end() || eIt != ereasedVals.end();
+				}
+			}
+			if (erase)
+			{
+				m_waypoints.erase(key);
+				ereasedVals.insert(std::make_pair(key, key));
+			}
+		}
+	}
+	std::cout << "Waypoints : " << m_waypoints.size() << "... ";
+	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
+}
+
+void Game::_placeTrianglesInTree()
+{
+	Timer t;
+	std::cout << "Placeing triangles in trees... ";
+	t.Start();
+	m_blockedTriangleTree.PlaceObjects(m_blockedTriangles);
+	m_unblockedTriangleTree.PlaceObjects(m_unblockedTriangles);
+	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
+}
+
+void Game::_createViewableTriangles()
+{
+	std::cout << "Create drawables for tree triangles..\n";
+	Timer t;
+	t.Start();
+	for (auto & t : m_blockedTriangles)
+	{
+		Vertex v;
+		v.Normal = DirectX::XMFLOAT4A(t->normal.x, t->normal.y, t->normal.z, 0.0f);
+
+		for (int i = 0; i < 3; i++)
+		{
+			v.Position = DirectX::XMFLOAT4A(t->points[i].x, t->points[i].y, t->points[i].z, 1.0f);
+			m_blockedTrianglesVertices.push_back(v);
+		}
+	}
+	for (auto & t : m_unblockedTriangles)
+	{
+		Vertex v;
+		v.Normal = DirectX::XMFLOAT4A(t->normal.x, t->normal.y, t->normal.z, 0.0f);
+
+		for (int i = 0; i < 3; i++)
+		{
+			v.Position = DirectX::XMFLOAT4A(t->points[i].x, t->points[i].y, t->points[i].z, 1.0f);
+			m_unblockedTrianglesVertices.push_back(v);
+		}
+	}
+	m_blockedtrianglesDraw.SetVertices(&m_blockedTrianglesVertices);
+	m_blockedtrianglesDraw.SetColor(1.0f, 0.0f, 0.0f);
+	m_blockedtrianglesDraw.Update();
+	m_unblockedtrianglesDraw.SetVertices(&m_unblockedTrianglesVertices);
+	m_unblockedtrianglesDraw.SetColor(0.0f, 1.0f, 0.0f);
+	m_unblockedtrianglesDraw.Update();
+	
+	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
+}
+
+void Game::_createViewableWaypoints()
+{
+	std::cout << "Create drawables for Waypoints... ";
+	m_wp = std::vector<Drawable>(m_waypoints.size());
+	int counter = 0;
+	Timer t;
+	t.Start();
+	for (auto & w : m_waypoints)
+	{
+		m_wp[counter].SetPosition(w.second.GetPosition().x, w.second.GetHeightVal(), w.second.GetPosition().y);
+		m_wp[counter].SetVertices(&m_playerMesh);
+		m_wp[counter].SetScale(0.1f, 0.1f, 0.1f);
+		m_wp[counter].UseDepthBuffer(false);
+		m_wp[counter].Update();
+		m_wp[counter++].SetColor(1, 0, 0);
+	}
+
+	
+	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
+}
+
+void Game::_connectWaypoints()
+{
+	// Connect Waypoints
+	std::cout << "Connecting Waypoints... ";
+	Timer t;
+	int counter = 0;
+	Vertex v1, v2;
+	DirectX::XMFLOAT4A n = { 0.0f, 1.0f, 0.0f, 0.0f };
+	v1.Normal = n;
+	v2.Normal = n;
+	v1.Position.w = 1.0f;
+	v2.Position.w = 1.0f;
+	t.Start();
+	for (auto & wp1 : m_waypoints)
+	{
+		for (auto & wp2 : m_waypoints)
+		{
+			if (wp1.first == wp2.first)
+				continue;
+
+			DirectX::XMFLOAT2 dummy;
+			Triangle * tri = m_blockedTriangleTree.LineIntersectionTriangle(wp1.second.GetPosition(), wp2.second.GetPosition(), true, dummy);
+
+
+			if (tri == nullptr)
+			{
+
+				v1.Position.x = wp1.second.GetPosition().x;
+				v1.Position.y = wp1.second.GetHeightVal();
+				v1.Position.z = wp1.second.GetPosition().y;
+
+				v2.Position.x = wp2.second.GetPosition().x;
+				v2.Position.y = wp2.second.GetHeightVal();
+				v2.Position.z = wp2.second.GetPosition().y;
+
+				m_connectionMesh.push_back(v1);
+				m_connectionMesh.push_back(v2);
+
+				if (wp1.second.Connect(&m_waypoints[wp2.first]))
+				{
+					counter++;
+					wp2.second.ForceConnection(&m_waypoints[wp1.first]);
+				}
+			}
+		}
+	}
+	std::cout << "Connection(s): " << counter << "... ";
+	std::cout << t.Stop(Timer::MILLISECONDS) << "ms\n";
+}
+
+void Game::_createViewableConnections()
+{
+	m_connections.SetVertices(&m_connectionMesh);
+	m_connections.SetColor(1, 0, 1);
+	m_connections.SetTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	m_connections.UseDepthBuffer(false);
+}
+
+void Game::_generateWorldEdges()
+{
+	std::cout << "Generating world edges... ";
+	Timer t;
+	t.Start();
+	for (int i = 0; i < 4; i++)
+	{
+		int size = m_edgeMeshes[i].size();
+		int v = 0;
+		int moreSize = 0;
+
+		if (i == 0 || i == 3)
+		{
+			v = 1;
+			moreSize = 1;
+		}
+
+		for (v; v < size + moreSize; v += 2)
+		{
+			int add = 0;
+			if (moreSize == 1)
+				add = -1;
+
+			Vertex ver = m_edgeMeshes[i][v + add];
+			ver.Position.y = MIN_HEIGHT * m_noise;
+
+			m_edgeMeshes[i].insert(m_edgeMeshes[i].begin() + v, ver);
+
+			size++;
+		}
+
+		m_edges[i].SetVertices(&m_edgeMeshes[i]);
+		m_edges[i].SetTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		m_edges[i].SetColor(0.1, 0.2f, 0.1f, 1.0f);
+		m_edges[i].SetPickable(true);
+	}
+	
+	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
 }

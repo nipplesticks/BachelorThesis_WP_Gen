@@ -140,6 +140,16 @@ Triangle * QuadTree::RayIntersectionTriangle3D(const DirectX::XMFLOAT3 & rayOrig
 	return tri;
 }
 
+Triangle * QuadTree::PointInsideTriangle(const DirectX::XMFLOAT2 & point, bool firstHitFound)
+{
+	DirectX::XMVECTOR p = DirectX::XMLoadFloat2(&point);
+	Triangle * tri = nullptr;
+
+	_triangleTraversePoint(tri, p, 0);
+
+	return tri;
+}
+
 void QuadTree::_triangleTraversalLine(Triangle *& outPtr, DirectX::XMFLOAT2 & interSectionPoint, const DirectX::XMVECTOR & lineStart, const DirectX::XMVECTOR & lineEnd, const DirectX::XMVECTOR & dir, bool firstHitFound, int quadIndex, float & t)
 {
 	if (((firstHitFound && outPtr == nullptr) || !firstHitFound) && t > 0.0f)
@@ -224,6 +234,39 @@ void QuadTree::_triangleTraversalRay3D(Triangle *& outPtr, DirectX::XMFLOAT3 & i
 	}
 }
 
+void QuadTree::_triangleTraversePoint(Triangle *& tPtr, const DirectX::XMVECTOR & p, int quadIndex)
+{
+	if (tPtr == nullptr)
+	{
+		if (m_quadTree[quadIndex].Intersects(p))
+		{
+			int nrOfChildren = m_quadTree[quadIndex].GetNrOfChildren();
+
+			if (nrOfChildren > 0)
+			{
+				const unsigned int * children = m_quadTree[quadIndex].GetChildren();
+				for (int i = 0; i < nrOfChildren; i++)
+					_triangleTraversePoint(tPtr, p, children[i]);
+			}
+			else
+			{
+				const std::vector<Triangle*> & triangles = m_quadTree[quadIndex].GetTriangles();
+				size_t size = triangles.size();
+				bool canContinue = true;
+
+				for (int i = 0; i < size && canContinue; i++)
+				{
+					if (_PointTriangleIntersection(triangles[i], p))
+					{
+						tPtr = triangles[i];
+						canContinue = false;
+					}
+				}
+			}
+		}
+	}
+}
+
 bool QuadTree::_lineTriangleIntersection(const Triangle * tri, DirectX::XMFLOAT2 & interSectionPoint, const DirectX::XMVECTOR & lineStart, const DirectX::XMVECTOR & lineEnd, float & t)
 {
 	t = FLT_MAX;
@@ -242,18 +285,33 @@ bool QuadTree::_lineTriangleIntersection(const Triangle * tri, DirectX::XMFLOAT2
 		l2.x = tri->points[oIndex].x;
 		l2.y = tri->points[oIndex].z;
 
-		DirectX::XMVECTOR tPoint = DirectX::XMVector2IntersectLine(lineStart, lineEnd, DirectX::XMLoadFloat2(&l1), DirectX::XMLoadFloat2(&l2));
+		DirectX::XMVECTOR tS = DirectX::XMLoadFloat2(&l1);
+		DirectX::XMVECTOR tE = DirectX::XMLoadFloat2(&l2);
 
-		if (DirectX::XMVectorGetX(DirectX::XMVectorIsNaN(tPoint)) != 0xFFFFFFFF)
+		DirectX::XMVECTOR tPoint = DirectX::XMVector2IntersectLine(lineStart, lineEnd, tS, tE);
+
+		if (DirectX::XMVectorGetX(tPoint) != 0xFFFFFFFF && !DirectX::XMVector2IsInfinite(tPoint))
 		{
-			hit = true;
+			float l1Length = DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSubtract(lineEnd, lineStart)));
+			float l1ToPoint = DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSubtract(tPoint, lineStart)));
 
-			float lSqTemp = DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(DirectX::XMVectorSubtract(tPoint, lineStart)));
-
-			if (lSqTemp < lSq)
+			if (l1Length > l1ToPoint)
 			{
-				lSq = lSqTemp;
-				isPoint = tPoint;
+				float l2Length = DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSubtract(tE, tS)));
+				float l2ToPoint = DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSubtract(tPoint, tS)));;
+
+				if (l2Length > l2ToPoint)
+				{
+					hit = true;
+
+					float lSqTemp = DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(DirectX::XMVectorSubtract(tPoint, lineStart)));
+
+					if (lSqTemp < lSq)
+					{
+						lSq = lSqTemp;
+						isPoint = tPoint;
+					}
+				}
 			}
 		}
 	}
@@ -272,6 +330,31 @@ bool QuadTree::_Ray3DTriangleIntersection(const Triangle * tri, const DirectX::X
 	return DirectX::TriangleTests::Intersects(origin, dir,
 		DirectX::XMLoadFloat3(&tri->points[0]), DirectX::XMLoadFloat3(&tri->points[1]), DirectX::XMLoadFloat3(&tri->points[2]),
 		t);
+}
+
+
+
+bool QuadTree::_PointTriangleIntersection(const Triangle * tri, const DirectX::XMVECTOR & point)
+{
+	DirectX::XMFLOAT2 s, a, b, c;
+	DirectX::XMStoreFloat2(&s, point);
+	a.x = tri->points[0].x;
+	a.y = tri->points[0].z;
+	b.x = tri->points[1].x;
+	b.y = tri->points[1].z;
+	c.x = tri->points[2].x;
+	c.y = tri->points[2].z;
+
+	float as_x = s.x - a.x;
+	float as_y = s.y - a.y;
+
+	bool s_ab = (b.x - a.x) * as_y - (b.y - a.y) * as_x > 0;
+
+	if ((c.x - a.x) * as_y - (c.y - a.y) * as_x >= 0 == s_ab) return false;
+
+	if ((c.x - b.x)*(s.y - b.y) - (c.y - b.y)*(s.x - b.x) > 0 != s_ab) return false;
+
+	return true;
 }
 
 size_t QuadTree::_GetQuadrantIndex(const DirectX::XMFLOAT2 & worldPos, unsigned int level)
