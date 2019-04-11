@@ -20,5 +20,5 @@
 #pragma comment (lib, "d3dcompiler.lib")
 
 // DEFINES
-#define TERRAIN_SIZE 1025
-//#define TERRAIN_SIZE 65
+//#define TERRAIN_SIZE 1025
+#define TERRAIN_SIZE 65

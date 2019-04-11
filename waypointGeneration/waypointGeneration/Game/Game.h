@@ -7,8 +7,8 @@
 #include "Pathfinding/Waypoint.h"
 #include "QuadTree/QuadTree.h"
 
-#define DRAW_WAYPOINT false
-#define DRAW_TRIANGLES false
+#define DRAW_WAYPOINT true
+#define DRAW_TRIANGLES true
 #define DRAW_CONNECTIONS false
 #define USE_RANDOM_SEED true
 

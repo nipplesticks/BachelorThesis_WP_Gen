@@ -623,7 +623,7 @@ void Game::_createTerrain()
 
 	Timer t;
 	m_noise = (float)(rand() % NOISE_RAND) + NOISE_MIN;
-	
+
 	m_maxHeight = MAX_HEIGHT * m_noise;
 	m_minHeight = abs(MIN_HEIGHT * m_noise);
 
@@ -747,10 +747,55 @@ void Game::_createBlockedTrianglesAndWaypoints()
 void Game::_cleanWaypoints()
 {
 	std::cout << "Cleaning waypoints Iteration1... ";
-	std::map<long int, long int> ereasedVals;
+	//std::map<long int, long int> ereasedVals;
 	Timer t;
 	t.Start();
-	for (long int i = 0; i < TERRAIN_SIZE; i++)
+
+	std::vector<int> keys;
+	for (int y = 0; y < TERRAIN_SIZE; y++)
+	{
+		for (int x = 0; x < TERRAIN_SIZE; x++)
+		{
+			int key = x + y * TERRAIN_SIZE;
+			auto it = m_waypoints.find(key);
+
+			if (it != m_waypoints.end())
+			{
+				// North
+				int innerKey = x + (y - 1) * TERRAIN_SIZE;
+				it = m_waypoints.find(innerKey);
+
+				if (it != m_waypoints.end())
+				{
+					// East
+					innerKey = (x + 1) + y * TERRAIN_SIZE;
+					it = m_waypoints.find(innerKey);
+
+					if (it != m_waypoints.end())
+					{
+						// South
+						innerKey = x + (y + 1) * TERRAIN_SIZE;
+						it = m_waypoints.find(innerKey);
+
+						if (it != m_waypoints.end())
+						{
+							// West
+							innerKey = (x - 1) + y * TERRAIN_SIZE;
+							it = m_waypoints.find(innerKey);
+
+							if (it != m_waypoints.end())
+								keys.push_back(key);
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	for (int i = 0; i < keys.size(); i++)
+		m_waypoints.erase(keys[i]);
+
+	/*for (long int i = 0; i < TERRAIN_SIZE; i++)
 	{
 		for (long int j = 0; j < TERRAIN_SIZE; j++)
 		{
@@ -820,7 +865,7 @@ void Game::_cleanWaypoints()
 				ereasedVals.insert(std::make_pair(key, key));
 			}
 		}
-	}
+	}*/
 	std::cout << "Waypoints : " << m_waypoints.size() << "... ";
 	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
 }
