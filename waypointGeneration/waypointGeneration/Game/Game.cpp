@@ -148,28 +148,33 @@ void Game::_playerFixYPosition(double dt)
 
 	if (tri)
 	{
+		/*
 		DirectX::XMVECTOR normal = DirectX::XMLoadFloat3(&tri->normal);
 		DirectX::XMVECTOR forward, right;
-
-		if (tri->normal.y < 0.95f)
+		float angle = 0.0f;
+		
+		angle = DirectX::XMVectorGetX(DirectX::XMVector3Dot(normal, DirectX::XMVectorSet(0, 1, 0, 0)));
+		if (tri->normal.y < 0.99f)
 		{
-			right = DirectX::XMVector3Cross(normal, DirectX::XMVectorSet(0, 1, 0, 0));
+			right = (DirectX::XMVector3Cross(normal, DirectX::XMVectorSet(0, 1, 0, 0)));
+			right = DirectX::XMVectorSetY(right, 0.0f);
+			right = DirectX::XMVector3Normalize(right);
 		}
 		else
 		{
-			right = DirectX::XMVector3Cross(normal, DirectX::XMVectorSet(0, 0, 1, 0));
+			right = (DirectX::XMVector3Cross(normal, DirectX::XMVectorSet(0, 0, 1, 0)));
+			right = DirectX::XMVectorSetY(right, 0.0f);
+			right = DirectX::XMVector3Normalize(right);
 		}
 
 		forward = DirectX::XMVector3Cross(normal, right);
 
-		DirectX::XMFLOAT3 xmf, xmr;
+		DirectX::XMFLOAT3 xmf, xmr, xmn = tri->normal;
 
 		DirectX::XMStoreFloat3(&xmf, forward);
 		DirectX::XMStoreFloat3(&xmr, right);
-
-		auto m = DirectX::XMMatrixSet(xmr.x, xmr.y, xmr.z, 0.0f, xmf.x, xmf.y, xmf.z, 0.0f, tri->normal.x, tri->normal.y, tri->normal.z, 0.0f, 0, 0, 0, 1);
-		
-		m_player.SetRotation2(m);
+*/
+		m_player.SetRotation(tri->normal);
 		auto pos = m_player.GetPosition();
 		pos.y = iPoint.y + 0.5f;
 		m_player.SetPosition(pos);

@@ -25,7 +25,7 @@ void Transform::Update()
 	XMMATRIX rotation;
 	
 	if (m_useForcedRot)
-		rotation = m_forcedRot;
+		rotation = XMMatrixRotationNormal(XMLoadFloat3(&m_rotation), m_angle);
 	else
 		rotation = XMMatrixRotationRollPitchYawFromVector(XMLoadFloat3(&this->m_rotation));;
 
@@ -70,9 +70,10 @@ void Transform::SetRotation(float x, float y, float z)
 	this->SetRotation(DirectX::XMFLOAT3(x, y, z));
 }
 
-void Transform::SetRotation2(const DirectX::XMMATRIX & rotation)
+void Transform::SetRotation2(const DirectX::XMFLOAT3 & rotation, float angle)
 {
-	m_forcedRot = rotation;
+	m_angle = angle;
+	m_rotation = rotation;
 	m_useForcedRot = true;
 }
 

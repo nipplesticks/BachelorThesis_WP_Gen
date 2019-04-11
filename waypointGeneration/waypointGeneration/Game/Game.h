@@ -15,8 +15,8 @@
 #define CAMERA_XZ_SPEED		100.0
 #define CAMERA_ZOOM_SPEED	10.0
 //#define TERRAIN_SIZE		2049
-//#define TERRAIN_SIZE		1025
-#define TERRAIN_SIZE		129
+#define TERRAIN_SIZE		1025
+//#define TERRAIN_SIZE		129
 
 class Game
 {
