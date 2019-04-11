@@ -81,9 +81,16 @@ void ForwardRender::Release()
 		m_blendState->Release();
 	m_blendState = nullptr;
 
+	if (m_mouseBuffer)
+		m_mouseBuffer->Release();
+	m_mouseBuffer = nullptr;
+
+
 	m_UAV.Release();
 	m_worldTexture.Release();
 
+	m_pickingPassShaders.Release();
+	m_depthPrePassShaders.Release();
 	m_forwardShaders.Release();
 }
 
