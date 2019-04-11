@@ -120,8 +120,8 @@ POINT Window::GetMousePosition()
 		double x = (double)p.x / m_width;
 		double y = (double)p.y / m_height;
 
-		p.x = x * m_resolution.x;
-		p.y = y * m_resolution.y;
+		p.x = x * (float)m_resolution.x;
+		p.y = y * (float)m_resolution.y;
 	}
 
 	return p;
@@ -149,8 +149,8 @@ void Window::SetMousePosition(POINT mousePos, BOOL windowRelative)
 		double x = (double)mousePos.x / m_resolution.x;
 		double y = (double)mousePos.y / m_resolution.y;
 
-		mousePos.x = x * m_width;
-		mousePos.y = y * m_height;
+		mousePos.x = x * (float)m_width;
+		mousePos.y = y * (float)m_height;
 	}
 
 	SetCursorPos(mousePos.x, mousePos.y);

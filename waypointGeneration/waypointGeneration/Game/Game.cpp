@@ -65,7 +65,7 @@ void Game::Update(double dt)
 
 	counter += dt * 0.1;
 
-	waterUV.x = counter;
+	waterUV.x = (float)counter;
 	waterUV.y = waterUV.x;
 
 	m_water.SetUVOffset(waterUV.x, waterUV.y);
@@ -117,27 +117,27 @@ void Game::_playerFixYPosition(double dt)
 
 	if (wnd->IsKeyPressed(Input::W))
 	{
-		translate.x += forward.x * speed * dt;
-		translate.y += forward.y * speed * dt;
-		translate.z += forward.z * speed * dt;
+		translate.x += forward.x * speed * (float)dt;
+		translate.y += forward.y * speed * (float)dt;
+		translate.z += forward.z * speed * (float)dt;
 	}
 	if (wnd->IsKeyPressed(Input::S))
 	{
-		translate.x -= forward.x * speed * dt;
-		translate.y -= forward.y * speed * dt;
-		translate.z -= forward.z * speed * dt;
+		translate.x -= forward.x * speed * (float)dt;
+		translate.y -= forward.y * speed * (float)dt;
+		translate.z -= forward.z * speed * (float)dt;
 	}
 	if (wnd->IsKeyPressed(Input::A))
 	{
-		translate.x -= right.x * speed * dt;
-		translate.y -= right.y * speed * dt;
-		translate.z -= right.z * speed * dt;
+		translate.x -= right.x * speed * (float)dt;
+		translate.y -= right.y * speed * (float)dt;
+		translate.z -= right.z * speed * (float)dt;
 	}
 	if (wnd->IsKeyPressed(Input::D))
 	{
-		translate.x += right.x * speed * dt;
-		translate.y += right.y * speed * dt;
-		translate.z += right.z * speed * dt;
+		translate.x += right.x * speed * (float)dt;
+		translate.y += right.y * speed * (float)dt;
+		translate.z += right.z * speed * (float)dt;
 	}
 
 	m_player.Translate(translate);
@@ -237,32 +237,32 @@ void Game::_cameraControl(double dt)
 
 	if (wnd->IsKeyPressed(Input::UP_ARROW) || mp.y < 0.1 * wnd->GetResolutionSize().y)
 	{
-		translation.z += CAMERA_XZ_SPEED * dt;
+		translation.z += CAMERA_XZ_SPEED * (float)dt;
 		m_isFollowingPlayer = false;
 	}
 	if (wnd->IsKeyPressed(Input::DOWN_ARROW) || mp.y > wnd->GetResolutionSize().y * 0.9)
 	{
-		translation.z -= CAMERA_XZ_SPEED * dt;
+		translation.z -= CAMERA_XZ_SPEED * (float)dt;
 		m_isFollowingPlayer = false;
 	}
 	if (wnd->IsKeyPressed(Input::RIGHT_ARROW) || mp.x > wnd->GetResolutionSize().x * 0.9)
 	{
-		translation.x += CAMERA_XZ_SPEED * dt;
+		translation.x += CAMERA_XZ_SPEED * (float)dt;
 		m_isFollowingPlayer = false;
 	}
 	if (wnd->IsKeyPressed(Input::LEFT_ARROW) || mp.x < wnd->GetResolutionSize().x * 0.1)
 	{
-		translation.x -= CAMERA_XZ_SPEED * dt;
+		translation.x -= CAMERA_XZ_SPEED * (float)dt;
 		m_isFollowingPlayer = false;
 	}
 	if (wnd->IsKeyPressed(Input::V))
 	{
-		translation.y += CAMERA_XZ_SPEED * dt;
+		translation.y += CAMERA_XZ_SPEED * (float)dt;
 		m_isFollowingPlayer = false;
 	}
 	if (wnd->IsKeyPressed(Input::C))
 	{
-		translation.y -= CAMERA_XZ_SPEED * dt;
+		translation.y -= CAMERA_XZ_SPEED * (float)dt;
 		m_isFollowingPlayer = false;
 	}
 
@@ -273,10 +273,10 @@ void Game::_cameraControl(double dt)
 	if (scrollDelta = wnd->GetMouseWheelDelta(Input::VERTICAL))
 	{
 		DirectX::XMFLOAT2 mousePos, center;
-		mousePos.x = mp.x;
-		mousePos.y = mp.y;
-		center.x = m_mouseReferencePosition.x;
-		center.y = m_mouseReferencePosition.y;
+		mousePos.x = (float)mp.x;
+		mousePos.y = (float)mp.y;
+		center.x = (float)m_mouseReferencePosition.x;
+		center.y = (float)m_mouseReferencePosition.y;
 
 		DirectX::XMFLOAT3 worldPos;
 		if (Renderer::GetInstance()->GetMousePicking(worldPos))
@@ -289,7 +289,7 @@ void Game::_cameraControl(double dt)
 
 			DirectX::XMVECTOR direction = DirectX::XMVector3Normalize(DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&worldPos), DirectX::XMLoadFloat4(&camPos)));
 
-			direction = DirectX::XMVectorScale(direction, scrollDelta * CAMERA_ZOOM_SPEED);
+			direction = DirectX::XMVectorScale(direction, scrollDelta * (float)CAMERA_ZOOM_SPEED);
 
 			DirectX::XMFLOAT3 trans;
 			DirectX::XMStoreFloat3(&trans, direction);
@@ -308,7 +308,7 @@ void Game::_cameraControl(double dt)
 		}
 		else
 		{
-			m_camera.Translate(0, 0, CAMERA_ZOOM_SPEED * scrollDelta, false);
+			m_camera.Translate(0, 0, (float)CAMERA_ZOOM_SPEED * scrollDelta, false);
 		}
 		
 	}
@@ -347,7 +347,7 @@ void Game::_cameraControl(double dt)
 			float mouseDeltaX = (float)mp.x - (float)_sMouseRef.x;
 			float mouseDeltaY = (float)mp.y - (float)_sMouseRef.y;
 
-			DirectX::XMFLOAT2 camRotation(DirectX::XMConvertToRadians(mouseDeltaX) * dt * MOUSE_SESITIVITY_X * 2.0f, DirectX::XMConvertToRadians(mouseDeltaY) * dt * MOUSE_SESITIVITY_Y * 2.0f);
+			DirectX::XMFLOAT2 camRotation(DirectX::XMConvertToRadians(mouseDeltaX) * (float)dt * (float)MOUSE_SESITIVITY_X * 2.0f, DirectX::XMConvertToRadians(mouseDeltaY) * (float)dt * (float)MOUSE_SESITIVITY_Y * 2.0f);
 
 			m_camera.Rotate(camRotation.y, camRotation.x, 0.0f);
 
@@ -404,12 +404,12 @@ void Game::_createWaterTexture()
 
 	for (int i = 0; i < WATER_WIDTH * WATER_HEIGHT; i++)
 	{
-		float pixel[3];
+		int pixel[3];
 		HEADER_PIXEL(data, pixel);
 
-		waterArr[i].x = pixel[0] / 256.0f;
-		waterArr[i].y = pixel[1] / 256.0f;
-		waterArr[i].z = pixel[2] / 256.0f;
+		waterArr[i].x = (float)pixel[0] / 256.0f;
+		waterArr[i].y = (float)pixel[1] / 256.0f;
+		waterArr[i].z = (float)pixel[2] / 256.0f;
 		waterArr[i].w = 1.0f;
 	}
 
@@ -544,7 +544,7 @@ void Game::_loadMeshes()
 		DirectX::XMVECTOR e1 = DirectX::XMVectorSubtract(DirectX::XMLoadFloat4A(&v2.Position), DirectX::XMLoadFloat4A(&v0.Position));
 		DirectX::XMVECTOR normal = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(e0, e1));
 
-		for (int k = i; k < i + 3; k++)
+		for (size_t k = i; k < i + 3; k++)
 			DirectX::XMStoreFloat4A(&verts[k].Normal, normal);
 
 	}
@@ -622,7 +622,7 @@ void Game::_createTerrain()
 	std::cout << "Creating Terrain... ";
 
 	Timer t;
-	m_noise = (rand() % NOISE_RAND) + NOISE_MIN;
+	m_noise = (float)(rand() % NOISE_RAND) + NOISE_MIN;
 	
 	m_maxHeight = MAX_HEIGHT * m_noise;
 	m_minHeight = abs(MIN_HEIGHT * m_noise);
@@ -720,8 +720,8 @@ void Game::_createBlockedTrianglesAndWaypoints()
 				Waypoint wp(pos.x, pos.z);
 				wp.SetHeightVal(pos.y);
 
-				long int xPos = pos.x + 0.5f;
-				long int yPos = pos.z + 0.5f;
+				long int xPos = (long)(pos.x + 0.5f);
+				long int yPos = (long)(pos.z + 0.5f);
 
 				long int key = xPos + yPos * (TERRAIN_SIZE);
 
@@ -958,7 +958,7 @@ void Game::_generateWorldEdges()
 	t.Start();
 	for (int i = 0; i < 4; i++)
 	{
-		int size = m_edgeMeshes[i].size();
+		int size = (int)m_edgeMeshes[i].size();
 		int v = 0;
 		int moreSize = 0;
 
