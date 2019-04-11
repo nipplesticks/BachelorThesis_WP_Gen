@@ -1,10 +1,16 @@
 #pragma once
-#include "../../Rendering/Drawable/Drawable.h"
+#include <map>
 
 class Waypoint
 {
 public:
-	Waypoint(float x, float y);
+	struct WaypointConnection
+	{
+		Waypoint * wp = nullptr;
+		float connectionCost = FLT_MAX;
+	};
+
+	Waypoint(float x = 0.0f, float y = 0.0f);
 	~Waypoint();
 
 	void SetHeightVal(float height);
@@ -12,15 +18,16 @@ public:
 	void SetPosition(float x, float y);
 	const DirectX::XMFLOAT2 GetPosition();
 
+	bool Connect(Waypoint * wp);
+	void ForceConnection(Waypoint * wp);
+
 	bool operator==(const Waypoint & other);
 	bool operator<(const Waypoint & other);
 
-private:
-	/*
-	
-		Stuff
+private:	
 
-	*/
+	std::map<int, WaypointConnection> m_connections;
+
 	DirectX::XMFLOAT2 m_position;
 	float m_heightValue = 0;
 

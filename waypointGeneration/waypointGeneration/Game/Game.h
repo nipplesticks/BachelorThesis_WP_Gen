@@ -8,14 +8,14 @@
 #include "QuadTree/QuadTree.h"
 
 #define DRAW_WAYPOINT true
-#define DRAW_TRIANGLES false
+#define DRAW_TRIANGLES true
 
 #define MOUSE_SESITIVITY_X	0.05
 #define MOUSE_SESITIVITY_Y	0.05
 #define CAMERA_XZ_SPEED		100.0
 #define CAMERA_ZOOM_SPEED	10.0
 //#define TERRAIN_SIZE		2049
-#define TERRAIN_SIZE		1025
+//#define TERRAIN_SIZE		1025
 //#define TERRAIN_SIZE		129
 
 class Game

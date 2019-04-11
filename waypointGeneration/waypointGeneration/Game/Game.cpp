@@ -437,7 +437,7 @@ void Game::_createWorld()
 	//const int MIN = 0;
 	//const int MAX = 0;
 	float NOISE = (rand() % 6) + 15;
-	
+	NOISE = 3;
 	bool placedPlayer = false;
 
 	m_maxHeight = MAX * NOISE;
@@ -458,6 +458,8 @@ void Game::_createWorld()
 
 	std::cout << "\nBuilding Trees...\n";
 	DirectX::XMFLOAT2 worldStart = DirectX::XMFLOAT2(m_terrainMesh[0].Position.x, m_terrainMesh[0].Position.z);
+	/*worldStart.x -= 1.0f;
+	worldStart.y -= 1.0f;*/
 
 	// Calculate tree depth and build quad tree for triangles
 	int reversedTreeSize = 1;
@@ -495,9 +497,9 @@ void Game::_createWorld()
 		DirectX::XMVECTOR e1 = DirectX::XMVectorSubtract(DirectX::XMLoadFloat4A(&v2), DirectX::XMLoadFloat4A(&v0));
 		DirectX::XMVECTOR normal = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(e0, e1));
 
-		//DirectX::XMStoreFloat4A(&m_terrainMesh[i].Normal, normal);
-		//DirectX::XMStoreFloat4A(&m_terrainMesh[i + 1].Normal, normal);
-		//DirectX::XMStoreFloat4A(&m_terrainMesh[i + 2].Normal, normal);
+		DirectX::XMStoreFloat4A(&m_terrainMesh[i].Normal, normal);
+		DirectX::XMStoreFloat4A(&m_terrainMesh[i + 1].Normal, normal);
+		DirectX::XMStoreFloat4A(&m_terrainMesh[i + 2].Normal, normal);
 
 
 		float dot = fabs(DirectX::XMVectorGetX(DirectX::XMVector3Dot(normal, up)));
@@ -508,26 +510,41 @@ void Game::_createWorld()
 		if (dot < m_terrainCreator.UNWALKABLE_SURFACE)
 		{
 			createBlockedTriangleLocation = true;
+
+			DirectX::XMFLOAT2 middle;
+			middle.x = (m_terrainMesh[i].Position.x + m_terrainMesh[i + 1].Position.x + m_terrainMesh[i + 2].Position.x) * 0.333333f;
+			middle.y = (m_terrainMesh[i].Position.z + m_terrainMesh[i + 1].Position.z + m_terrainMesh[i + 2].Position.z) * 0.333333f;
+
+			DirectX::XMVECTOR vMiddle = DirectX::XMLoadFloat2(&middle);
+
 			for (int k = i; k < i + 3; k++)
 			{
 				DirectX::XMFLOAT4A pos = m_terrainMesh[k].Position;
+				DirectX::XMFLOAT2 pos2D = { pos.x, pos.z };
 				
+				DirectX::XMVECTOR vPos2D = DirectX::XMLoadFloat2(&pos2D);
+				DirectX::XMVECTOR vDir = DirectX::XMVector2Normalize(DirectX::XMVectorSubtract(vPos2D, vMiddle));
+
+				DirectX::XMFLOAT2 dir;
+				DirectX::XMStoreFloat2(&dir, vDir);
+
+
 				if (pos.y < m_terrainCreator.WATER_START)
 					continue;
 
-				Waypoint wp(pos.x, pos.z);
+				Waypoint wp(pos.x + dir.x * 0.1f, pos.z + dir.y * 0.1f);
 				wp.SetHeightVal(pos.y);
 
 				long int xPos = pos.x;
 				long int yPos = pos.z;
 
 				if (xPos > lastX)
-					lastX = xPos;
+					lastX = xPos + 0.5f;
 
 				if (yPos > lastY)
-					lastY = yPos;
+					lastY = yPos + 0.5f;
 
-				long int key = xPos + yPos * (TERRAIN_SIZE);
+				long int key = int(xPos + 0.5f) + int(yPos + 0.5f) * (TERRAIN_SIZE);
 
 				auto it = m_waypoints.find(key);
 
@@ -577,9 +594,9 @@ void Game::_createWorld()
 	std::cout << "\nCleaning waypoints...\n";
 	std::map<long int, long int> ereasedVals;
 
-	for (long int i = 0; i < lastY; i++)
+	for (long int i = 0; i < TERRAIN_SIZE; i++)
 	{
-		for (long int j = 0; j < lastX; j++)
+		for (long int j = 0; j < TERRAIN_SIZE; j++)
 		{
 			long int key = j + i * TERRAIN_SIZE;
 
@@ -608,9 +625,9 @@ void Game::_createWorld()
 	}
 	ereasedVals.clear();
 
-	for (long int i = 0; i < lastY; i++)
+	for (long int i = 0; i < TERRAIN_SIZE; i++)
 	{
-		for (long int j = 0; j < lastX; j++)
+		for (long int j = 0; j < TERRAIN_SIZE; j++)
 		{
 			long int key = j + i * TERRAIN_SIZE;
 
@@ -624,7 +641,6 @@ void Game::_createWorld()
 				auto tIt = m_waypoints.find(tKey);
 				auto eIt = ereasedVals.find(tKey);
 				erase = tIt != m_waypoints.end() || eIt != ereasedVals.end();
-
 			}
 			if (!erase)
 			{
@@ -705,7 +721,34 @@ void Game::_createWorld()
 		m_unblockedtrianglesDraw.Update();
 		time = t.Stop(Timer::MILLISECONDS);
 		std::cout << "Time to create Drawables: " << time << " ms\n";
+
 	}
+
+	// Connect Waypoints
+	std::cout << "\nCreate Connections\n..";
+	Timer t1;
+	t1.Start();
+	int counter123 = 0;
+	for (auto & wp1 : m_waypoints)
+	{
+		for (auto & wp2 : m_waypoints)
+		{
+			if (wp1.first == wp2.first)
+				continue;
+
+			DirectX::XMFLOAT2 dummy;
+			Triangle * tri = m_blockedTriangleTree.LineIntersectionTriangle(wp1.second.GetPosition(), wp2.second.GetPosition(), true, dummy);
+
+			if (tri == nullptr)
+			{
+				counter123++;
+				if (wp1.second.Connect(&m_waypoints[wp2.first]))
+					wp2.second.ForceConnection(&m_waypoints[wp1.first]);
+			}
+		}
+	}
+	std::cout << "\nConnection time: " << t1.Stop(Timer::MILLISECONDS) << std::endl;
+	std::cout << "\nConnection(s): " << counter123 << std::endl;
 
 
 	std::cout << "\nGenerating sides..\n";

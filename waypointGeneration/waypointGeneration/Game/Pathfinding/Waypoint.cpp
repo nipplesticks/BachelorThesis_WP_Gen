@@ -1,6 +1,7 @@
 #include "waypointGenerationPCH.h"
 #include "Waypoint.h"
 
+#include <DirectXMath.h>
 Waypoint::Waypoint(float x, float y)
 {
 	SetPosition(x, y);
@@ -29,6 +30,38 @@ void Waypoint::SetPosition(float x, float y)
 const DirectX::XMFLOAT2 Waypoint::GetPosition()
 {
 	return m_position;
+}
+
+bool Waypoint::Connect(Waypoint * wp)
+{
+	if (wp != this)
+	{
+		int index = wp->GetPosition().x + wp->GetPosition().y * TERRAIN_SIZE;
+
+		auto it = m_connections.find(index);
+
+		if (it == m_connections.end())
+		{
+			WaypointConnection wc = {};
+			wc.wp = wp;
+			wc.connectionCost = DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&wp->GetPosition()), DirectX::XMLoadFloat2(&m_position))));
+
+			m_connections.insert(std::make_pair(index, wc));
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void Waypoint::ForceConnection(Waypoint * wp)
+{
+	int index = wp->GetPosition().x + wp->GetPosition().y * TERRAIN_SIZE;
+	WaypointConnection wc;
+	wc.wp = wp;
+
+	wc.connectionCost = DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&wp->GetPosition()), DirectX::XMLoadFloat2(&m_position))));
+	m_connections.insert(std::make_pair(index, wc));
 }
 
 bool floatEQ(float a, float b)

@@ -96,7 +96,7 @@ bool Quadrant::Intersects(const DirectX::XMVECTOR & rayOrigin, const DirectX::XM
 {
 	DirectX::XMVECTOR result = DirectX::XMVectorEqual(rayDirection, DirectX::XMVectorZero());
 
-	if (DirectX::XMVectorGetX(result) == DirectX::XMVectorGetY(result) == DirectX::XMVectorGetZ(result) == 0xFFFFFFFF)
+	if (DirectX::XMVectorGetX(result) == 0 || DirectX::XMVectorGetY(result) == 0 || DirectX::XMVectorGetZ(result) == 0)
 	{
 		float t;
 		return m_aabb.Intersects(rayOrigin, rayDirection, t);
