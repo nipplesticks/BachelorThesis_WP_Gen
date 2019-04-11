@@ -7,7 +7,7 @@
 #include "Pathfinding/Waypoint.h"
 #include "QuadTree/QuadTree.h"
 
-#define DRAW_WAYPOINT false
+#define DRAW_WAYPOINT true
 #define DRAW_TRIANGLES false
 
 #define MOUSE_SESITIVITY_X	0.05
