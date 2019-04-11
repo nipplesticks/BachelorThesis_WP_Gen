@@ -64,6 +64,7 @@ void ForwardRender::Draw()
 	_prePass();
 	_forwardPass();
 	_pickingPass();
+	_noDepth();
 }
 
 void ForwardRender::Release()
@@ -405,4 +406,40 @@ void ForwardRender::_pickingPass()
 		dc->Unmap(m_UAV.PickingTexBufferCPU, 0);
 	}
 
+}
+
+void ForwardRender::_noDepth()
+{
+	Renderer * r = Renderer::GetInstance();
+	ID3D11DeviceContext * dc = r->GetDeviceContext();
+	m_forwardShaders.SetShaders(dc);
+
+	//dc->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 0, 0);
+	dc->OMSetRenderTargets(1, &m_backBufferRTV, nullptr);
+	dc->OMSetBlendState(nullptr, 0, 0xffffffff);
+	D3D11_MAPPED_SUBRESOURCE dataPtr;
+	size_t drawQueueSize = p_drawQueueNoDepthBuffer.size();
+	for (size_t i = 0; i < drawQueueSize; i++)
+	{
+		dc->IASetPrimitiveTopology(p_drawQueueNoDepthBuffer[i]->GetTopology());
+		m_objectValues.color = p_drawQueueNoDepthBuffer[i]->GetColor();
+		m_objectValues.worldMatrix = p_drawQueueNoDepthBuffer[i]->GetWorldMatrix();
+		m_objectValues.uvOffset = p_drawQueueNoDepthBuffer[i]->GetUVOffset();
+
+		dc->Map(m_objectBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dataPtr);
+		memcpy(dataPtr.pData, &m_objectValues, sizeof(m_objectValues));
+		dc->Unmap(m_objectBuffer, 0);
+
+		dc->VSSetConstantBuffers(0, 1, &m_objectBuffer);
+
+		ID3D11ShaderResourceView * tex = p_drawQueueNoDepthBuffer[i]->GetTexture();
+
+		dc->PSSetShaderResources(0, 1, &tex);
+
+		ID3D11Buffer * vertexBuffer = p_drawQueueNoDepthBuffer[i]->GetBuffer();
+		UINT stride = sizeof(Vertex);
+		UINT offset = 0;
+		dc->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+		dc->Draw((UINT)p_drawQueueNoDepthBuffer[i]->GetVertices()->size(), 0);
+	}
 }

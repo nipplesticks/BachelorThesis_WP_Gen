@@ -96,5 +96,6 @@ private:
 	void _prePass();
 	void _forwardPass();
 	void _pickingPass();
+	void _noDepth();
 
 };

@@ -21,6 +21,8 @@ public:
 		bool firstHitFound, __out DirectX::XMFLOAT2 & interSectionPoint);
 	Triangle * RayIntersectionTriangle3D(const DirectX::XMFLOAT3 & rayOrigin, const DirectX::XMFLOAT3 & rayDir,
 		bool firstHitFound, __out DirectX::XMFLOAT3 & interSectionPoint);
+	Triangle * PointInsideTriangle(const DirectX::XMFLOAT2 & point,	bool firstHitFound);
+
 
 	//Drawable * LineIntersection(const DirectX::XMFLOAT2 & origin, const DirectX::XMFLOAT2 & direction, float & t, Drawable * avoidThis);
 	//Triangle * PointIntersection(const DirectX::XMFLOAT2 & point, Drawable * avoidThis);
@@ -38,11 +40,13 @@ private:
 		const DirectX::XMVECTOR & rayOrigin, const DirectX::XMVECTOR & rayOrigin2D,
 		const DirectX::XMVECTOR & ray, const DirectX::XMVECTOR & ray2D,
 		bool firstHitFound, int quadIndex, float & t);
+	void _triangleTraversePoint(__out Triangle *& tPtr, const DirectX::XMVECTOR & p, int quadIndex);
 
 	bool _lineTriangleIntersection(const Triangle * tri, __out DirectX::XMFLOAT2 & interSectionPoint,
 		const DirectX::XMVECTOR & lineStart, const DirectX::XMVECTOR & lineEnd, float & t);
 	bool _Ray3DTriangleIntersection(const Triangle * tri,
 		const DirectX::XMVECTOR & origin, const DirectX::XMVECTOR & dir, float & t);
+	bool _PointTriangleIntersection(const Triangle * tri, const DirectX::XMVECTOR & p);
 
 private:
 	size_t _GetQuadrantIndex(const DirectX::XMFLOAT2 & worldPos, unsigned int level);

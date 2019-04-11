@@ -7,16 +7,20 @@
 #include "Pathfinding/Waypoint.h"
 #include "QuadTree/QuadTree.h"
 
-#define DRAW_WAYPOINT true
-#define DRAW_TRIANGLES true
+#define DRAW_WAYPOINT false
+#define DRAW_TRIANGLES false
+#define DRAW_CONNECTIONS false
+#define USE_RANDOM_SEED true
+
+#define MIN_HEIGHT	-10
+#define MAX_HEIGHT	15
+#define NOISE_MIN	15
+#define NOISE_RAND	6
 
 #define MOUSE_SESITIVITY_X	0.05
 #define MOUSE_SESITIVITY_Y	0.05
-#define CAMERA_XZ_SPEED		100.0
+#define CAMERA_XZ_SPEED		TERRAIN_SIZE / 10
 #define CAMERA_ZOOM_SPEED	10.0
-//#define TERRAIN_SIZE		2049
-//#define TERRAIN_SIZE		1025
-//#define TERRAIN_SIZE		129
 
 class Game
 {
@@ -53,6 +57,8 @@ private:
 	std::vector<Vertex> m_unblockedTrianglesVertices;
 	Drawable m_unblockedtrianglesDraw;
 
+	std::vector<Vertex> m_connectionMesh;
+	Drawable m_connections;
 
 	std::vector<Drawable> m_wp;
 
@@ -72,6 +78,7 @@ private:
 
 	float m_maxHeight = 0.0f;
 	float m_minHeight = 0.0f;
+	float m_noise = 0.0f;
 
 	std::map<long int, Waypoint> m_waypoints;
 
@@ -86,4 +93,16 @@ private:
 	void _loadMeshes();
 	void _randomizeBuildings();
 	void _setupGame();
+
+private:
+	void _createTerrain();
+	void _buildTrees();
+	void _createBlockedTrianglesAndWaypoints();
+	void _cleanWaypoints();
+	void _placeTrianglesInTree();
+	void _createViewableTriangles();
+	void _createViewableWaypoints();
+	void _connectWaypoints();
+	void _createViewableConnections();
+	void _generateWorldEdges();
 };

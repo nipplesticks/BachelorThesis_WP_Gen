@@ -32,7 +32,8 @@ public:
 
 	ID3D11ShaderResourceView * GetTexture() const;
 
-
+	void UseDepthBuffer(bool val);
+	
 	void Draw();
 
 private:
@@ -40,6 +41,8 @@ private:
 	DirectX::XMFLOAT2A m_uvOffset = { 0,0 };
 
 	bool m_isPickable = false;
+
+	bool m_useDepth = true;
 
 	D3D11_PRIMITIVE_TOPOLOGY m_topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
