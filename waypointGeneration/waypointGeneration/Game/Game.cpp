@@ -456,6 +456,8 @@ void Game::_createWorld()
 	std::cout << std::endl;
 	_placeTrianglesInTree();
 	std::cout << std::endl;
+	_offsetWaypoints();
+	std::cout << std::endl;
 	//_connectWaypoints();
 	std::cout << std::endl;
 	_generateWorldEdges();
@@ -931,10 +933,26 @@ void Game::_createViewableWaypoints()
 		m_wp[counter].SetScale(0.1f, 0.1f, 0.1f);
 		m_wp[counter].UseDepthBuffer(false);
 		m_wp[counter].Update();
-		m_wp[counter++].SetColor(1, 0, 0);
+		m_wp[counter++].SetColor(0, 1, 1);
 	}
 
 	
+	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
+}
+
+void Game::_offsetWaypoints()
+{
+	Timer t;
+	std::cout << "Prepareing Waypoints for connections... ";
+
+	t.Start();
+
+	/*
+	
+		TODO :: Offset WP;
+	
+	*/
+
 	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
 }
 

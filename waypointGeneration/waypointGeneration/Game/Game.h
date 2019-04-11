@@ -102,6 +102,7 @@ private:
 	void _placeTrianglesInTree();
 	void _createViewableTriangles();
 	void _createViewableWaypoints();
+	void _offsetWaypoints();
 	void _connectWaypoints();
 	void _createViewableConnections();
 	void _generateWorldEdges();
