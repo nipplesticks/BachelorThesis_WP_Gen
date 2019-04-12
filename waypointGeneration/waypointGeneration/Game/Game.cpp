@@ -104,7 +104,6 @@ void Game::Draw()
 		d.Draw();
 
 	m_water.Draw();
-
 }
 
 void Game::_playerFixYPosition(double dt)
@@ -453,11 +452,11 @@ void Game::_createWorld()
 	std::cout << std::endl;
 	_createBlockedTrianglesAndWaypoints();
 	std::cout << std::endl;
+	_placeTrianglesInTree();
+	std::cout << std::endl;
 	//_offsetWaypoints();
 	std::cout << std::endl;
 	_cleanWaypoints();
-	std::cout << std::endl;
-	_placeTrianglesInTree();
 	std::cout << std::endl;
 	//_connectWaypoints();
 	std::cout << std::endl;
@@ -818,8 +817,8 @@ void Game::_cleanWaypoints()
 
 		while (keysFollowEachother)
 		{
-			int checkInSecondIt = i + removeThisManyWaypoints;
-			if (checkInSecondIt == vectorSize)
+			int index = i + removeThisManyWaypoints;
+			if (index == vectorSize)
 			{
 				removeThisManyWaypoints--;
 				for (int j = 1; j < removeThisManyWaypoints; j++)
@@ -830,7 +829,24 @@ void Game::_cleanWaypoints()
 				break;
 			}
 			// Check if the keys are in a line
-			if (keysSecondIt[i] != keysSecondIt[i + removeThisManyWaypoints] - removeThisManyWaypoints)
+			DirectX::XMFLOAT2 halfwayToNextTrianglePoint;
+			halfwayToNextTrianglePoint.x = (keysSecondIt[index - 1] % TERRAIN_SIZE) + (keysSecondIt[index] % TERRAIN_SIZE);
+			halfwayToNextTrianglePoint.x *= 0.5;
+			halfwayToNextTrianglePoint.y = keysSecondIt[index] / TERRAIN_SIZE;
+			Triangle * ptr = m_blockedTriangleTree.PointInsideTriangle(halfwayToNextTrianglePoint, true);
+			if (keysSecondIt[i] != keysSecondIt[index] - removeThisManyWaypoints
+				&&  ptr != nullptr)
+			{
+				keysFollowEachother = false;
+				removeThisManyWaypoints--;
+
+				for (int j = 1; j < removeThisManyWaypoints; j++)
+				{
+					i++;
+					m_waypoints.erase(keysSecondIt[i]);
+				}
+			}
+			else if (ptr == nullptr)
 			{
 				keysFollowEachother = false;
 				removeThisManyWaypoints--;
