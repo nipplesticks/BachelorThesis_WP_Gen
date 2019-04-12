@@ -14,8 +14,8 @@
 
 #define MIN_HEIGHT	-10
 #define MAX_HEIGHT	15
-#define NOISE_MIN	15
-#define NOISE_RAND	6
+#define NOISE_MIN	3
+#define NOISE_RAND	1
 
 #define MOUSE_SESITIVITY_X	0.05
 #define MOUSE_SESITIVITY_Y	0.05
