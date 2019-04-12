@@ -454,7 +454,7 @@ void Game::_createWorld()
 	std::cout << std::endl;
 	_placeTrianglesInTree();
 	std::cout << std::endl;
-	//_offsetWaypoints();
+	_offsetWaypoints();
 	std::cout << std::endl;
 	_cleanWaypoints();
 	std::cout << std::endl;
