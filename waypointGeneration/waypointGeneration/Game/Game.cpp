@@ -453,7 +453,7 @@ void Game::_createWorld()
 	std::cout << std::endl;
 	_createBlockedTrianglesAndWaypoints();
 	std::cout << std::endl;
-	_offsetWaypoints();
+	//_offsetWaypoints();
 	std::cout << std::endl;
 	_cleanWaypoints();
 	std::cout << std::endl;
@@ -799,26 +799,46 @@ void Game::_cleanWaypoints()
 	}
 
 	// Remove the flagged waypoints
-	for (int i = 0; i < keys.size(); i++)
+	int vectorSize = keys.size();
+	for (int i = 0; i < vectorSize; i++)
 		m_waypoints.erase(keys[i]);
 
+	// Post process waypoints and remove waypoints in a line
+	// Extract all waypoint keys
+	std::vector<int> keysSecondIt(m_waypoints.size());
+	int waypointPositionCounter = 0;
 	for (auto & wp : m_waypoints)
+		keysSecondIt[waypointPositionCounter++] = wp.first;
+
+	vectorSize = keysSecondIt.size();
+	for (int i = 0; i < vectorSize; i++)
 	{
-		// Post process waypoints and remove waypoints in a line
 		int removeThisManyWaypoints = 1;
 		bool keysFollowEachother = true;
 
 		while (keysFollowEachother)
 		{
-			// Check if the keys are in a line
-			if (keys[i] != keys[i + removeThisManyWaypoints] - removeThisManyWaypoints)
+			int checkInSecondIt = i + removeThisManyWaypoints;
+			if (checkInSecondIt == vectorSize)
 			{
 				removeThisManyWaypoints--;
-				keysFollowEachother = false;
-
-				for (int j = 0; j < removeThisManyWaypoints; j++)
+				for (int j = 1; j < removeThisManyWaypoints; j++)
 				{
+					i++;
+					m_waypoints.erase(keysSecondIt[i]);
+				}
+				break;
+			}
+			// Check if the keys are in a line
+			if (keysSecondIt[i] != keysSecondIt[i + removeThisManyWaypoints] - removeThisManyWaypoints)
+			{
+				keysFollowEachother = false;
+				removeThisManyWaypoints--;
 
+				for (int j = 1; j < removeThisManyWaypoints; j++)
+				{
+					i++;
+					m_waypoints.erase(keysSecondIt[i]);
 				}
 			}
 			else
