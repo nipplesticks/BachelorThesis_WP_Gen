@@ -759,6 +759,12 @@ void Game::_cleanWaypoints()
 		for (int x = 0; x < TERRAIN_SIZE; x++)
 		{
 			int key = x + y * TERRAIN_SIZE;
+			if (y == 0 || x == 0 || y == TERRAIN_SIZE - 1 || x == TERRAIN_SIZE - 1)
+			{
+				keys.push_back(key);
+				continue;
+			}
+
 			auto it = m_waypoints.find(key);
 
 			if (it != m_waypoints.end())
@@ -794,8 +800,11 @@ void Game::_cleanWaypoints()
 		}
 	}
 	
+	// Remove the flagged waypoints
 	for (int i = 0; i < keys.size(); i++)
+	{
 		m_waypoints.erase(keys[i]);
+	}
 
 	/*for (long int i = 0; i < TERRAIN_SIZE; i++)
 	{
