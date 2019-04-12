@@ -459,7 +459,7 @@ void Game::_createWorld()
 	std::cout << std::endl;
 	_placeTrianglesInTree();
 	std::cout << std::endl;
-	//_connectWaypoints();
+	_connectWaypoints();
 	std::cout << std::endl;
 	_generateWorldEdges();
 	std::cout << std::endl;
@@ -957,24 +957,6 @@ void Game::_offsetWaypoints()
 
 	t.Start();
 
-
-	/*for (int y = 1; y < TERRAIN_SIZE - 1; y++)
-	{
-		for (int x = 1; x < TERRAIN_SIZE - 1; x++)
-		{
-			int key = x + y * TERRAIN_SIZE;
-			
-			auto itRef = m_waypoints.find(key);
-			if (itRef != m_waypoints.end())
-			{
-				
-			}
-
-		}
-	}*/
-
-	
-
 	for (auto & wp : m_waypoints)
 	{
 		DirectX::XMFLOAT2 pRef = wp.second.GetPosition();
@@ -1089,43 +1071,41 @@ void Game::_connectWaypoints()
 	v2.Position.w = 1.0f;
 	t.Start();
 	std::cout << std::endl;
-	int counter2 = 0;
+	long int counter2 = 0;
 
-	int totalSize = m_waypoints.size() * m_waypoints.size();
+	long int totalSize = m_waypoints.size();
 
 	for (auto & wp1 : m_waypoints)
-	{
+	{	
+		std::cout << "\r" << std::to_string(((double)counter2++ / totalSize) * 100.0) << "%";
+		
 		for (auto & wp2 : m_waypoints)
 		{
-			if (counter2++ % 100 == 0)
-			{
-				std::cout << "\r" << std::to_string(((double)counter2 / totalSize) * 100.0) << "%";
-			}
-
-
 			if (wp1.first == wp2.first)
 				continue;
 
+			DirectX::XMFLOAT2 p1, p2;
+
 			DirectX::XMFLOAT2 dummy;
-			Triangle * tri = m_blockedTriangleTree.LineIntersectionTriangle(wp1.second.GetPosition(), wp2.second.GetPosition(), true, dummy);
+			Triangle * tri = m_blockedTriangleTree.LineIntersectionTriangle(p1 = wp1.second.GetPosition(), p2 = wp2.second.GetPosition(), true, dummy);
 
 
 			if (tri == nullptr)
 			{
 
-				v1.Position.x = wp1.second.GetPosition().x;
+				v1.Position.x = p1.x;
 				v1.Position.y = wp1.second.GetHeightVal();
-				v1.Position.z = wp1.second.GetPosition().y;
+				v1.Position.z = p1.y;
 
-				v2.Position.x = wp2.second.GetPosition().x;
+				v2.Position.x = p2.x;
 				v2.Position.y = wp2.second.GetHeightVal();
-				v2.Position.z = wp2.second.GetPosition().y;
+				v2.Position.z = p2.y;
 
-				m_connectionMesh.push_back(v1);
-				m_connectionMesh.push_back(v2);
 
 				if (wp1.second.Connect(&m_waypoints[wp2.first]))
 				{
+					m_connectionMesh.push_back(v1);
+					m_connectionMesh.push_back(v2);
 					counter++;
 					wp2.second.ForceConnection(&m_waypoints[wp1.first]);
 				}
@@ -1134,6 +1114,7 @@ void Game::_connectWaypoints()
 	}
 	std::cout << "\nConnection(s): " << counter << "... ";
 	std::cout << t.Stop(Timer::MILLISECONDS) << "ms\n";
+
 }
 
 void Game::_createViewableConnections()

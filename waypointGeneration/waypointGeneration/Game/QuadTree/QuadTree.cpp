@@ -316,6 +316,7 @@ bool QuadTree::_lineTriangleIntersection(const Triangle * tri, DirectX::XMFLOAT2
 		{
 			t = tTemp;
 			XMStoreFloat2(&interSectionPoint, XMVectorAdd(lineStart, XMVectorScale(XMLoadFloat2(&b), t)));
+			return true;
 		}
 
 	}
