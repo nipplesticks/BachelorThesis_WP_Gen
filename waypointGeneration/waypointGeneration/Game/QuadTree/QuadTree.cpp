@@ -269,57 +269,55 @@ void QuadTree::_triangleTraversePoint(Triangle *& tPtr, const DirectX::XMVECTOR 
 
 bool QuadTree::_lineTriangleIntersection(const Triangle * tri, DirectX::XMFLOAT2 & interSectionPoint, const DirectX::XMVECTOR & lineStart, const DirectX::XMVECTOR & lineEnd, float & t)
 {
+	static const float EPSILON = 0.0001f;
+	using namespace DirectX;
 	t = FLT_MAX;
 	bool hit = false;
 
+	DirectX::XMFLOAT2 l1S, l1E;
+	DirectX::XMStoreFloat2(&l1S, lineStart);
+	DirectX::XMStoreFloat2(&l1E, lineEnd);
+
 	DirectX::XMVECTOR isPoint;
-	
 	float lSq = FLT_MAX;
 
-	DirectX::XMFLOAT2 l1, l2;
+	DirectX::XMFLOAT2 l2S, l2E;
 	for (int i = 0; i < 3; i++)
 	{
 		int oIndex = (i + 1) % 3;
-		l1.x = tri->points[i].x;
-		l1.y = tri->points[i].z;
-		l2.x = tri->points[oIndex].x;
-		l2.y = tri->points[oIndex].z;
+		l2S.x = tri->points[i].x;
+		l2S.y = tri->points[i].z;
+		l2E.x = tri->points[oIndex].x;
+		l2E.y = tri->points[oIndex].z;
 
-		DirectX::XMVECTOR tS = DirectX::XMLoadFloat2(&l1);
-		DirectX::XMVECTOR tE = DirectX::XMLoadFloat2(&l2);
+		XMFLOAT2 b(l1E.x - l1S.x, l1E.y - l1S.y);
+		XMFLOAT2 d(l2E.x - l2S.x, l2E.y - l2S.y);
 
-		DirectX::XMVECTOR tPoint = DirectX::XMVector2IntersectLine(lineStart, lineEnd, tS, tE);
+		float bDotDPerp = b.x * d.y - b.y * d.x;
 
-		if (DirectX::XMVectorGetX(tPoint) != 0xFFFFFFFF && !DirectX::XMVector2IsInfinite(tPoint))
+		if (fabs(bDotDPerp) < EPSILON)
+			continue;
+
+		XMFLOAT2 c(l2S.x - l1S.x, l2S.y - l1S.y);
+
+		float tTemp = (c.x * d.y - c.y * d.x) / bDotDPerp;
+
+		if (tTemp < 0.0f || tTemp > 1.0f)
+			continue;
+
+		float u = (c.x * b.y - c.y * b.x) / bDotDPerp;
+
+		if (u < 0.0f || u > 1.0f)
+			continue;
+
+		hit = true;
+
+		if (tTemp < t)
 		{
-			float l1Length = DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSubtract(lineEnd, lineStart)));
-			float l1ToPoint = DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSubtract(tPoint, lineStart)));
-
-			if (l1Length > l1ToPoint)
-			{
-				float l2Length = DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSubtract(tE, tS)));
-				float l2ToPoint = DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSubtract(tPoint, tS)));;
-
-				if (l2Length > l2ToPoint)
-				{
-					hit = true;
-
-					float lSqTemp = DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(DirectX::XMVectorSubtract(tPoint, lineStart)));
-
-					if (lSqTemp < lSq)
-					{
-						lSq = lSqTemp;
-						isPoint = tPoint;
-					}
-				}
-			}
+			t = tTemp;
+			XMStoreFloat2(&interSectionPoint, XMVectorAdd(lineStart, XMVectorScale(XMLoadFloat2(&b), t)));
 		}
-	}
 
-	if (hit)
-	{
-		t = sqrt(lSq);
-		DirectX::XMStoreFloat2(&interSectionPoint, isPoint);
 	}
 
 	return hit;
