@@ -69,6 +69,11 @@ bool floatEQ(float a, float b)
 	return fabs(a - b) < 0.01f;
 }
 
+bool Waypoint::HasConnections() const
+{
+	return !m_connections.empty();
+}
+
 bool Waypoint::operator==(const Waypoint & other)
 {
 	return floatEQ(m_position.x, other.m_position.x) && floatEQ(m_position.y, other.m_position.y);

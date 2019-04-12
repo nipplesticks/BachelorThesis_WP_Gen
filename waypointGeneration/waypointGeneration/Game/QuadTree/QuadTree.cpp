@@ -162,7 +162,7 @@ void QuadTree::_triangleTraversalLine(Triangle *& outPtr, DirectX::XMFLOAT2 & in
 			if (nrOfChildren > 0)
 			{
 				const unsigned int * children = m_quadTree[quadIndex].GetChildren();
-				for (int i = 0; i < nrOfChildren; i++)
+				for (int i = 0; i < nrOfChildren && outPtr == nullptr; i++)
 					_triangleTraversalLine(outPtr, interSectionPoint, lineStart, lineEnd, dir, firstHitFound, children[i], t);
 			}
 			else

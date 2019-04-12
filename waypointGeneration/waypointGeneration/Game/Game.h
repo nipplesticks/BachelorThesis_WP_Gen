@@ -14,8 +14,8 @@
 
 #define MIN_HEIGHT	-10
 #define MAX_HEIGHT	15
-#define NOISE_MIN	3
-#define NOISE_RAND	1
+#define NOISE_MIN	15
+#define NOISE_RAND	6
 
 #define MOUSE_SESITIVITY_X	0.05
 #define MOUSE_SESITIVITY_Y	0.05
@@ -104,6 +104,16 @@ private:
 	void _createViewableWaypoints();
 	void _offsetWaypoints();
 	void _connectWaypoints();
+
+
+	struct QUAD
+	{
+		float left, top, right, bottom;
+	};
+
+	UINT _connectInsideQuadrant(int xStart, int xEnd, int yStart, int yEnd);
+
+
 	void _createViewableConnections();
 	void _generateWorldEdges();
 };

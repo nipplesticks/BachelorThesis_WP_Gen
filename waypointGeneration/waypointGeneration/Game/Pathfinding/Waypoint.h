@@ -21,6 +21,7 @@ public:
 	bool Connect(Waypoint * wp);
 	void ForceConnection(Waypoint * wp);
 
+	bool HasConnections() const;
 	bool operator==(const Waypoint & other);
 	bool operator<(const Waypoint & other);
 

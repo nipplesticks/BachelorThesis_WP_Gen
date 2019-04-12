@@ -1044,61 +1044,153 @@ void Game::_offsetWaypoints()
 void Game::_connectWaypoints()
 {
 	// Connect Waypoints
-	std::cout << "Connecting Waypoints... ";
+	std::cout << "Connecting Waypoints... \n";
 	Timer t;
-	int counter = 0;
+	t.Start();
+	std::cout << std::endl;
+	
+	int stopVal = TERRAIN_SIZE - 1;
+	int increment = 32;
+	//int numberOfQuadrants = * stopVal) / increment;
+
+	UINT con = 0;
+	
+	for (int y = 0; y < stopVal; y += increment)
+	{
+		std::cout << "\r" << ((double)y / stopVal) * 100.0 << " % done...";
+		for (int x = 0; x < stopVal; x += increment)
+		{
+		
+			Timer t1;
+			t1.Start();
+			con += _connectInsideQuadrant(x, x + increment, y, y + increment);
+			//double time = t1.Stop(Timer::MILLISECONDS);
+			//std::cout << "Building Quadrant: " << con2 << ", " <<  time << " ms\n";
+		}
+	}
+
+	std::vector<int> keyVector(TERRAIN_SIZE * TERRAIN_SIZE);
+	UINT counterAgain = 0;
+
+	for (auto & wp : m_waypoints)
+	{
+		if (!wp.second.HasConnections())
+		{
+			keyVector[counterAgain++] = wp.first;
+		}
+	}
+
+	for (int i = 0; i < counterAgain; i++)
+		m_waypoints.erase(keyVector[i]);
+
+	std::cout << "\nConnection(s): " << con << " on " << m_waypoints.size() << " wow! : ";
+	std::cout << t.Stop(Timer::MILLISECONDS) << "ms\n";
+}
+
+UINT Game::_connectInsideQuadrant(int xStart, int xEnd, int yStart, int yEnd)
+{
+	QUAD q;
+	q.left = xStart;
+	q.top = yStart;
+	q.right = xEnd;
+	q.bottom = yEnd;
+
+	UINT counter = 0;
+
+	DirectX::XMFLOAT2 center(xStart + xEnd, yStart + yEnd);
+	center.x *= 0.5f;
+	center.y *= 0.5f;
+
+	DirectX::XMVECTOR vC = DirectX::XMLoadFloat2(&center);
+
+	DirectX::XMFLOAT2 points[4] = {
+		 { (float)xStart, (float)yStart	},
+		 { (float)xEnd, (float)yStart	},
+		 { (float)xStart, (float)yEnd	},
+		 { (float)xEnd, (float)yEnd		}
+		};
+
+	int keys[4] = {
+		xStart + yStart * TERRAIN_SIZE,
+		xEnd + yStart * TERRAIN_SIZE,
+		xStart + yEnd * TERRAIN_SIZE,
+		xEnd + yEnd * TERRAIN_SIZE
+	};
+
+	for (int i = 0; i < 4; i++)
+	{
+		if (m_waypoints.find(keys[i]) == m_waypoints.end())
+		{
+			Waypoint wp(points[i].x, points[i].y);
+
+			DirectX::XMFLOAT3 iPoint;
+			Triangle * t = m_unblockedTriangleTree.RayIntersectionTriangle3D(DirectX::XMFLOAT3(points[i].x, m_maxHeight, points[i].y), DirectX::XMFLOAT3(0, -1, 0), true, iPoint);
+
+			if (t)
+				wp.SetHeightVal(iPoint.y);
+			m_waypoints.insert(std::make_pair(keys[i], wp));
+		}
+	}
+
 	Vertex v1, v2;
 	DirectX::XMFLOAT4A n = { 0.0f, 1.0f, 0.0f, 0.0f };
 	v1.Normal = n;
 	v2.Normal = n;
 	v1.Position.w = 1.0f;
 	v2.Position.w = 1.0f;
-	t.Start();
-	std::cout << std::endl;
-	long int counter2 = 0;
 
-	long int totalSize = m_waypoints.size();
-
-	for (auto & wp1 : m_waypoints)
-	{	
-		std::cout << "\r" << std::to_string(((double)counter2++ / totalSize) * 100.0) << "%";
-		
-		for (auto & wp2 : m_waypoints)
+	for (int y = yStart; y <= yEnd; y++)
+	{
+		for (int x = xStart; x <= xEnd; x++)
 		{
-			if (wp1.first == wp2.first)
-				continue;
+			int key = x + y * TERRAIN_SIZE;
 
-			DirectX::XMFLOAT2 p1, p2;
-
-			DirectX::XMFLOAT2 dummy;
-			Triangle * tri = m_blockedTriangleTree.LineIntersectionTriangle(p1 = wp1.second.GetPosition(), p2 = wp2.second.GetPosition(), true, dummy);
-
-
-			if (tri == nullptr)
+			//Timer timer;
+			//timer.Start();
+			if (m_waypoints.find(key) != m_waypoints.end())
 			{
+				//std::cout << "m_waypoints.find(key) --> " << timer.Stop(Timer::MILLISECONDS) << " ms\n";
 
-				v1.Position.x = p1.x;
-				v1.Position.y = wp1.second.GetHeightVal();
-				v1.Position.z = p1.y;
-
-				v2.Position.x = p2.x;
-				v2.Position.y = wp2.second.GetHeightVal();
-				v2.Position.z = p2.y;
-
-
-				if (wp1.second.Connect(&m_waypoints[wp2.first]))
+				for (int yy = y; yy <= yEnd; yy++)
 				{
-					m_connectionMesh.push_back(v1);
-					m_connectionMesh.push_back(v2);
-					counter++;
-					wp2.second.ForceConnection(&m_waypoints[wp1.first]);
+					for (int xx = x; xx <= xEnd; xx++)
+					{
+						int key2 = xx + yy * TERRAIN_SIZE;
+						if (m_waypoints.find(key2) != m_waypoints.end())
+						{
+							//std::cout << "\tm_waypoints.find(key2) --> " << timer.Stop(Timer::MILLISECONDS) << " ms\n";
+							DirectX::XMFLOAT2 dummy;
+							DirectX::XMFLOAT2 p1, p2;
+							Triangle * tri = m_blockedTriangleTree.LineIntersectionTriangle(p1 = m_waypoints[key].GetPosition(), p2 = m_waypoints[key2].GetPosition(), true, dummy);
+							//std::cout << "\t\tLineInterSectionTriangle --> " << timer.Stop(Timer::MILLISECONDS) << " ms\n";
+							if (tri == nullptr)
+							{
+								v1.Position.x = p1.x;
+								v1.Position.y = m_waypoints[key].GetHeightVal();
+								v1.Position.z = p1.y;
+
+								v2.Position.x = p2.x;
+								v2.Position.y = m_waypoints[key2].GetHeightVal();
+								v2.Position.z = p2.y;
+
+
+								if (m_waypoints[key].Connect(&m_waypoints[key2]))
+								{
+									counter++;
+									m_connectionMesh.push_back(v1);
+									m_connectionMesh.push_back(v2);
+									m_waypoints[key2].ForceConnection(&m_waypoints[key]);
+								}
+								//std::cout << "\t\t\tConnection --> " << timer.Stop(Timer::MILLISECONDS) << " ms\n";
+							}
+						}
+					}
 				}
 			}
 		}
 	}
-	std::cout << "\nConnection(s): " << counter << "... ";
-	std::cout << t.Stop(Timer::MILLISECONDS) << "ms\n";
 
+	return counter;
 }
 
 void Game::_createViewableConnections()
