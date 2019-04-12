@@ -695,7 +695,7 @@ void Game::_createBlockedTrianglesAndWaypoints()
 		if (v0.y < m_terrainCreator.WATER_START || v1.y < m_terrainCreator.WATER_START || v2.y < m_terrainCreator.WATER_START)
 			createBlockedTriangleLocation = true;
 
-		if (dot < m_terrainCreator.UNWALKABLE_SURFACE)
+		if (dot < m_terrainCreator.UNWALKABLE_SURFACE || createBlockedTriangleLocation)
 		{
 			createBlockedTriangleLocation = true;
 
@@ -715,9 +715,6 @@ void Game::_createBlockedTrianglesAndWaypoints()
 
 				DirectX::XMFLOAT2 dir;
 				DirectX::XMStoreFloat2(&dir, vDir);
-
-				if (pos.y < m_terrainCreator.WATER_START)
-					continue;
 
 				Waypoint wp(pos.x, pos.z);
 				wp.SetHeightVal(pos.y);
@@ -749,24 +746,16 @@ void Game::_createBlockedTrianglesAndWaypoints()
 void Game::_cleanWaypoints()
 {
 	std::cout << "Cleaning waypoints Iteration1... ";
-	//std::map<long int, long int> ereasedVals;
 	Timer t;
 	t.Start();
 
 	std::vector<int> keys;
-	for (int y = 0; y < TERRAIN_SIZE; y++)
+	for (int y = 1; y < TERRAIN_SIZE - 1; y++)
 	{
-		for (int x = 0; x < TERRAIN_SIZE; x++)
+		for (int x = 1; x < TERRAIN_SIZE - 1; x++)
 		{
 			int key = x + y * TERRAIN_SIZE;
-			if (y == 0 || x == 0 || y == TERRAIN_SIZE - 1 || x == TERRAIN_SIZE - 1)
-			{
-				keys.push_back(key);
-				continue;
-			}
-
 			auto it = m_waypoints.find(key);
-
 			if (it != m_waypoints.end())
 			{
 				// North
@@ -799,84 +788,43 @@ void Game::_cleanWaypoints()
 			}
 		}
 	}
-	
+
+	for (int i = 0; i < TERRAIN_SIZE; i++)
+	{
+		m_waypoints.erase(i);
+		m_waypoints.erase(i * TERRAIN_SIZE);
+		m_waypoints.erase(i * TERRAIN_SIZE - 1);
+		m_waypoints.erase(TERRAIN_SIZE - i);
+	}
+
 	// Remove the flagged waypoints
 	for (int i = 0; i < keys.size(); i++)
-	{
 		m_waypoints.erase(keys[i]);
-	}
 
-	/*for (long int i = 0; i < TERRAIN_SIZE; i++)
+	for (auto & wp : m_waypoints)
 	{
-		for (long int j = 0; j < TERRAIN_SIZE; j++)
+		// Post process waypoints and remove waypoints in a line
+		int removeThisManyWaypoints = 1;
+		bool keysFollowEachother = true;
+
+		while (keysFollowEachother)
 		{
-			long int key = j + i * TERRAIN_SIZE;
-
-			bool erase = true;
-
-			for (int y = i - 1; y <= i + 1 && erase; y++)
+			// Check if the keys are in a line
+			if (keys[i] != keys[i + removeThisManyWaypoints] - removeThisManyWaypoints)
 			{
-				for (int x = j - 1; x <= j + 1 && erase; x++)
+				removeThisManyWaypoints--;
+				keysFollowEachother = false;
+
+				for (int j = 0; j < removeThisManyWaypoints; j++)
 				{
-					if (y == i && x == j)
-						continue;
 
-					int tKey = x + y * TERRAIN_SIZE;
-
-					auto tIt = m_waypoints.find(tKey);
-					auto eIt = ereasedVals.find(tKey);
-					erase = tIt != m_waypoints.end() || eIt != ereasedVals.end();
 				}
 			}
-			if (erase)
-			{
-				m_waypoints.erase(key);
-				ereasedVals.insert(std::make_pair(key, key));
-			}
+			else
+				removeThisManyWaypoints++;
 		}
 	}
-	ereasedVals.clear();
-	std::cout << t.Stop(Timer::MILLISECONDS) << " ms...\n";
-	std::cout << "Cleaning waypoints Iteration2... ";
-	for (long int i = 0; i < TERRAIN_SIZE; i++)
-	{
-		for (long int j = 0; j < TERRAIN_SIZE; j++)
-		{
-			long int key = j + i * TERRAIN_SIZE;
 
-			bool erase = true;
-
-			for (int y = i - 1; y <= i + 1 && erase; y++)
-			{
-				if (y == i)
-					continue;
-				int tKey = j + y * TERRAIN_SIZE;
-				auto tIt = m_waypoints.find(tKey);
-				auto eIt = ereasedVals.find(tKey);
-				erase = tIt != m_waypoints.end() || eIt != ereasedVals.end();
-			}
-			if (!erase)
-			{
-				erase = true;
-				for (int x = j - 1; x <= j + 1 && erase; x++)
-				{
-					if (x == j)
-						continue;
-
-					int tKey = x + i * TERRAIN_SIZE;
-
-					auto tIt = m_waypoints.find(tKey);
-					auto eIt = ereasedVals.find(tKey);
-					erase = tIt != m_waypoints.end() || eIt != ereasedVals.end();
-				}
-			}
-			if (erase)
-			{
-				m_waypoints.erase(key);
-				ereasedVals.insert(std::make_pair(key, key));
-			}
-		}
-	}*/
 	std::cout << "Waypoints : " << m_waypoints.size() << "... ";
 	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
 }
