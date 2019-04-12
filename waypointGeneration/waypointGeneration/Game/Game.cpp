@@ -2,6 +2,7 @@
 #include "Game.h"
 #include "../Rendering/Rendering/Renderer.h"
 #include <time.h>
+#include <algorithm>
 
 Game::Game()
 {
@@ -452,11 +453,11 @@ void Game::_createWorld()
 	std::cout << std::endl;
 	_createBlockedTrianglesAndWaypoints();
 	std::cout << std::endl;
+	_offsetWaypoints();
+	std::cout << std::endl;
 	_cleanWaypoints();
 	std::cout << std::endl;
 	_placeTrianglesInTree();
-	std::cout << std::endl;
-	_offsetWaypoints();
 	std::cout << std::endl;
 	//_connectWaypoints();
 	std::cout << std::endl;
@@ -956,11 +957,120 @@ void Game::_offsetWaypoints()
 
 	t.Start();
 
-	/*
+
+	/*for (int y = 1; y < TERRAIN_SIZE - 1; y++)
+	{
+		for (int x = 1; x < TERRAIN_SIZE - 1; x++)
+		{
+			int key = x + y * TERRAIN_SIZE;
+			
+			auto itRef = m_waypoints.find(key);
+			if (itRef != m_waypoints.end())
+			{
+				
+			}
+
+		}
+	}*/
+
 	
-		TODO :: Offset WP;
-	
-	*/
+
+	for (auto & wp : m_waypoints)
+	{
+		DirectX::XMFLOAT2 pRef = wp.second.GetPosition();
+		DirectX::XMFLOAT2 offset(0.0f, 0.0f);
+		
+		int xRef = (pRef.x + 0.5f);
+		int yRef = (pRef.y + 0.5f);
+
+		// North
+		DirectX::XMINT2 north(xRef, yRef - 1);
+		auto itNorth = m_waypoints.find((north.x + north.y * TERRAIN_SIZE));
+		bool hasNorth = itNorth != m_waypoints.end();
+		if (hasNorth)
+		{
+			offset.y += 0.5f;
+		}
+
+		// East
+		DirectX::XMINT2 east(xRef + 1, yRef);
+		auto itEast = m_waypoints.find((east.x + east.y * TERRAIN_SIZE));
+		bool hasEast = itEast != m_waypoints.end();
+		if (hasEast)
+		{
+			offset.x -= 0.5f;
+		}
+
+		// South
+		DirectX::XMINT2 south(xRef, yRef + 1);
+		auto itSouth = m_waypoints.find((south.x + south.y * TERRAIN_SIZE));
+		bool hasSouth = itSouth != m_waypoints.end();
+		if (hasSouth)
+		{
+			offset.y -= 0.5f;
+		}
+
+		// West
+		DirectX::XMINT2 west(xRef - 1, yRef);
+		auto itWest = m_waypoints.find((west.x + west.y * TERRAIN_SIZE));
+		bool hasWest = itWest != m_waypoints.end();
+		if (hasWest)
+		{
+			offset.x += 0.5f;
+		}
+
+		// North-East
+		DirectX::XMINT2 northEast(xRef + 1, yRef - 1);
+		auto itNorthEast = m_waypoints.find((northEast.x + northEast.y * TERRAIN_SIZE));
+		bool hasNorthEast = itNorthEast != m_waypoints.end();
+		if (hasNorthEast)
+		{
+			offset.y += 0.5f;
+			offset.x -= 0.5f;
+		}
+
+
+		// South-East
+		DirectX::XMINT2 southEast(xRef + 1, yRef + 1);
+		auto itSouthEast = m_waypoints.find((southEast.x + southEast.y * TERRAIN_SIZE));
+		bool hasSouthEast = itSouthEast != m_waypoints.end();
+		if (hasSouthEast)
+		{
+			offset.y -= 0.5f;
+			offset.x -= 0.5f;
+		}
+
+
+		// South-West
+		DirectX::XMINT2 southWest(xRef - 1, yRef + 1);
+		auto itSouthWest = m_waypoints.find((southWest.x + southWest.y * TERRAIN_SIZE));
+		bool hasSouthWest = itSouthWest != m_waypoints.end();
+		if (hasSouthWest)
+		{
+			offset.y -= 0.5f;
+			offset.x += 0.5f;
+		}
+
+		// North-West
+		DirectX::XMINT2 NorthWest(xRef + 1, yRef - 1);
+		auto itNorthWest = m_waypoints.find((NorthWest.x + NorthWest.y * TERRAIN_SIZE));
+		bool hasNorthWest = itNorthWest != m_waypoints.end();
+		if (hasNorthWest)
+		{
+			offset.y += 0.5f;
+			offset.x += 0.5f;
+		}
+
+		offset.x = std::clamp(offset.x, -0.5f, 0.5f);
+		offset.y = std::clamp(offset.y, -0.5f, 0.5f);
+
+		pRef.x += offset.x;
+		pRef.y += offset.y;
+
+		wp.second.SetPosition(pRef.x, pRef.y);
+
+	}
+
 
 	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
 }
@@ -978,10 +1088,21 @@ void Game::_connectWaypoints()
 	v1.Position.w = 1.0f;
 	v2.Position.w = 1.0f;
 	t.Start();
+	std::cout << std::endl;
+	int counter2 = 0;
+
+	int totalSize = m_waypoints.size() * m_waypoints.size();
+
 	for (auto & wp1 : m_waypoints)
 	{
 		for (auto & wp2 : m_waypoints)
 		{
+			if (counter2++ % 100 == 0)
+			{
+				std::cout << "\r" << std::to_string(((double)counter2 / totalSize) * 100.0) << "%";
+			}
+
+
 			if (wp1.first == wp2.first)
 				continue;
 
@@ -1011,7 +1132,7 @@ void Game::_connectWaypoints()
 			}
 		}
 	}
-	std::cout << "Connection(s): " << counter << "... ";
+	std::cout << "\nConnection(s): " << counter << "... ";
 	std::cout << t.Stop(Timer::MILLISECONDS) << "ms\n";
 }
 
