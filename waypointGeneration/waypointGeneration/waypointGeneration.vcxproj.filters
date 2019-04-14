@@ -127,4 +127,7 @@
     <FxCompile Include="Rendering\Rendering\Shaders\PickingPassPixel.hlsl" />
     <FxCompile Include="Rendering\Rendering\Shaders\PickingPassVertex.hlsl" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
+  </ItemGroup>
 </Project>

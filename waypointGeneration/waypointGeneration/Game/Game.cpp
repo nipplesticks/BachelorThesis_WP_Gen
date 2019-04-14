@@ -1044,13 +1044,20 @@ void Game::_offsetWaypoints()
 void Game::_connectWaypoints()
 {
 	// Connect Waypoints
-	std::cout << "Connecting Waypoints... \n";
 	Timer t;
 	t.Start();
+	std::cout << "Placing wp in Quadtree... ";
+
+	m_blockedTriangleTree.PlaceObjects(m_waypoints);
+
+	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n ";
+
+
+	std::cout << "Connecting Waypoints... \n";
 	std::cout << std::endl;
 	
 	int stopVal = TERRAIN_SIZE - 1;
-	int increment = 32;
+	int increment = 16;
 	//int numberOfQuadrants = * stopVal) / increment;
 
 	UINT con = 0;
@@ -1059,13 +1066,8 @@ void Game::_connectWaypoints()
 	{
 		std::cout << "\r" << ((double)y / stopVal) * 100.0 << " % done...";
 		for (int x = 0; x < stopVal; x += increment)
-		{
-		
-			Timer t1;
-			t1.Start();
+		{		
 			con += _connectInsideQuadrant(x, x + increment, y, y + increment);
-			//double time = t1.Stop(Timer::MILLISECONDS);
-			//std::cout << "Building Quadrant: " << con2 << ", " <<  time << " ms\n";
 		}
 	}
 
@@ -1089,6 +1091,8 @@ void Game::_connectWaypoints()
 
 UINT Game::_connectInsideQuadrant(int xStart, int xEnd, int yStart, int yEnd)
 {
+	//Timer totalTimer;
+	//totalTimer.Start();
 	QUAD q;
 	q.left = xStart;
 	q.top = yStart;
@@ -1117,6 +1121,10 @@ UINT Game::_connectInsideQuadrant(int xStart, int xEnd, int yStart, int yEnd)
 		xEnd + yEnd * TERRAIN_SIZE
 	};
 
+
+	// Define corner waypoints.
+	//Timer cornerTimer;
+	//cornerTimer.Start();
 	for (int i = 0; i < 4; i++)
 	{
 		if (m_waypoints.find(keys[i]) == m_waypoints.end())
@@ -1129,8 +1137,11 @@ UINT Game::_connectInsideQuadrant(int xStart, int xEnd, int yStart, int yEnd)
 			if (t)
 				wp.SetHeightVal(iPoint.y);
 			m_waypoints.insert(std::make_pair(keys[i], wp));
+			m_blockedTriangleTree.AddObject(&m_waypoints[keys[i]]);
 		}
 	}
+	//double cornerTime = cornerTimer.Stop(Timer::MILLISECONDS);
+
 
 	Vertex v1, v2;
 	DirectX::XMFLOAT4A n = { 0.0f, 1.0f, 0.0f, 0.0f };
@@ -1139,55 +1150,70 @@ UINT Game::_connectInsideQuadrant(int xStart, int xEnd, int yStart, int yEnd)
 	v1.Position.w = 1.0f;
 	v2.Position.w = 1.0f;
 
-	for (int y = yStart; y <= yEnd; y++)
+	// Finding waypoints
+	//Timer findingWPTimer;
+	//findingWPTimer.Start();
+	DirectX::BoundingBox bb;
+	bb.CreateFromPoints(bb, DirectX::XMLoadFloat2(&points[0]), DirectX::XMLoadFloat2(&points[3]));
+	std::vector<Waypoint*> wp;
+	//double findingWPTime;
+	//double lineTraceTime = 0.0;
+	//double connectionTime = 0.0;
+
+	if (m_blockedTriangleTree.GetWaypointsFrom(bb, wp))
 	{
-		for (int x = xStart; x <= xEnd; x++)
+		//findingWPTime = findingWPTimer.Stop(Timer::MILLISECONDS);
+		size_t wpSize = wp.size();
+
+		for (int i = 0; i < wpSize; i++)
 		{
-			int key = x + y * TERRAIN_SIZE;
+			Waypoint * wp1 = wp[i];
 
-			//Timer timer;
-			//timer.Start();
-			if (m_waypoints.find(key) != m_waypoints.end())
+			//std::cout << "\r" << ((double)i / wpSize) * 100.0;
+
+			for (int j = i + 1; j < wpSize; j++)
 			{
-				//std::cout << "m_waypoints.find(key) --> " << timer.Stop(Timer::MILLISECONDS) << " ms\n";
+				Waypoint * wp2 = wp[j];
+				DirectX::XMFLOAT2 dummy, p1, p2;
+				//Timer lineTraceTimer;
+				//lineTraceTimer.Start();
+				Triangle * tri = m_blockedTriangleTree.LineIntersectionTriangle(p1 = wp1->GetPosition(), p2 = wp2->GetPosition(), true, dummy);
+				//lineTraceTime += lineTraceTimer.Stop(Timer::MILLISECONDS);
 
-				for (int yy = y; yy <= yEnd; yy++)
+				if (tri == nullptr)
 				{
-					for (int xx = x; xx <= xEnd; xx++)
+					v1.Position.x = p1.x;
+					v1.Position.y = wp1->GetHeightVal();
+					v1.Position.z = p1.y;
+
+					v2.Position.x = p2.x;
+					v2.Position.y = wp2->GetHeightVal();
+					v2.Position.z = p2.y;
+
+					//Timer connectionTimer;
+					//connectionTimer.Start();
+					if (wp1->Connect(wp2))
 					{
-						int key2 = xx + yy * TERRAIN_SIZE;
-						if (m_waypoints.find(key2) != m_waypoints.end())
-						{
-							//std::cout << "\tm_waypoints.find(key2) --> " << timer.Stop(Timer::MILLISECONDS) << " ms\n";
-							DirectX::XMFLOAT2 dummy;
-							DirectX::XMFLOAT2 p1, p2;
-							Triangle * tri = m_blockedTriangleTree.LineIntersectionTriangle(p1 = m_waypoints[key].GetPosition(), p2 = m_waypoints[key2].GetPosition(), true, dummy);
-							//std::cout << "\t\tLineInterSectionTriangle --> " << timer.Stop(Timer::MILLISECONDS) << " ms\n";
-							if (tri == nullptr)
-							{
-								v1.Position.x = p1.x;
-								v1.Position.y = m_waypoints[key].GetHeightVal();
-								v1.Position.z = p1.y;
-
-								v2.Position.x = p2.x;
-								v2.Position.y = m_waypoints[key2].GetHeightVal();
-								v2.Position.z = p2.y;
-
-
-								if (m_waypoints[key].Connect(&m_waypoints[key2]))
-								{
-									counter++;
-									m_connectionMesh.push_back(v1);
-									m_connectionMesh.push_back(v2);
-									m_waypoints[key2].ForceConnection(&m_waypoints[key]);
-								}
-								//std::cout << "\t\t\tConnection --> " << timer.Stop(Timer::MILLISECONDS) << " ms\n";
-							}
-						}
+						counter++;
+						m_connectionMesh.push_back(v1);
+						m_connectionMesh.push_back(v2);
+						wp2->ForceConnection(wp1);
 					}
+					//connectionTime += connectionTimer.Stop(Timer::MILLISECONDS);
 				}
 			}
 		}
+
+
+		//std::cout << "\n";
+		/*double totalTime = totalTimer.Stop(Timer::MILLISECONDS);
+		std::cout << "Waypoints: \t" << wpSize << "\n";
+		std::cout << "Total Time: \t" << totalTime << " ms\n";
+		std::cout << "Corner Time: \t" << cornerTime << " ms, " <<  (cornerTime / totalTime) * 100.0 << "%\n";
+		std::cout << "Finding wp: \t" << findingWPTime << " ms, " << (findingWPTime / totalTime) * 100.0 << "%\n";
+		std::cout << "Line trace: \t" << lineTraceTime << " ms, " << (lineTraceTime / totalTime) * 100.0 << "%\n";
+		std::cout << "Connection: \t" << connectionTime << " ms, " << (connectionTime / totalTime) * 100.0 << "%\n";
+		std::cout << "***************************************************************************\n";*/
 	}
 
 	return counter;

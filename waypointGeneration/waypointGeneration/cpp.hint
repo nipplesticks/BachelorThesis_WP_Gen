@@ -1,0 +1,5 @@
+// Hint files help the Visual Studio IDE interpret Visual C++ identifiers
+// such as names of functions and macros.
+// For more information see https://go.microsoft.com/fwlink/?linkid=865984
+#define __out _SAL_VERSION_CHECK(__out)
+#define __out _SAL1_Source_(__out, (), _Out_)
