@@ -125,6 +125,7 @@
     <ClCompile Include="Game\Pathfinding\Waypoint.cpp" />
     <ClCompile Include="Game\QuadTree\Quadrant.cpp" />
     <ClCompile Include="Game\QuadTree\QuadTree.cpp" />
+    <ClCompile Include="Game\GPUQuadTree\GPUQuadTree.cpp" />
     <ClCompile Include="MapGeneration\DiamondSquare.cpp" />
     <ClCompile Include="MapGeneration\TerrainCreator.cpp" />
     <ClCompile Include="Rendering\Drawable\Drawable.cpp" />
@@ -149,6 +150,7 @@
     <ClInclude Include="Game\QuadTree\Quadrant.h" />
     <ClInclude Include="Game\QuadTree\QuadTree.h" />
     <ClInclude Include="Game\water_texture.h" />
+    <ClInclude Include="Game\GPUQuadTree\GPUQuadTree.h" />
     <ClInclude Include="MapGeneration\DiamondSquare.h" />
     <ClInclude Include="MapGeneration\TerrainCreator.h" />
     <ClInclude Include="Rendering\Drawable\Drawable.h" />
@@ -164,6 +166,20 @@
     <ClInclude Include="Rendering\Window\Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Rendering\Rendering\Shaders\ComputeShaders\ComputeShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </PreprocessorDefinitions>
+    </FxCompile>
     <FxCompile Include="Rendering\Rendering\Shaders\DepthPrePassPixel.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>

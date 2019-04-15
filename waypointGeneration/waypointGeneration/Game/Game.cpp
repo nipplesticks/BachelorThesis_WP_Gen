@@ -1,8 +1,10 @@
 #include "waypointGenerationPCH.h"
 #include "Game.h"
 #include "../Rendering/Rendering/Renderer.h"
+#include "GPUQuadTree/GPUQuadTree.h"
 #include <time.h>
 #include <algorithm>
+
 
 Game::Game()
 {
@@ -1047,7 +1049,121 @@ void Game::_connectWaypoints()
 	std::cout << "Connecting Waypoints... ";
 	Timer t;
 	int counter = 0;
-	Vertex v1, v2;
+
+	struct gpuWaypoint
+	{
+		UINT connections[4096];
+		float CostConnections[4096];
+		UINT key = 0;
+		UINT nrOfConnections = 0;
+		DirectX::XMFLOAT2 pos;
+	};
+
+	GPUQuadTree gpuQuadTree;
+	gpuQuadTree.BuildTree(0, 0, 7, TERRAIN_SIZE);
+
+	size_t tSize = m_blockedTriangles.size();
+	std::vector<Triangle> bTri(tSize);
+	for (size_t i = 0; i < tSize; i++)
+		bTri[i] = *m_blockedTriangles[i];
+
+	gpuQuadTree.PlaceObjects(bTri);
+
+	const std::vector<GPUQuadrant> & qt = gpuQuadTree.GetQuadTree();
+	size_t wpSize = m_waypoints.size();
+	std::vector<gpuWaypoint> gpuWp(wpSize);
+
+	size_t c = 0;
+
+	for (auto & wp : m_waypoints)
+	{
+		gpuWaypoint gwp;
+		gwp.key = wp.first;
+		gwp.pos = wp.second.GetPosition();
+		gpuWp[c++] = gwp;
+	}
+
+	ID3D11Buffer * quadTree = nullptr;			// This can be read only
+	ID3D11Buffer * triangles = nullptr;			// This can be read only
+	ID3D11Buffer * wps = nullptr;				// This this needs RW
+
+	ID3D11Device * device = Renderer::GetInstance()->GetDevice();
+	ID3D11DeviceContext * deviceContext = Renderer::GetInstance()->GetDeviceContext();
+
+#pragma region CREATE_GPU
+	// Dunka upp qt till GPU
+	{
+		D3D11_BUFFER_DESC qtBufferDesc = {};
+		qtBufferDesc.ByteWidth = gpuQuadTree.ByteSize();
+		qtBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+		qtBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		//qtBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		qtBufferDesc.StructureByteStride = 0;
+		
+		void * qtSer = malloc(gpuQuadTree.ByteSize());
+		UINT currentOffset = 0;
+		for (size_t i = 0; i < qt.size(); i++)
+		{
+			UINT sizeOfTriInd = (UINT)qt[i].TriangleIndices.size() * sizeof(UINT);
+			memcpy((char*)qtSer + currentOffset, &qt[i], qt[i].ByteSize - sizeOfTriInd);
+			currentOffset += qt[i].ByteSize - sizeOfTriInd;
+			memcpy((char*)qtSer + currentOffset, qt[i].TriangleIndices.data(), sizeOfTriInd);
+			currentOffset += sizeOfTriInd;
+		}
+
+		D3D11_SUBRESOURCE_DATA subData = {};
+		subData.pSysMem = qtSer;
+		subData.SysMemPitch = qtBufferDesc.ByteWidth;
+
+		HRESULT hr = device->CreateBuffer(&qtBufferDesc, &subData, &quadTree);
+
+		free(qtSer);
+	}
+	// Dunka upp trianglar till GPU
+	{
+		D3D11_BUFFER_DESC triBufferDesc = {};
+		triBufferDesc.ByteWidth = bTri.size() * sizeof(Triangle);
+		triBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+		triBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		//triBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		triBufferDesc.StructureByteStride = sizeof(Triangle);
+
+		D3D11_SUBRESOURCE_DATA subData = {};
+		subData.pSysMem = bTri.data();
+		subData.SysMemPitch = triBufferDesc.ByteWidth;
+
+		HRESULT hr = device->CreateBuffer(&triBufferDesc, &subData, &triangles);
+
+	}
+	// Dunka upp WP till GPU
+	{
+		D3D11_BUFFER_DESC wpBufferDesc = {};
+		wpBufferDesc.ByteWidth = gpuWp.size() * sizeof(gpuWaypoint);
+		wpBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		wpBufferDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
+		wpBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		wpBufferDesc.StructureByteStride = sizeof(gpuWaypoint);
+
+		D3D11_SUBRESOURCE_DATA subData = {};
+		subData.pSysMem = gpuWp.data();
+		subData.SysMemPitch = wpBufferDesc.ByteWidth;
+
+		HRESULT hr = device->CreateBuffer(&wpBufferDesc, &subData, &wps);
+
+		int breakMe = 0;
+	}
+#pragma endregion 
+
+	deviceContext->VSSetShader(nullptr, nullptr, NULL);
+	deviceContext->PSSetShader(nullptr, nullptr, NULL);
+
+
+	// TODO :: Create Compute Shader
+	// TODO :: Bind Buffers
+	// TODO :: Dispatch(gpuWp.size(), 0, 0)
+	// TODO :: Fetch WPBuffer and use data to create connections on CPU
+
+	/*Vertex v1, v2;
 	DirectX::XMFLOAT4A n = { 0.0f, 1.0f, 0.0f, 0.0f };
 	v1.Normal = n;
 	v2.Normal = n;
@@ -1095,10 +1211,13 @@ void Game::_connectWaypoints()
 				}
 			}
 		}
-	}
+	}*/
 	std::cout << "\nConnection(s): " << counter << "... ";
 	std::cout << t.Stop(Timer::MILLISECONDS) << "ms\n";
 
+	quadTree->Release();
+	wps->Release();
+	triangles->Release();
 }
 
 void Game::_createViewableConnections()

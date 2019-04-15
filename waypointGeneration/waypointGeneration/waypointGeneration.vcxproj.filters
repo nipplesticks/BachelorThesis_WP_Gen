@@ -63,6 +63,9 @@
     <ClCompile Include="Game\QuadTree\QuadTree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Game\GPUQuadTree\GPUQuadTree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Rendering\Window\Window.h">
@@ -119,6 +122,9 @@
     <ClInclude Include="Game\water_texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Game\GPUQuadTree\GPUQuadTree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Rendering\Rendering\Shaders\ForwardVertex.hlsl" />
@@ -126,5 +132,6 @@
     <FxCompile Include="Rendering\Rendering\Shaders\DepthPrePassPixel.hlsl" />
     <FxCompile Include="Rendering\Rendering\Shaders\PickingPassPixel.hlsl" />
     <FxCompile Include="Rendering\Rendering\Shaders\PickingPassVertex.hlsl" />
+    <FxCompile Include="Rendering\Rendering\Shaders\ComputeShaders\ComputeShader.hlsl" />
   </ItemGroup>
 </Project>
