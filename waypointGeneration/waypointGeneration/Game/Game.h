@@ -9,7 +9,7 @@
 
 #define DRAW_WAYPOINT true
 #define DRAW_TRIANGLES true
-#define DRAW_CONNECTIONS true
+#define DRAW_CONNECTIONS false
 #define USE_RANDOM_SEED false
 
 #define MIN_HEIGHT	-10
