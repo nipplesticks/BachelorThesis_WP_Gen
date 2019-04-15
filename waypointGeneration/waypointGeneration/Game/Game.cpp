@@ -881,17 +881,16 @@ void Game::_cleanWaypoints()
 	for (int i = 0; i < vectorSize; i++)
 	{
 		int removeThisManyWaypoints = 1;
+		int lastWaypointKey = keysThirdIteration[i];
 		bool keysFollowEachother = true;
 		std::vector<int> keysToRemove;
 
 		while (keysFollowEachother)
 		{
-			int index = i + removeThisManyWaypoints;
-
-			if (index == vectorSize)
+			if (i == vectorSize)
 			{
 				int removeSize = keysToRemove.size() - 1;
-				for (int j = 1; j < removeSize; j++)
+				for (int j = 0; j < removeSize; j++)
 					m_waypoints.erase(keysToRemove[j]);
 
 				break;
@@ -903,35 +902,35 @@ void Game::_cleanWaypoints()
 			if (nextWpIt != m_waypoints.end())
 			{
 				DirectX::XMFLOAT2 halfwayToNextTrianglePoint;
-				halfwayToNextTrianglePoint.x = keysThirdIteration[index] % TERRAIN_SIZE;
-				halfwayToNextTrianglePoint.y = float(keysThirdIteration[index] / TERRAIN_SIZE + nextWaypointKey / TERRAIN_SIZE);
+				//halfwayToNextTrianglePoint.x = keysThirdIteration[lastWaypointIndex] % TERRAIN_SIZE;
+				//halfwayToNextTrianglePoint.y = (keysThirdIteration[lastWaypointIndex] / TERRAIN_SIZE) + (nextWaypointKey / TERRAIN_SIZE);
+				halfwayToNextTrianglePoint.x = nextWaypointKey % TERRAIN_SIZE;
+				halfwayToNextTrianglePoint.y = (lastWaypointKey / TERRAIN_SIZE) + (nextWaypointKey / TERRAIN_SIZE);
 				halfwayToNextTrianglePoint.y *= 0.5;
 				Triangle * ptr = m_blockedTriangleTree.PointInsideTriangle(halfwayToNextTrianglePoint, true);
-				if ((keysThirdIteration[i] + removeThisManyWaypoints * TERRAIN_SIZE) != nextWaypointKey &&
-					ptr != nullptr)
+				if (ptr == nullptr)
 				{
 					keysFollowEachother = false;
 
 					int removeSize = keysToRemove.size() - 1;
-					for (int j = 1; j < removeSize; j++)
-						m_waypoints.erase(keysToRemove[j]);
-				}
-				else if (ptr == nullptr)
-				{
-					keysFollowEachother = false;
-
-					int removeSize = keysToRemove.size() - 1;
-					for (int j = 1; j < removeSize; j++)
+					for (int j = 0; j < removeSize; j++)
 						m_waypoints.erase(keysToRemove[j]);
 				}
 				else
 				{
 					removeThisManyWaypoints++;
+					lastWaypointKey = nextWaypointKey;
 					keysToRemove.push_back(nextWaypointKey);
 				}
 			}
 			else
+			{
 				keysFollowEachother = false;
+
+				int removeSize = keysToRemove.size() - 1;
+				for (int j = 0; j < removeSize; j++)
+					m_waypoints.erase(keysToRemove[j]);
+			}
 		}
 	}
 
