@@ -28,15 +28,15 @@ struct AddressStack
 
 struct Waypoint
 {
-	uint	Connections[4096];
-	float	CostConnections[4096];
 	uint	Key;
 	uint	NrOfConnections;
 	float2	Pos;
+	uint	Connections[128];
+	float	CostConnections[128];
 };
 
-ByteAddressBuffer QuadTreeBuffer : register(t0);			// Quad Tree
-StructuredBuffer<Triangle> Triangles : register(t1);		// Triangles
+StructuredBuffer<Triangle> Triangles : register(t0);		// Triangles
+ByteAddressBuffer QuadTreeBuffer : register(t1);			// Quad Tree
 RWStructuredBuffer<Waypoint> Waypoints : register(u0);		// Waypoints
 
 Triangle GetTriangle(in uint address, in uint index)
@@ -67,6 +67,7 @@ TreeNode GetNode(in uint address, out uint triangleIndexAddress)
 
 	address += 4 * 4; // childrenIndices
 	
+    [unroll]
     for (uint j = 0; j < 4; j++)
 	{
 		node.ChildrenByteAddress[j] = QuadTreeBuffer.Load(address);
@@ -108,6 +109,14 @@ bool LineLineIntersect(float2 l1Origin, float2 l1End, float2 l2Origin, float2 l2
 
 bool LineQuadIntersect(float2 origin, float2 end, float2 Min, float2 Max)
 {
+    if (origin.x >= Min.x && origin.y <= Max.x &&
+        origin.y >= Min.y && origin.y <= Max.y)
+        return true;
+
+    if (end.x >= Min.x && end.y <= Max.x &&
+        end.y >= Min.y && end.y <= Max.y)
+        return true;
+
     float2 topRight, bottomLeft;
     topRight.x = Max.x;
     topRight.y = Min.y;
@@ -150,13 +159,15 @@ bool LineTriangleIntersect(float2 origin, float2 end, Triangle tri)
 void main( uint3 threadID : SV_DispatchThreadID )
 {
     uint waypointTarget = threadID.x;
-
     Waypoint target = Waypoints[waypointTarget];
-
-   static uint nrOfWaypoints = 0, dummy = 0;
+    uint nrOfWaypoints = 0, dummy = 0;
     Waypoints.GetDimensions(nrOfWaypoints, dummy);
 	
+    uint tConnections[128];
+    float tCost[128];
+    
     float2 origin = target.Pos;
+
 	
     for (uint i = 0; i < nrOfWaypoints; i++)
     {
@@ -166,13 +177,14 @@ void main( uint3 threadID : SV_DispatchThreadID )
         Waypoint towards = Waypoints[i];
         float2 end = towards.Pos;
         
-        AddressStack	nodeStack[16];
+        AddressStack nodeStack[16];
         uint nodeStackSize = 0;
         uint triIndexAddress = 0;
-        TreeNode node = GetNode(0, triIndexAddress);
-
+        TreeNode node = GetNode(0, triIndexAddress); // All Nodes seems to be NULL AF
+        
         if (LineQuadIntersect(origin, end, node.Min, node.Max))
         {
+            Waypoints[waypointTarget].NrOfConnections = 1;
             bool intersection = false;
 
             nodeStack[nodeStackSize].Address = node.ByteStart;
@@ -205,7 +217,7 @@ void main( uint3 threadID : SV_DispatchThreadID )
 
                     }
                 }
-				else
+                else
                 {
                     nodeStackSize--;
                 }
@@ -215,13 +227,17 @@ void main( uint3 threadID : SV_DispatchThreadID )
             if (!intersection)
             {
                 float cost = length(end - origin);
-                target.Connections[target.NrOfConnections] = towards.Key;
-                target.CostConnections[target.NrOfConnections] = cost;
+                uint nrOfConnections = target.NrOfConnections;
+                tConnections[target.NrOfConnections] = towards.Key;
+                tCost[target.NrOfConnections] = cost;
                 target.NrOfConnections++;
             }
 			
         } // If hit master node End
     } // For end
+
+    target.Connections = tConnections;
+    target.CostConnections = tCost;
 
     Waypoints[waypointTarget] = target;
 }

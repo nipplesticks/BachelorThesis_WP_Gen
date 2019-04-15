@@ -1052,11 +1052,11 @@ void Game::_connectWaypoints()
 
 	struct gpuWaypoint
 	{
-		UINT connections[4096];
-		float CostConnections[4096];
 		UINT key = 0;
 		UINT nrOfConnections = 0;
 		DirectX::XMFLOAT2 pos;
+		UINT connections[128];
+		float CostConnections[128];
 	};
 
 	GPUQuadTree gpuQuadTree;
@@ -1078,14 +1078,22 @@ void Game::_connectWaypoints()
 	for (auto & wp : m_waypoints)
 	{
 		gpuWaypoint gwp;
+
+		memset(gwp.CostConnections, 0, 128 * sizeof(UINT));
+		memset(gwp.connections, 0, 128 * sizeof(UINT));
+
 		gwp.key = wp.first;
 		gwp.pos = wp.second.GetPosition();
 		gpuWp[c++] = gwp;
 	}
 
-	ID3D11Buffer * quadTree = nullptr;			// This can be read only
-	ID3D11Buffer * triangles = nullptr;			// This can be read only
-	ID3D11Buffer * wps = nullptr;				// This this needs RW
+	ID3D11Buffer * quadTreeOld = nullptr;			// This can be read only
+	ID3D11Buffer * trianglesOld = nullptr;			// This can be read only
+	ID3D11Buffer * wpsOld = nullptr;				// This this needs RW
+
+	ID3D11ShaderResourceView * quadTree = nullptr;
+	ID3D11ShaderResourceView * triangles = nullptr;
+	ID3D11UnorderedAccessView * wps = nullptr;
 
 	ID3D11Device * device = Renderer::GetInstance()->GetDevice();
 	ID3D11DeviceContext * deviceContext = Renderer::GetInstance()->GetDeviceContext();
@@ -1097,9 +1105,9 @@ void Game::_connectWaypoints()
 		qtBufferDesc.ByteWidth = gpuQuadTree.ByteSize();
 		qtBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
 		qtBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		//qtBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		qtBufferDesc.StructureByteStride = 0;
-		
+		qtBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
+
 		void * qtSer = malloc(gpuQuadTree.ByteSize());
 		UINT currentOffset = 0;
 		for (size_t i = 0; i < qt.size(); i++)
@@ -1110,30 +1118,55 @@ void Game::_connectWaypoints()
 			memcpy((char*)qtSer + currentOffset, qt[i].TriangleIndices.data(), sizeOfTriInd);
 			currentOffset += sizeOfTriInd;
 		}
+		
+		D3D11_BUFFEREX_SRV bsrv = {};
+		bsrv.FirstElement = 0;
+		bsrv.NumElements = 1;
+		bsrv.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+		srvDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+		srvDesc.BufferEx = bsrv;
+		
+		
 
 		D3D11_SUBRESOURCE_DATA subData = {};
 		subData.pSysMem = qtSer;
 		subData.SysMemPitch = qtBufferDesc.ByteWidth;
 
-		HRESULT hr = device->CreateBuffer(&qtBufferDesc, &subData, &quadTree);
+		HRESULT hr = device->CreateBuffer(&qtBufferDesc, &subData, &quadTreeOld);
+		hr = device->CreateShaderResourceView(quadTreeOld, &srvDesc, &quadTree);
 
 		free(qtSer);
 	}
+	
 	// Dunka upp trianglar till GPU
 	{
 		D3D11_BUFFER_DESC triBufferDesc = {};
 		triBufferDesc.ByteWidth = bTri.size() * sizeof(Triangle);
 		triBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
 		triBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		//triBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		triBufferDesc.StructureByteStride = sizeof(Triangle);
+		triBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+
+		D3D11_BUFFEREX_SRV bsrv = {};
+		bsrv.FirstElement = 0;
+		bsrv.NumElements = bTri.size();
+		
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+		srvDesc.BufferEx = bsrv;
 
 		D3D11_SUBRESOURCE_DATA subData = {};
 		subData.pSysMem = bTri.data();
 		subData.SysMemPitch = triBufferDesc.ByteWidth;
 
-		HRESULT hr = device->CreateBuffer(&triBufferDesc, &subData, &triangles);
-
+		HRESULT hr = device->CreateBuffer(&triBufferDesc, &subData, &trianglesOld);
+		hr = device->CreateShaderResourceView(trianglesOld, &srvDesc, &triangles);
+		
 	}
 	// Dunka upp WP till GPU
 	{
@@ -1143,81 +1176,114 @@ void Game::_connectWaypoints()
 		wpBufferDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
 		wpBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 		wpBufferDesc.StructureByteStride = sizeof(gpuWaypoint);
+		wpBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+
+		D3D11_BUFFER_UAV buav = {};
+		buav.FirstElement = 0;
+		buav.NumElements = gpuWp.size();
+		buav.Flags = D3D11_BUFFER_UAV_FLAG_COUNTER;
+
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+		uavDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+		uavDesc.Buffer = buav;
+
 
 		D3D11_SUBRESOURCE_DATA subData = {};
 		subData.pSysMem = gpuWp.data();
 		subData.SysMemPitch = wpBufferDesc.ByteWidth;
 
-		HRESULT hr = device->CreateBuffer(&wpBufferDesc, &subData, &wps);
-
-		int breakMe = 0;
+		HRESULT hr = device->CreateBuffer(&wpBufferDesc, &subData, &wpsOld);
+		hr = device->CreateUnorderedAccessView(wpsOld, &uavDesc, &wps);
 	}
 #pragma endregion 
 
-	deviceContext->VSSetShader(nullptr, nullptr, NULL);
-	deviceContext->PSSetShader(nullptr, nullptr, NULL);
+	ID3D11ComputeShader * cShader = nullptr;
 
+#pragma region Create_Shader
+	{
+		HRESULT shaderError = 0;
+		ID3DBlob * pCS = nullptr;
+		ID3DBlob * er = nullptr;
 
-	// TODO :: Create Compute Shader
-	// TODO :: Bind Buffers
-	// TODO :: Dispatch(gpuWp.size(), 0, 0)
-	// TODO :: Fetch WPBuffer and use data to create connections on CPU
+		shaderError = D3DCompileFromFile(
+			L"Rendering\\Rendering\\Shaders\\ComputeShaders\\ComputeShader.hlsl",
+			nullptr,
+			D3D_COMPILE_STANDARD_FILE_INCLUDE,
+			"main",
+			"cs_5_0",
+			0,
+			0,
+			&pCS,
+			&er
+		);
 
-	/*Vertex v1, v2;
-	DirectX::XMFLOAT4A n = { 0.0f, 1.0f, 0.0f, 0.0f };
-	v1.Normal = n;
-	v2.Normal = n;
-	v1.Position.w = 1.0f;
-	v2.Position.w = 1.0f;
-	t.Start();
-	std::cout << std::endl;
-	long int counter2 = 0;
-
-	long int totalSize = m_waypoints.size();
-
-	for (auto & wp1 : m_waypoints)
-	{	
-		std::cout << "\r" << std::to_string(((double)counter2++ / totalSize) * 100.0) << "%";
-		
-		for (auto & wp2 : m_waypoints)
+		if (FAILED(shaderError))
 		{
-			if (wp1.first == wp2.first)
-				continue;
+			std::cout << ((char*)er->GetBufferPointer());
+			er->Release();
 
-			DirectX::XMFLOAT2 p1, p2;
-
-			DirectX::XMFLOAT2 dummy;
-			Triangle * tri = m_blockedTriangleTree.LineIntersectionTriangle(p1 = wp1.second.GetPosition(), p2 = wp2.second.GetPosition(), true, dummy);
-
-
-			if (tri == nullptr)
+			if (pCS)
 			{
-
-				v1.Position.x = p1.x;
-				v1.Position.y = wp1.second.GetHeightVal();
-				v1.Position.z = p1.y;
-
-				v2.Position.x = p2.x;
-				v2.Position.y = wp2.second.GetHeightVal();
-				v2.Position.z = p2.y;
-
-
-				if (wp1.second.Connect(&m_waypoints[wp2.first]))
-				{
-					m_connectionMesh.push_back(v1);
-					m_connectionMesh.push_back(v2);
-					counter++;
-					wp2.second.ForceConnection(&m_waypoints[wp1.first]);
-				}
+				pCS->Release();
 			}
 		}
-	}*/
-	std::cout << "\nConnection(s): " << counter << "... ";
-	std::cout << t.Stop(Timer::MILLISECONDS) << "ms\n";
+		HRESULT hr = device->CreateComputeShader(pCS->GetBufferPointer(), pCS->GetBufferSize(), nullptr, &cShader);
+	}
+	deviceContext->VSSetShader(nullptr, nullptr, NULL);
+	deviceContext->PSSetShader(nullptr, nullptr, NULL);
+	deviceContext->CSSetShader(cShader, nullptr, NULL);
+#pragma endregion
 
+#pragma region Bind_Buffer
+	{
+		deviceContext->CSSetShaderResources(0, 1, &triangles);
+		deviceContext->CSSetShaderResources(1, 1, &quadTree);
+		UINT i = -1;
+		deviceContext->CSSetUnorderedAccessViews(0, 1, &wps, &i);
+	}
+#pragma endregion 
+
+	//while (true)
+	{
+		deviceContext->Dispatch(gpuWp.size(), 1, 1);
+		//deviceContext->Dispatch(1, 1, 1);
+
+		D3D11_MAPPED_SUBRESOURCE dataPtr;
+
+		gpuWaypoint * arr = nullptr;
+
+		if (SUCCEEDED(deviceContext->Map(wpsOld, 0, D3D11_MAP_READ, 0, &dataPtr)))
+		{
+			arr = (gpuWaypoint*)dataPtr.pData;
+
+			for (size_t i = 0; i < gpuWp.size(); i++)
+			{
+				gpuWp[i] = arr[i];
+
+				if (gpuWp[i].nrOfConnections == 1)
+					int breakMe = 1;
+
+			}
+
+			deviceContext->Unmap(wpsOld, 0);
+		}
+
+
+		Renderer::GetInstance()->Present();
+	}
+	
+	deviceContext->CSSetShader(nullptr, nullptr, NULL);
+	quadTreeOld->Release();
+	wpsOld->Release();
+	trianglesOld->Release();
 	quadTree->Release();
 	wps->Release();
 	triangles->Release();
+	cShader->Release();
+
+	std::cout << "\nConnection(s): " << counter << "... ";
+	std::cout << t.Stop(Timer::MILLISECONDS) << "ms\n";
 }
 
 void Game::_createViewableConnections()
