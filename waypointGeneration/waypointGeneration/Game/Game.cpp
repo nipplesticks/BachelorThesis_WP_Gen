@@ -4,6 +4,8 @@
 #include <time.h>
 #include <algorithm>
 
+//#define PRINT_TIME_YES
+
 Game::Game()
 {
 	if (USE_RANDOM_SEED)
@@ -653,7 +655,7 @@ void Game::_buildTrees()
 	DirectX::XMFLOAT2 worldStart = DirectX::XMFLOAT2(m_terrainMesh[0].Position.x, m_terrainMesh[0].Position.z);
 
 	// Calculate tree depth and build quad tree for triangles
-	int reversedTreeSize = 2;
+	int reversedTreeSize = 16;
 	int treeLevels = 0;
 	t.Start();
 	while (reversedTreeSize < TERRAIN_SIZE)
@@ -661,6 +663,8 @@ void Game::_buildTrees()
 		treeLevels++;
 		reversedTreeSize *= 2;
 	}
+
+	
 
 	std::cout << "Depth: " << treeLevels << "... ";
 	m_blockedTriangleTree.BuildTree(treeLevels, TERRAIN_SIZE, worldStart);
@@ -1057,7 +1061,7 @@ void Game::_connectWaypoints()
 	std::cout << std::endl;
 	
 	int stopVal = TERRAIN_SIZE - 1;
-	int increment = 16;
+	int increment = 64;
 	//int numberOfQuadrants = * stopVal) / increment;
 
 	UINT con = 0;
@@ -1089,10 +1093,14 @@ void Game::_connectWaypoints()
 	std::cout << t.Stop(Timer::MILLISECONDS) << "ms\n";
 }
 
+
 UINT Game::_connectInsideQuadrant(int xStart, int xEnd, int yStart, int yEnd)
 {
-	//Timer totalTimer;
-	//totalTimer.Start();
+#ifdef PRINT_TIME_YES
+	Timer totalTimer;
+	totalTimer.Start();
+#endif
+
 	QUAD q;
 	q.left = xStart;
 	q.top = yStart;
@@ -1121,10 +1129,11 @@ UINT Game::_connectInsideQuadrant(int xStart, int xEnd, int yStart, int yEnd)
 		xEnd + yEnd * TERRAIN_SIZE
 	};
 
-
+#ifdef PRINT_TIME_YES
 	// Define corner waypoints.
-	//Timer cornerTimer;
-	//cornerTimer.Start();
+	Timer cornerTimer;
+	cornerTimer.Start();
+#endif
 	for (int i = 0; i < 4; i++)
 	{
 		if (m_waypoints.find(keys[i]) == m_waypoints.end())
@@ -1140,8 +1149,9 @@ UINT Game::_connectInsideQuadrant(int xStart, int xEnd, int yStart, int yEnd)
 			m_blockedTriangleTree.AddObject(&m_waypoints[keys[i]]);
 		}
 	}
-	//double cornerTime = cornerTimer.Stop(Timer::MILLISECONDS);
-
+#ifdef PRINT_TIME_YES
+	double cornerTime = cornerTimer.Stop(Timer::MILLISECONDS);
+#endif
 
 	Vertex v1, v2;
 	DirectX::XMFLOAT4A n = { 0.0f, 1.0f, 0.0f, 0.0f };
@@ -1150,19 +1160,25 @@ UINT Game::_connectInsideQuadrant(int xStart, int xEnd, int yStart, int yEnd)
 	v1.Position.w = 1.0f;
 	v2.Position.w = 1.0f;
 
+#ifdef PRINT_TIME_YES
 	// Finding waypoints
-	//Timer findingWPTimer;
-	//findingWPTimer.Start();
+	Timer findingWPTimer;
+	findingWPTimer.Start();
+#endif
 	DirectX::BoundingBox bb;
 	bb.CreateFromPoints(bb, DirectX::XMLoadFloat2(&points[0]), DirectX::XMLoadFloat2(&points[3]));
 	std::vector<Waypoint*> wp;
-	//double findingWPTime;
-	//double lineTraceTime = 0.0;
-	//double connectionTime = 0.0;
+#ifdef PRINT_TIME_YES
+	double findingWPTime;
+	double lineTraceTime = 0.0;
+	double connectionTime = 0.0;
+#endif
 
 	if (m_blockedTriangleTree.GetWaypointsFrom(bb, wp))
 	{
-		//findingWPTime = findingWPTimer.Stop(Timer::MILLISECONDS);
+#ifdef PRINT_TIME_YES
+		findingWPTime = findingWPTimer.Stop(Timer::MILLISECONDS);
+#endif PRINT_TIME_YES
 		size_t wpSize = wp.size();
 
 		for (int i = 0; i < wpSize; i++)
@@ -1175,10 +1191,14 @@ UINT Game::_connectInsideQuadrant(int xStart, int xEnd, int yStart, int yEnd)
 			{
 				Waypoint * wp2 = wp[j];
 				DirectX::XMFLOAT2 dummy, p1, p2;
-				//Timer lineTraceTimer;
-				//lineTraceTimer.Start();
+#ifdef PRINT_TIME_YES
+				Timer lineTraceTimer;
+				lineTraceTimer.Start();
+#endif PRINT_TIME_YES
 				Triangle * tri = m_blockedTriangleTree.LineIntersectionTriangle(p1 = wp1->GetPosition(), p2 = wp2->GetPosition(), true, dummy);
-				//lineTraceTime += lineTraceTimer.Stop(Timer::MILLISECONDS);
+#ifdef PRINT_TIME_YES
+				lineTraceTime += lineTraceTimer.Stop(Timer::MILLISECONDS);
+#endif
 
 				if (tri == nullptr)
 				{
@@ -1190,8 +1210,10 @@ UINT Game::_connectInsideQuadrant(int xStart, int xEnd, int yStart, int yEnd)
 					v2.Position.y = wp2->GetHeightVal();
 					v2.Position.z = p2.y;
 
-					//Timer connectionTimer;
-					//connectionTimer.Start();
+#ifdef PRINT_TIME_YES
+					Timer connectionTimer;
+					connectionTimer.Start();
+#endif
 					if (wp1->Connect(wp2))
 					{
 						counter++;
@@ -1199,21 +1221,24 @@ UINT Game::_connectInsideQuadrant(int xStart, int xEnd, int yStart, int yEnd)
 						m_connectionMesh.push_back(v2);
 						wp2->ForceConnection(wp1);
 					}
-					//connectionTime += connectionTimer.Stop(Timer::MILLISECONDS);
+#ifdef PRINT_TIME_YES
+					connectionTime += connectionTimer.Stop(Timer::MILLISECONDS);
+#endif
 				}
 			}
 		}
 
-
-		//std::cout << "\n";
-		/*double totalTime = totalTimer.Stop(Timer::MILLISECONDS);
+#ifdef PRINT_TIME_YES
+		std::cout << "\n";
+		double totalTime = totalTimer.Stop(Timer::MILLISECONDS);
 		std::cout << "Waypoints: \t" << wpSize << "\n";
 		std::cout << "Total Time: \t" << totalTime << " ms\n";
 		std::cout << "Corner Time: \t" << cornerTime << " ms, " <<  (cornerTime / totalTime) * 100.0 << "%\n";
 		std::cout << "Finding wp: \t" << findingWPTime << " ms, " << (findingWPTime / totalTime) * 100.0 << "%\n";
 		std::cout << "Line trace: \t" << lineTraceTime << " ms, " << (lineTraceTime / totalTime) * 100.0 << "%\n";
 		std::cout << "Connection: \t" << connectionTime << " ms, " << (connectionTime / totalTime) * 100.0 << "%\n";
-		std::cout << "***************************************************************************\n";*/
+		std::cout << "***************************************************************************\n";
+#endif
 	}
 
 	return counter;
