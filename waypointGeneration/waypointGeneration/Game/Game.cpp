@@ -1,8 +1,10 @@
 #include "waypointGenerationPCH.h"
 #include "Game.h"
 #include "../Rendering/Rendering/Renderer.h"
+#include "GPUQuadTree/GPUQuadTree.h"
 #include <time.h>
 #include <algorithm>
+
 
 Game::Game()
 {
@@ -462,7 +464,7 @@ void Game::_createWorld()
 	std::cout << std::endl;
 	_cleanWaypoints();
 	std::cout << std::endl;
-	//_connectWaypoints();
+	_connectWaypoints();
 	std::cout << std::endl;
 	_generateWorldEdges();
 	std::cout << std::endl;
@@ -1364,65 +1366,374 @@ void Game::_offsetWaypoints()
 
 	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
 }
-
+#include <fstream>
 void Game::_connectWaypoints()
 {
+	static const UINT TREE_SIZE = 1024 * 1024 * 16;
+
 	// Connect Waypoints
 	std::cout << "Connecting Waypoints... ";
 	Timer t;
+	t.Start();
 	int counter = 0;
+
+	struct gpuWaypoint
+	{
+		UINT key = 0;
+		UINT nrOfConnections = 0;
+		DirectX::XMFLOAT2 pos;
+		UINT connections[256];
+	};
+
+	GPUQuadTree gpuQuadTree;
+	gpuQuadTree.BuildTree(0, 0, 7, TERRAIN_SIZE);
+
+	size_t tSize = m_blockedTriangles.size();
+	std::vector<Triangle> bTri(tSize);
+	for (size_t i = 0; i < tSize; i++)
+		bTri[i] = *m_blockedTriangles[i];
+
+	gpuQuadTree.PlaceObjects(bTri);
+
+	std::ofstream lol;
+	lol.open("GPUTREE.txt");
+	lol << gpuQuadTree.ToString();
+	lol.close();
+
+	const std::vector<GPUQuadrant> & qt = gpuQuadTree.GetQuadTree();
+	size_t wpSize = m_waypoints.size();
+	std::vector<gpuWaypoint> gpuWp(wpSize);
+
+	size_t c = 0;
+
+	for (auto & wp : m_waypoints)
+	{
+		gpuWaypoint gwp;
+		memset(gwp.connections, 0, 256 * sizeof(UINT));
+
+		gwp.key = wp.first;
+		gwp.pos = wp.second.GetPosition();
+		gpuWp[c++] = gwp;
+	}
+
+	ID3D11Buffer * quadTreeOld = nullptr;			// This can be read only
+	ID3D11Buffer * trianglesOld = nullptr;			// This can be read only
+	ID3D11Buffer * wpsOld = nullptr;				// This this needs RW
+
+	ID3D11Buffer * offsetBuffer = nullptr;
+
+
+	
+
+	ID3D11ShaderResourceView * quadTree = nullptr;
+	ID3D11ShaderResourceView * triangles = nullptr;
+	ID3D11UnorderedAccessView * wps = nullptr;
+
+	ID3D11Device * device = Renderer::GetInstance()->GetDevice();
+	ID3D11DeviceContext * deviceContext = Renderer::GetInstance()->GetDeviceContext();
+	ID3D11Query * async = nullptr;
+	ID3D11Query * timeStamp = nullptr;
+	ID3D11Query * timeStamp2 = nullptr;
+	ID3D11Query * disJoint = nullptr;
+
+
+	D3D11_QUERY_DESC qd = {};
+	qd.Query = D3D11_QUERY_EVENT;
+
+	device->CreateQuery(&qd, &async);
+
+	qd.Query = D3D11_QUERY_TIMESTAMP;
+	device->CreateQuery(&qd, &timeStamp);
+	device->CreateQuery(&qd, &timeStamp2);
+
+	qd.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
+	device->CreateQuery(&qd, &disJoint);
+
+	int plzDontBreak = 2;
+
+	deviceContext->End(timeStamp2);
+	UINT64 timestampStart;
+	while (S_OK != deviceContext->GetData(timeStamp2, &timestampStart, sizeof(UINT64), 0))
+	{
+		plzDontBreak++;
+	}
+	
+	DirectX::XMUINT4 DispatchOffset(0, 0, 0, 0);
+
+	D3D11_BUFFER_DESC bDesc = {};
+	bDesc.Usage = D3D11_USAGE_DYNAMIC;
+	bDesc.ByteWidth = sizeof(DirectX::XMUINT4);
+	bDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	bDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	bDesc.MiscFlags = 0;
+	bDesc.StructureByteStride = 0;
+
+	device->CreateBuffer(&bDesc, nullptr, &offsetBuffer);
+
+
+#pragma region CREATE_GPU
+	// Dunka upp qt till GPU
+	{
+		void * qtSer = malloc(TREE_SIZE);
+		UINT currentOffset = 0;
+		for (size_t i = 0; i < qt.size(); i++)
+		{
+			UINT sizeOfTriInd = (UINT)qt[i].TriangleIndices.size() * sizeof(UINT);
+			memcpy((char*)qtSer + currentOffset, &qt[i], qt[i].ByteSize - sizeOfTriInd);
+			currentOffset += qt[i].ByteSize - sizeOfTriInd;
+			memcpy((char*)qtSer + currentOffset, qt[i].TriangleIndices.data(), sizeOfTriInd);
+			currentOffset += sizeOfTriInd;
+		}
+
+		D3D11_BUFFER_DESC qtBufferDesc = {};
+		qtBufferDesc.ByteWidth = currentOffset;
+		qtBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+		qtBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		qtBufferDesc.StructureByteStride = 0;
+		qtBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
+		
+		D3D11_BUFFEREX_SRV bsrv = {};
+		bsrv.FirstElement = 0;
+		bsrv.NumElements = currentOffset / 4;
+		bsrv.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+		srvDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+		srvDesc.BufferEx = bsrv;
+		
+		D3D11_SUBRESOURCE_DATA subData = {};
+		subData.pSysMem = qtSer;
+		subData.SysMemPitch = qtBufferDesc.ByteWidth;
+
+		HRESULT hr = device->CreateBuffer(&qtBufferDesc, &subData, &quadTreeOld);
+		hr = device->CreateShaderResourceView(quadTreeOld, &srvDesc, &quadTree);
+
+		free(qtSer);
+	}
+	
+	// Dunka upp trianglar till GPU
+	{
+		D3D11_BUFFER_DESC triBufferDesc = {};
+		triBufferDesc.ByteWidth = bTri.size() * sizeof(Triangle);
+		triBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+		triBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		triBufferDesc.StructureByteStride = sizeof(Triangle);
+		triBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+
+		D3D11_BUFFEREX_SRV bsrv = {};
+		bsrv.FirstElement = 0;
+		bsrv.NumElements = bTri.size();
+		
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+		srvDesc.BufferEx = bsrv;
+
+		D3D11_SUBRESOURCE_DATA subData = {};
+		subData.pSysMem = bTri.data();
+		subData.SysMemPitch = triBufferDesc.ByteWidth;
+
+		HRESULT hr = device->CreateBuffer(&triBufferDesc, &subData, &trianglesOld);
+		hr = device->CreateShaderResourceView(trianglesOld, &srvDesc, &triangles);
+		
+	}
+	// Dunka upp WP till GPU
+	{
+		D3D11_BUFFER_DESC wpBufferDesc = {};
+		wpBufferDesc.ByteWidth = gpuWp.size() * sizeof(gpuWaypoint);
+		wpBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		wpBufferDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
+		wpBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		wpBufferDesc.StructureByteStride = sizeof(gpuWaypoint);
+		wpBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+
+		D3D11_BUFFER_UAV buav = {};
+		buav.FirstElement = 0;
+		buav.NumElements = gpuWp.size();
+		buav.Flags = D3D11_BUFFER_UAV_FLAG_COUNTER;
+
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+		uavDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+		uavDesc.Buffer = buav;
+
+
+		D3D11_SUBRESOURCE_DATA subData = {};
+		subData.pSysMem = gpuWp.data();
+		subData.SysMemPitch = wpBufferDesc.ByteWidth;
+
+		HRESULT hr = device->CreateBuffer(&wpBufferDesc, &subData, &wpsOld);
+		hr = device->CreateUnorderedAccessView(wpsOld, &uavDesc, &wps);
+	}
+#pragma endregion 
+
+	ID3D11ComputeShader * cShader = nullptr;
+
+#pragma region Create_Shader
+	{
+		HRESULT shaderError = 0;
+		ID3DBlob * pCS = nullptr;
+		ID3DBlob * er = nullptr;
+
+		shaderError = D3DCompileFromFile(
+			L"Rendering\\Rendering\\Shaders\\ComputeShaders\\ComputeShader.hlsl",
+			nullptr,
+			D3D_COMPILE_STANDARD_FILE_INCLUDE,
+			"main",
+			"cs_5_0",
+			0,
+			0,
+			&pCS,
+			&er
+		);
+
+		if (FAILED(shaderError))
+		{
+			std::cout << ((char*)er->GetBufferPointer());
+			er->Release();
+			if (pCS)
+			{
+				pCS->Release();
+			}
+		}
+		HRESULT hr = device->CreateComputeShader(pCS->GetBufferPointer(), pCS->GetBufferSize(), nullptr, &cShader);
+	}
+	deviceContext->VSSetShader(nullptr, nullptr, NULL);
+	deviceContext->PSSetShader(nullptr, nullptr, NULL);
+	deviceContext->CSSetShader(cShader, nullptr, NULL);
+#pragma endregion
+
+#pragma region Bind_Buffer
+	{
+		deviceContext->CSSetShaderResources(0, 1, &triangles);
+		deviceContext->CSSetShaderResources(1, 1, &quadTree);
+		UINT i = -1;
+		deviceContext->CSSetUnorderedAccessViews(0, 1, &wps, &i);
+	}
+#pragma endregion 
+
 	Vertex v1, v2;
 	DirectX::XMFLOAT4A n = { 0.0f, 1.0f, 0.0f, 0.0f };
 	v1.Normal = n;
 	v2.Normal = n;
 	v1.Position.w = 1.0f;
 	v2.Position.w = 1.0f;
-	t.Start();
-	std::cout << std::endl;
-	long int counter2 = 0;
 
-	long int totalSize = m_waypoints.size();
+	size_t increment = 512;
 
-	for (auto & wp1 : m_waypoints)
-	{	
-		std::cout << "\r" << std::to_string(((double)counter2++ / totalSize) * 100.0) << "%";
+	size_t gpuwpSize = gpuWp.size() + increment - 1;
+
+	int error = 0;
+
+	double totalGpuTime = 0.0;
+
+	std::cout << "\n";
+	deviceContext->Begin(disJoint);
+	for (size_t i = 0; i < gpuwpSize; i += increment)
+	{
+		error = 0;
+		std::cout << "\r" << (double)i / gpuwpSize * 100.0 << " %";
+		D3D11_MAPPED_SUBRESOURCE offsetData;
+
+		deviceContext->Map(offsetBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &offsetData);
+
+		memcpy(offsetData.pData, &DispatchOffset, sizeof(DirectX::XMUINT4));
+
+		deviceContext->Unmap(offsetBuffer, 0);
+
+		deviceContext->CSSetConstantBuffers(0, 1, &offsetBuffer);
+
+		deviceContext->Dispatch(increment, 1, 1);
 		
-		for (auto & wp2 : m_waypoints)
+		DispatchOffset.x += increment;
+		deviceContext->End(async);
+
+		UINT queryData;
+		
+		while(S_OK != deviceContext->GetData(async, &queryData, sizeof(UINT), 0))
 		{
-			if (wp1.first == wp2.first)
-				continue;
-
-			DirectX::XMFLOAT2 p1, p2;
-
-			DirectX::XMFLOAT2 dummy;
-			Triangle * tri = m_blockedTriangleTree.LineIntersectionTriangle(p1 = wp1.second.GetPosition(), p2 = wp2.second.GetPosition(), true, dummy);
-
-
-			if (tri == nullptr)
-			{
-
-				v1.Position.x = p1.x;
-				v1.Position.y = wp1.second.GetHeightVal();
-				v1.Position.z = p1.y;
-
-				v2.Position.x = p2.x;
-				v2.Position.y = wp2.second.GetHeightVal();
-				v2.Position.z = p2.y;
-
-
-				if (wp1.second.Connect(&m_waypoints[wp2.first]))
-				{
-					m_connectionMesh.push_back(v1);
-					m_connectionMesh.push_back(v2);
-					counter++;
-					wp2.second.ForceConnection(&m_waypoints[wp1.first]);
-				}
-			}
+			error++;
 		}
 	}
-	std::cout << "\nConnection(s): " << counter << "... ";
-	std::cout << t.Stop(Timer::MILLISECONDS) << "ms\n";
 
+	D3D11_MAPPED_SUBRESOURCE dataPtr;
+
+	gpuWaypoint * arr = nullptr;
+	if (SUCCEEDED(deviceContext->Map(wpsOld, 0, D3D11_MAP_READ, 0, &dataPtr)))
+	{
+		arr = (gpuWaypoint*)dataPtr.pData;
+
+		for (size_t t = 0; t < gpuWp.size(); t++)
+		{
+			UINT nrOfConnections = arr[t].nrOfConnections;
+
+			UINT key = arr[t].key;
+
+			for (UINT n = 0; n < nrOfConnections && n < 256; n++)
+			{
+				UINT key2 = arr[t].connections[n];
+
+				bool hasConnection = false;
+
+				hasConnection = m_waypoints[key].Connect(&m_waypoints[key2]);
+
+				if (m_waypoints[key2].Connect(&m_waypoints[key]))
+				{
+					if (hasConnection)
+					{
+						v1.Position.x = m_waypoints[key].GetPosition().x;
+						v1.Position.y = m_waypoints[key].GetHeightVal();
+						v1.Position.z = m_waypoints[key].GetPosition().y;
+						v2.Position.x = m_waypoints[key2].GetPosition().x;
+						v2.Position.y = m_waypoints[key2].GetHeightVal();
+						v2.Position.z = m_waypoints[key2].GetPosition().y;
+						m_connectionMesh.push_back(v1);
+						m_connectionMesh.push_back(v2);
+						counter++;
+					}
+				}
+					
+			}
+		}
+		deviceContext->Unmap(wpsOld, 0);
+	}
+
+
+	deviceContext->End(disJoint);
+	D3D11_QUERY_DATA_TIMESTAMP_DISJOINT gpuTick;
+	while (S_OK != deviceContext->GetData(disJoint, &gpuTick, sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT), 0))
+	{
+		error++;
+	}
+
+	deviceContext->End(timeStamp);
+	UINT64 timestampEnd;
+	while (S_OK != deviceContext->GetData(timeStamp, &timestampEnd, sizeof(UINT64), 0))
+	{
+		error++;
+	}
+
+	double time = (timestampEnd - timestampStart) / gpuTick.Frequency;
+	time *= 1000;
+
+	deviceContext->CSSetShader(nullptr, nullptr, NULL);
+	quadTreeOld->Release();
+	wpsOld->Release();
+	trianglesOld->Release();
+	quadTree->Release();
+	wps->Release();
+	triangles->Release();
+	cShader->Release();
+	offsetBuffer->Release();
+	async->Release();
+	timeStamp->Release();
+	disJoint->Release();
+	timeStamp2->Release();
+
+	std::cout << "\nConnection(s): " << counter << "... ";
+	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
 }
 
 void Game::_createViewableConnections()

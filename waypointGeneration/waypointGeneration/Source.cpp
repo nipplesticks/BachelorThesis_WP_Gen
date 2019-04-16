@@ -1,5 +1,3 @@
-#include <DirectXCollision.h>
-#include <DirectXMath.h>
 #include "waypointGenerationPCH.h"
 #include "Rendering/Rendering/Renderer.h"
 #include "Game/Game.h"

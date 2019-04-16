@@ -22,8 +22,8 @@ void Renderer::Init()
 
 	UINT createDeviceFlags = 0;
 
-#ifdef _DEBUG
 	createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#ifdef _DEBUG
 #endif //DEBUG
 
 	DXGI_SWAP_CHAIN_DESC scd;

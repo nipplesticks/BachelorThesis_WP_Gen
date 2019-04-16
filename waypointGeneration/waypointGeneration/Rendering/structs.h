@@ -23,6 +23,7 @@ struct MouseBuffer
 
 struct Triangle
 {
+	Triangle() {};
 	Triangle(const DirectX::XMFLOAT3 & p0,
 		const DirectX::XMFLOAT3 & p1,
 		const DirectX::XMFLOAT3 & p2)
@@ -51,8 +52,16 @@ struct Triangle
 
 		DirectX::XMStoreFloat3(&normal, n);
 	}
+	Triangle & operator=(const Triangle & other)
+	{
+		if (this != &other)
+		{
+			normal = other.normal;
+			memcpy(points, other.points, sizeof(float) * 9);
+		}
+		return *this;
+	}
 
-	Drawable * owner;
 	DirectX::XMFLOAT3 points[3];
 	DirectX::XMFLOAT3 normal;
 };
