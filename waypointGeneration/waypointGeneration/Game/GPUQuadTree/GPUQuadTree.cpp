@@ -122,6 +122,26 @@ UINT GPUQuadTree::ByteSize() const
 	return m_totalTreeByteSize;
 }
 
+std::string GPUQuadTree::ToString() const
+{
+	std::string str = "";
+	str += "NrOfLeaves: " + std::to_string(m_leafCounter) + "\n";
+	str += "ObjectsInLeaves: " + std::to_string(m_objectsInLeaves) + "\n";
+	str += "MaxLevel: " + std::to_string(m_level) + "\n";
+	str += "TotalTreeByteSize: " + std::to_string(m_totalTreeByteSize) + "\n";
+	str += "Nodes:\n";
+
+	for (size_t i = 0; i < m_quadTree.size(); i++)
+	{
+		str += "*******************************************************\n";
+		str += "Index: " + std::to_string(i) + "\n";
+		str += m_quadTree[i].ToString();
+		str += "*******************************************************\n";
+	}
+
+	return str;
+}
+
 bool GPUQuadTree::_inside(const DirectX::BoundingBox& bb, const Triangle& tri)
 {
 	using namespace DirectX;

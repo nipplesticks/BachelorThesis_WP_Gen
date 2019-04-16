@@ -31,8 +31,7 @@ struct Waypoint
 	uint	Key;
 	uint	NrOfConnections;
 	float2	Pos;
-	uint	Connections[128];
-	float	CostConnections[128];
+	uint	Connections[256];
 };
 
 StructuredBuffer<Triangle> Triangles : register(t0);		// Triangles
@@ -155,16 +154,17 @@ bool LineTriangleIntersect(float2 origin, float2 end, Triangle tri)
     return false;
 }
 
-[numthreads(1, 1, 1)]
-void main( uint3 threadID : SV_DispatchThreadID )
+[numthreads(2, 1, 1)]
+void main(uint3 threadID : SV_DispatchThreadID, uint3 threadGroup : SV_GroupID)
 {
     uint waypointTarget = threadID.x;
+    
     Waypoint target = Waypoints[waypointTarget];
     uint nrOfWaypoints = 0, dummy = 0;
     Waypoints.GetDimensions(nrOfWaypoints, dummy);
 	
-    uint tConnections[128];
-    float tCost[128];
+    uint tConnections[256];
+    
     
     float2 origin = target.Pos;
 
@@ -173,7 +173,7 @@ void main( uint3 threadID : SV_DispatchThreadID )
     {
         if (i == waypointTarget)
             continue;
-
+        
         Waypoint towards = Waypoints[i];
         float2 end = towards.Pos;
         
@@ -184,7 +184,7 @@ void main( uint3 threadID : SV_DispatchThreadID )
         
         if (LineQuadIntersect(origin, end, node.Min, node.Max))
         {
-            Waypoints[waypointTarget].NrOfConnections = 1;
+
             bool intersection = false;
 
             nodeStack[nodeStackSize].Address = node.ByteStart;
@@ -226,10 +226,8 @@ void main( uint3 threadID : SV_DispatchThreadID )
 
             if (!intersection)
             {
-                float cost = length(end - origin);
                 uint nrOfConnections = target.NrOfConnections;
-                tConnections[target.NrOfConnections] = towards.Key;
-                tCost[target.NrOfConnections] = cost;
+                tConnections[min(target.NrOfConnections, 255)] = towards.Key;
                 target.NrOfConnections++;
             }
 			
@@ -237,7 +235,5 @@ void main( uint3 threadID : SV_DispatchThreadID )
     } // For end
 
     target.Connections = tConnections;
-    target.CostConnections = tCost;
-
     Waypoints[waypointTarget] = target;
 }

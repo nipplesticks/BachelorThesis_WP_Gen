@@ -44,6 +44,31 @@ struct GPUQuadrant
 		}
 	}
 
+	std::string ToString() const
+	{
+		std::string str = "";
+		str += "ByteSize: " + std::to_string(ByteSize) + "\n";
+		str += "ByteStart: " + std::to_string(ByteStart) + "\n";
+		str += "Min: " + std::to_string(Min.x) + ", " + std::to_string(Min.y) + "\n";
+		str += "Max: " + std::to_string(Max.x) + ", " + std::to_string(Max.y) + "\n";
+		str += "Level: " + std::to_string(Level) + "\n";
+		str += "NrOfChildren: " + std::to_string(NrOfChildren) + "\n";
+		str += "ChildrenIndices: ";
+		for (UINT i = 0; i < NrOfChildren; i++)
+			str += std::to_string(ChildrenIndices[i]) + ", ";
+		str += "\n";
+		str += "ChildrenByteAddress: ";
+		for (UINT i = 0; i < NrOfChildren; i++)
+			str += std::to_string(ChildrenByteAddress[i]) + ", ";
+		str += "\n";
+		str += "NrOfObjects: " + std::to_string(NrOfObjects) + "\n";
+		str += "TriangleIndices: ";
+		for (UINT i = 0; i < NrOfObjects; i++)
+			str += std::to_string(TriangleIndices[i]) + ", ";
+		str += "\n";
+		return str;
+	}
+
 	UINT ByteSize = 0;
 	UINT ByteStart = 0;
 
@@ -68,6 +93,9 @@ public:
 	void PlaceObjects(const std::vector<Triangle> & triangles);
 	const std::vector<GPUQuadrant> & GetQuadTree() const;
 	UINT ByteSize() const;
+
+	std::string ToString() const;
+
 
 private:
 	std::vector<GPUQuadrant>	m_quadTree;
