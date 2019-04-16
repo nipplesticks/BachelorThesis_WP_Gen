@@ -876,7 +876,6 @@ void Game::_cleanWaypoints()
 	for (auto & wp : m_waypoints)
 		keysThirdIteration[waypointPositionCounter++] = wp.first;
 
-	// Remove waypoints that follow each other in y-axis
 	vectorSize = keysThirdIteration.size();
 	for (int i = 0; i < vectorSize; i++)
 	{
@@ -902,9 +901,137 @@ void Game::_cleanWaypoints()
 			if (nextWpIt != m_waypoints.end())
 			{
 				DirectX::XMFLOAT2 halfwayToNextTrianglePoint;
-				//halfwayToNextTrianglePoint.x = keysThirdIteration[lastWaypointIndex] % TERRAIN_SIZE;
-				//halfwayToNextTrianglePoint.y = (keysThirdIteration[lastWaypointIndex] / TERRAIN_SIZE) + (nextWaypointKey / TERRAIN_SIZE);
 				halfwayToNextTrianglePoint.x = nextWaypointKey % TERRAIN_SIZE;
+				halfwayToNextTrianglePoint.y = (lastWaypointKey / TERRAIN_SIZE) + (nextWaypointKey / TERRAIN_SIZE);
+				halfwayToNextTrianglePoint.y *= 0.5;
+				Triangle * ptr = m_blockedTriangleTree.PointInsideTriangle(halfwayToNextTrianglePoint, true);
+				if (ptr == nullptr)
+				{
+					keysFollowEachother = false;
+
+					int removeSize = keysToRemove.size() - 1;
+					for (int j = 0; j < removeSize; j++)
+						m_waypoints.erase(keysToRemove[j]);
+				}
+				else
+				{
+					removeThisManyWaypoints++;
+					lastWaypointKey = nextWaypointKey;
+					keysToRemove.push_back(nextWaypointKey);
+				}
+			}
+			else
+			{
+				keysFollowEachother = false;
+
+				int removeSize = keysToRemove.size() - 1;
+				for (int j = 0; j < removeSize; j++)
+					m_waypoints.erase(keysToRemove[j]);
+			}
+		}
+	}
+
+	/*
+	 * Fourth iteration - Remove waypoints that follow each other in one of the diagonals
+	 */
+	std::vector<int> keysFourthIteration(m_waypoints.size());
+	waypointPositionCounter = 0;
+	for (auto & wp : m_waypoints)
+		keysFourthIteration[waypointPositionCounter++] = wp.first;
+
+	vectorSize = keysFourthIteration.size();
+	for (int i = 0; i < vectorSize; i++)
+	{
+		int removeThisManyWaypoints = 1;
+		int lastWaypointKey = keysFourthIteration[i];
+		bool keysFollowEachother = true;
+		std::vector<int> keysToRemove;
+
+		while (keysFollowEachother)
+		{
+			if (i == vectorSize)
+			{
+				int removeSize = keysToRemove.size() - 1;
+				for (int j = 0; j < removeSize; j++)
+					m_waypoints.erase(keysToRemove[j]);
+
+				break;
+			}
+
+			// Diagonal movement forward direction
+			int nextWaypointKey = keysFourthIteration[i] + removeThisManyWaypoints + removeThisManyWaypoints * TERRAIN_SIZE;
+			auto nextWpIt = m_waypoints.find(nextWaypointKey);
+
+			if (nextWpIt != m_waypoints.end())
+			{
+				DirectX::XMFLOAT2 halfwayToNextTrianglePoint;
+				halfwayToNextTrianglePoint.x = (lastWaypointKey % TERRAIN_SIZE) + (nextWaypointKey % TERRAIN_SIZE);
+				halfwayToNextTrianglePoint.x *= 0.5;
+				halfwayToNextTrianglePoint.y = (lastWaypointKey / TERRAIN_SIZE) + (nextWaypointKey / TERRAIN_SIZE);
+				halfwayToNextTrianglePoint.y *= 0.5;
+				Triangle * ptr = m_blockedTriangleTree.PointInsideTriangle(halfwayToNextTrianglePoint, true);
+				if (ptr == nullptr)
+				{
+					keysFollowEachother = false;
+
+					int removeSize = keysToRemove.size() - 1;
+					for (int j = 0; j < removeSize; j++)
+						m_waypoints.erase(keysToRemove[j]);
+				}
+				else
+				{
+					removeThisManyWaypoints++;
+					lastWaypointKey = nextWaypointKey;
+					keysToRemove.push_back(nextWaypointKey);
+				}
+			}
+			else
+			{
+				keysFollowEachother = false;
+
+				int removeSize = keysToRemove.size() - 1;
+				for (int j = 0; j < removeSize; j++)
+					m_waypoints.erase(keysToRemove[j]);
+			}
+		}
+	}
+
+	/*
+	 * Fifth iteration - Remove waypoints that follow each other in the other diagonal
+	 */
+	std::vector<int> keysFifthIteration(m_waypoints.size());
+	waypointPositionCounter = 0;
+	for (auto & wp : m_waypoints)
+		keysFifthIteration[waypointPositionCounter++] = wp.first;
+
+	vectorSize = keysFifthIteration.size();
+	for (int i = 0; i < vectorSize; i++)
+	{
+		int removeThisManyWaypoints = 1;
+		int lastWaypointKey = keysFifthIteration[i];
+		bool keysFollowEachother = true;
+		std::vector<int> keysToRemove;
+
+		while (keysFollowEachother)
+		{
+			if (i == vectorSize)
+			{
+				int removeSize = keysToRemove.size() - 1;
+				for (int j = 0; j < removeSize; j++)
+					m_waypoints.erase(keysToRemove[j]);
+
+				break;
+			}
+
+			// Diagonal movement forward direction
+			int nextWaypointKey = keysFifthIteration[i] - removeThisManyWaypoints + removeThisManyWaypoints * TERRAIN_SIZE;
+			auto nextWpIt = m_waypoints.find(nextWaypointKey);
+
+			if (nextWpIt != m_waypoints.end())
+			{
+				DirectX::XMFLOAT2 halfwayToNextTrianglePoint;
+				halfwayToNextTrianglePoint.x = (lastWaypointKey % TERRAIN_SIZE) + (nextWaypointKey % TERRAIN_SIZE);
+				halfwayToNextTrianglePoint.x *= 0.5;
 				halfwayToNextTrianglePoint.y = (lastWaypointKey / TERRAIN_SIZE) + (nextWaypointKey / TERRAIN_SIZE);
 				halfwayToNextTrianglePoint.y *= 0.5;
 				Triangle * ptr = m_blockedTriangleTree.PointInsideTriangle(halfwayToNextTrianglePoint, true);
