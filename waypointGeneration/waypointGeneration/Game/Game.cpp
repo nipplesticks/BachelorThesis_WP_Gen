@@ -1374,6 +1374,7 @@ void Game::_connectWaypoints()
 	// Connect Waypoints
 	std::cout << "Connecting Waypoints... ";
 	Timer t;
+	t.Start();
 	int counter = 0;
 
 	struct gpuWaypoint
@@ -1422,6 +1423,7 @@ void Game::_connectWaypoints()
 	ID3D11Buffer * offsetBuffer = nullptr;
 
 
+	
 
 	ID3D11ShaderResourceView * quadTree = nullptr;
 	ID3D11ShaderResourceView * triangles = nullptr;
@@ -1429,7 +1431,33 @@ void Game::_connectWaypoints()
 
 	ID3D11Device * device = Renderer::GetInstance()->GetDevice();
 	ID3D11DeviceContext * deviceContext = Renderer::GetInstance()->GetDeviceContext();
+	ID3D11Query * async = nullptr;
+	ID3D11Query * timeStamp = nullptr;
+	ID3D11Query * timeStamp2 = nullptr;
+	ID3D11Query * disJoint = nullptr;
 
+
+	D3D11_QUERY_DESC qd = {};
+	qd.Query = D3D11_QUERY_EVENT;
+
+	device->CreateQuery(&qd, &async);
+
+	qd.Query = D3D11_QUERY_TIMESTAMP;
+	device->CreateQuery(&qd, &timeStamp);
+	device->CreateQuery(&qd, &timeStamp2);
+
+	qd.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
+	device->CreateQuery(&qd, &disJoint);
+
+	int plzDontBreak = 2;
+
+	deviceContext->End(timeStamp2);
+	UINT64 timestampStart;
+	while (S_OK != deviceContext->GetData(timeStamp2, &timestampStart, sizeof(UINT64), 0))
+	{
+		plzDontBreak++;
+	}
+	
 	DirectX::XMUINT4 DispatchOffset(0, 0, 0, 0);
 
 	D3D11_BUFFER_DESC bDesc = {};
@@ -1565,7 +1593,6 @@ void Game::_connectWaypoints()
 		{
 			std::cout << ((char*)er->GetBufferPointer());
 			er->Release();
-
 			if (pCS)
 			{
 				pCS->Release();
@@ -1594,14 +1621,20 @@ void Game::_connectWaypoints()
 	v1.Position.w = 1.0f;
 	v2.Position.w = 1.0f;
 
-	size_t increment = 1;
+	size_t increment = 512;
 
 	size_t gpuwpSize = gpuWp.size() + increment - 1;
 
+	int error = 0;
+
+	double totalGpuTime = 0.0;
+
 	std::cout << "\n";
+	deviceContext->Begin(disJoint);
 	for (size_t i = 0; i < gpuwpSize; i += increment)
 	{
-		std::cout <<  (double)i / gpuwpSize * 100.0 << "%\n";
+		error = 0;
+		std::cout << "\r" << (double)i / gpuwpSize * 100.0 << " %";
 		D3D11_MAPPED_SUBRESOURCE offsetData;
 
 		deviceContext->Map(offsetBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &offsetData);
@@ -1615,26 +1648,40 @@ void Game::_connectWaypoints()
 		deviceContext->Dispatch(increment, 1, 1);
 		
 		DispatchOffset.x += increment;
+		deviceContext->End(async);
 
-		D3D11_MAPPED_SUBRESOURCE dataPtr;
-
-		gpuWaypoint * arr = nullptr;
-
-		if (SUCCEEDED(deviceContext->Map(wpsOld, 0, D3D11_MAP_READ, 0, &dataPtr)))
+		UINT queryData;
+		
+		while(S_OK != deviceContext->GetData(async, &queryData, sizeof(UINT), 0))
 		{
-			arr = (gpuWaypoint*)dataPtr.pData;
+			error++;
+		}
+	}
 
-			for (size_t t = i; t < gpuWp.size(); t++)
+	D3D11_MAPPED_SUBRESOURCE dataPtr;
+
+	gpuWaypoint * arr = nullptr;
+	if (SUCCEEDED(deviceContext->Map(wpsOld, 0, D3D11_MAP_READ, 0, &dataPtr)))
+	{
+		arr = (gpuWaypoint*)dataPtr.pData;
+
+		for (size_t t = 0; t < gpuWp.size(); t++)
+		{
+			UINT nrOfConnections = arr[t].nrOfConnections;
+
+			UINT key = arr[t].key;
+
+			for (UINT n = 0; n < nrOfConnections && n < 256; n++)
 			{
-				UINT nrOfConnections = arr[t].nrOfConnections;
+				UINT key2 = arr[t].connections[n];
 
-				UINT key = arr[t].key;
+				bool hasConnection = false;
 
-				for (UINT n = 0; n < nrOfConnections && n < 256; n++)
+				hasConnection = m_waypoints[key].Connect(&m_waypoints[key2]);
+
+				if (m_waypoints[key2].Connect(&m_waypoints[key]))
 				{
-					UINT key2 = arr[t].connections[n];
-					
-					if (m_waypoints[key].Connect(&m_waypoints[key2]))
+					if (hasConnection)
 					{
 						v1.Position.x = m_waypoints[key].GetPosition().x;
 						v1.Position.y = m_waypoints[key].GetHeightVal();
@@ -1644,18 +1691,32 @@ void Game::_connectWaypoints()
 						v2.Position.z = m_waypoints[key2].GetPosition().y;
 						m_connectionMesh.push_back(v1);
 						m_connectionMesh.push_back(v2);
-
 						counter++;
-						m_waypoints[key2].ForceConnection(&m_waypoints[key]);
 					}
 				}
+					
 			}
-
-			deviceContext->Unmap(wpsOld, 0);
 		}
+		deviceContext->Unmap(wpsOld, 0);
 	}
 
 
+	deviceContext->End(disJoint);
+	D3D11_QUERY_DATA_TIMESTAMP_DISJOINT gpuTick;
+	while (S_OK != deviceContext->GetData(disJoint, &gpuTick, sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT), 0))
+	{
+		error++;
+	}
+
+	deviceContext->End(timeStamp);
+	UINT64 timestampEnd;
+	while (S_OK != deviceContext->GetData(timeStamp, &timestampEnd, sizeof(UINT64), 0))
+	{
+		error++;
+	}
+
+	double time = (timestampEnd - timestampStart) / gpuTick.Frequency;
+	time *= 1000;
 
 	deviceContext->CSSetShader(nullptr, nullptr, NULL);
 	quadTreeOld->Release();
@@ -1666,9 +1727,13 @@ void Game::_connectWaypoints()
 	triangles->Release();
 	cShader->Release();
 	offsetBuffer->Release();
+	async->Release();
+	timeStamp->Release();
+	disJoint->Release();
+	timeStamp2->Release();
 
 	std::cout << "\nConnection(s): " << counter << "... ";
-	std::cout << t.Stop(Timer::MILLISECONDS) << "ms\n";
+	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
 }
 
 void Game::_createViewableConnections()

@@ -111,28 +111,34 @@ bool LineLineIntersect(float2 l1Origin, float2 l1End, float2 l2Origin, float2 l2
 
 bool LineQuadIntersect(float2 origin, float2 end, float2 Min, float2 Max)
 {
+    if (origin.x >= Min.x && origin.x <= Max.x &&
+        origin.y >= Min.y && origin.y <= Max.y)
+        return true;
+
+    if (end.x >= Min.x && end.x <= Max.x &&
+        end.y >= Min.y && end.y <= Max.y)
+        return true;
+
     float2 topRight, bottomLeft;
     topRight.x = Max.x;
     topRight.y = Min.y;
     bottomLeft.x = Min.x;
     bottomLeft.y = Max.y;
-
-    if (origin.x >= Min.x && origin.x <= Max.x &&
-        origin.y >= Min.y && origin.y <= Max.y)
-        return true;
-
-    if (end.x >= Min.x && end.y <= Max.x &&
-        end.y >= Min.y && end.y <= Max.y)
-        return true;
     
-    if (LineLineIntersect(origin, end, Min, topRight))
+    if (LineLineIntersect(origin, end, Min, Max))
         return true;
-    if (LineLineIntersect(origin, end, topRight, Max))
+    if (LineLineIntersect(origin, end, bottomLeft, topRight))
         return true;
-    if (LineLineIntersect(origin, end, Max, bottomLeft))
-        return true;
-    if (LineLineIntersect(origin, end, bottomLeft, Min))
-        return true;
+
+
+    //if (LineLineIntersect(origin, end, Min, topRight))
+    //    return true;
+    //if (LineLineIntersect(origin, end, topRight, Max))
+    //    return true;
+    //if (LineLineIntersect(origin, end, Max, bottomLeft))
+    //    return true;
+    //if (LineLineIntersect(origin, end, bottomLeft, Min))
+    //    return true;
 	
     return false;
 }
@@ -155,26 +161,17 @@ bool PointTriangleIntersect(float2 s, float2 a, float2 b, float2 c)
 
 bool LineTriangleIntersect(float2 origin, float2 end, Triangle tri)
 {
-    float2 p0, p1, p2;
-    p0.x = tri.Position[0].x;
-    p0.y = tri.Position[0].z;
-
-    p1.x = tri.Position[1].x;
-    p1.y = tri.Position[1].z;
-
-    p2.x = tri.Position[2].x;
-    p2.y = tri.Position[2].z;
+    //if (PointTriangleIntersect(origin, tri.Position[0].xz, tri.Position[1].xz, tri.Position[2].xz))
+    //    return true;
+    //if (PointTriangleIntersect(end, tri.Position[0].xz, tri.Position[1].xz, tri.Position[2].xz))
+    //    return true;
     
-    if (PointTriangleIntersect(origin, p0, p1, p2))
+    if (LineLineIntersect(origin, end, tri.Position[0].xz, tri.Position[1].xz))
         return true;
-    if (PointTriangleIntersect(end, p0, p1, p2))
+    if (LineLineIntersect(origin, end, tri.Position[1].xz, tri.Position[2].xz))
         return true;
-    if (LineLineIntersect(origin, end, p0, p1))
-        return true;
-    if (LineLineIntersect(origin, end, p1, p2))
-        return true;
-    if (LineLineIntersect(origin, end, p2, p0))
-        return true;
+    //if (LineLineIntersect(origin, end, tri.Position[2].xz, tri.Position[0].xz))
+    //    return true;
 
     return false;
 }
@@ -188,35 +185,31 @@ void main(uint3 threadID : SV_GroupID, uint3 threadGroup : SV_GroupThreadID)
     uint wpSplit = threadGroup.x;
 
     Waypoint target = Waypoints[waypointTarget];
+
     uint nrOfWaypoints = 0, dummy = 0;
     Waypoints.GetDimensions(nrOfWaypoints, dummy);
     
-    uint numberOfWP = (float)nrOfWaypoints / WP_SPLIT + 0.5f;
-    uint wpStart = numberOfWP * wpSplit;
+    uint numberOfWP = nrOfWaypoints / WP_SPLIT;
+    uint wpStart = numberOfWP * wpSplit + waypointTarget + 1;
     uint wpEnd = wpStart + numberOfWP;
-
-    if (wpSplit == WP_SPLIT - 1)
-        wpEnd = nrOfWaypoints;
-
+    
     wpEnd = min(wpEnd, nrOfWaypoints);
 
     float2 origin = target.Pos;
     
     for (uint i = wpStart; i < wpEnd; i++)
     {
-        if (i == waypointTarget)
-            continue;
         bool hit = false;
-        
         Waypoint towards = Waypoints[i];
         float2 end = towards.Pos;
-        
-        AddressStack nodeStack[16];
+
+        AddressStack nodeStack[7];
         uint nodeStackSize = 0;
+
         uint triIndexAddress = 0;
         TreeNode node = GetNode(0, triIndexAddress);
         
-        if (LineQuadIntersect(origin, end, node.Min, node.Max))
+        //if (LineQuadIntersect(origin, end, node.Min, node.Max))
         {
             bool intersection = false;
 
@@ -240,7 +233,10 @@ void main(uint3 threadID : SV_GroupID, uint3 threadGroup : SV_GroupThreadID)
                                 Triangle tri = GetTriangle(triIndexAddress, triIt);
                                 intersection = LineTriangleIntersect(origin, end, tri);
                                 if (intersection)
+                                {
                                     hit = true;
+                                    break;
+                                }
                             }
                         }
                         else
@@ -261,19 +257,19 @@ void main(uint3 threadID : SV_GroupID, uint3 threadGroup : SV_GroupThreadID)
 
             if (!hit)
             {
-                if (WP_SPLIT > 1)
-                {
-                    uint index;
-                    InterlockedAdd(Waypoints[waypointTarget].NrOfConnections, 1, index);
-                    index = min(index, 255);
-                    Waypoints[waypointTarget].Connections[index] = towards.Key;
-                }
-                else
-                {
-                    uint index = Waypoints[waypointTarget].NrOfConnections;
-                    Waypoints[waypointTarget].Connections[index] = towards.Key;
-                    Waypoints[waypointTarget].NrOfConnections++;
-                }
+                //if (WP_SPLIT > 1)
+                //{
+                uint index;
+                InterlockedAdd(Waypoints[waypointTarget].NrOfConnections, 1, index);
+                index = min(index, 255);
+                Waypoints[waypointTarget].Connections[index] = towards.Key;
+                //}
+                //else
+                //{
+                //    uint index = Waypoints[waypointTarget].NrOfConnections;
+                //    Waypoints[waypointTarget].Connections[index] = towards.Key;
+                //    Waypoints[waypointTarget].NrOfConnections++;
+                //}
             }
 			
         } // If hit master node End
