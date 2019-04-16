@@ -450,15 +450,19 @@ void Game::_createWorld()
 	std::cout << std::endl;
 	_buildTrees();
 	std::cout << std::endl;
-	_createBlockedTrianglesAndWaypoints();
+	_createBlockedTriangles();
 	std::cout << std::endl;
 	_placeTrianglesInTree();
+	std::cout << std::endl;
+	_smoothUnorthodoxShapes();
+	std::cout << std::endl;
+	_createWaypoints();
 	std::cout << std::endl;
 	_offsetWaypoints();
 	std::cout << std::endl;
 	_cleanWaypoints();
 	std::cout << std::endl;
-	_connectWaypoints();
+	//_connectWaypoints();
 	std::cout << std::endl;
 	_generateWorldEdges();
 	std::cout << std::endl;
@@ -668,9 +672,9 @@ void Game::_buildTrees()
 	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
 }
 
-void Game::_createBlockedTrianglesAndWaypoints()
+void Game::_createBlockedTriangles()
 {
-	std::cout << "Detecting blocked/unblocked triangles and placing waypoints...\n";
+	std::cout << "Detecting blocked/unblocked triangles...\n";
 	Timer t;
 	DirectX::XMVECTOR up = DirectX::XMVectorSet(0, -1, 0, 0);
 	t.Start();
@@ -702,50 +706,53 @@ void Game::_createBlockedTrianglesAndWaypoints()
 			DirectX::XMFLOAT2 middle;
 			middle.x = (m_terrainMesh[i].Position.x + m_terrainMesh[i + 1].Position.x + m_terrainMesh[i + 2].Position.x) / 3;
 			middle.y = (m_terrainMesh[i].Position.z + m_terrainMesh[i + 1].Position.z + m_terrainMesh[i + 2].Position.z) / 3;
-
-			DirectX::XMVECTOR vMiddle = DirectX::XMLoadFloat2(&middle);
-
-			for (int k = i; k < i + 3; k++)
-			{
-				DirectX::XMFLOAT4A pos = m_terrainMesh[k].Position;
-				DirectX::XMFLOAT2 pos2D = { pos.x, pos.z };
-
-				DirectX::XMVECTOR vPos2D = DirectX::XMLoadFloat2(&pos2D);
-				DirectX::XMVECTOR vDir = DirectX::XMVector2Normalize(DirectX::XMVectorSubtract(vPos2D, vMiddle));
-
-				DirectX::XMFLOAT2 dir;
-				DirectX::XMStoreFloat2(&dir, vDir);
-
-				Waypoint wp(pos.x, pos.z);
-				wp.SetHeightVal(pos.y);
-
-				long int xPos = (long)(pos.x + 0.5f);
-				long int yPos = (long)(pos.z + 0.5f);
-
-				long int key = xPos + yPos * (TERRAIN_SIZE);
-
-				auto it = m_waypoints.find(key);
-
-				if (it == m_waypoints.end())
-					m_waypoints.insert(std::make_pair(key, wp));
-			}
 		}
 		if (createBlockedTriangleLocation)
 			m_blockedTriangles.push_back(new Triangle(v0, v1, v2));
 		else
-		{
 			m_unblockedTriangles.push_back(new Triangle(v0, v1, v2));
-		}
 	}
 
-	std::cout << "Waypoints: " << m_waypoints.size() << "...\n";
 	std::cout << "Blocked tri: " << m_blockedTriangles.size() << "...\n";
 	std::cout << "Unblocked tri:" << m_unblockedTriangles.size() << "...\nTime: " << t.Stop(Timer::MILLISECONDS) << " ms\n";
 }
 
+void Game::_createWaypoints()
+{
+	std::cout << "Creating waypoints...\n";
+	Timer t;
+	t.Start();
+	
+	int vectorSize = m_blockedTriangles.size();
+	for (int i = 0; i < vectorSize; i++)
+	{
+		DirectX::XMFLOAT3 points[3];
+		memcpy(points, m_blockedTriangles[i]->points, sizeof(float) * 9);
+
+		for (int j = 0; j < 3; j++)
+		{
+			long int xPos = (long)(points[j].x + 0.5f);
+			long int yPos = (long)(points[j].z + 0.5f);
+			long int key = xPos + yPos * TERRAIN_SIZE;
+
+			auto it = m_waypoints.find(key);
+
+			if (it == m_waypoints.end())
+			{
+				Waypoint wp(points[j].x, points[j].z);
+				wp.SetHeightVal(points[j].y);
+				m_waypoints.insert(std::make_pair(key, wp));
+			}
+		}
+	}
+
+	std::cout << "Waypoints: " << m_waypoints.size() << "...\n";
+	std::cout << "Time: " << t.Stop(Timer::MILLISECONDS) << " ms\n";
+}
+
 void Game::_cleanWaypoints()
 {
-	std::cout << "Cleaning waypoints Iteration1... ";
+	std::cout << "Cleaning waypoints blocked cleanup iteration... ";
 	Timer t;
 	t.Start();
 
@@ -792,6 +799,7 @@ void Game::_cleanWaypoints()
 		}
 	}
 
+	// Erase the waypoints at the maps edges
 	for (int i = 0; i < TERRAIN_SIZE; i++)
 	{
 		m_waypoints.erase(i);
@@ -805,6 +813,10 @@ void Game::_cleanWaypoints()
 	for (int i = 0; i < vectorSize; i++)
 		m_waypoints.erase(keys[i]);
 
+	std::cout << "Time: " << t.Stop(Timer::MILLISECONDS) << " ms\n";
+	std::cout << "Waypoints : " << m_waypoints.size() << "...\n\n";
+	std::cout << "X-axis iteration... ";
+
 	/*
 	 * Second iteration - Remove waypoints that follow each other in the x-axis
 	 */
@@ -812,6 +824,7 @@ void Game::_cleanWaypoints()
 	// Extract all waypoint keys
 	std::vector<int> keysSecondIteration(m_waypoints.size());
 	int waypointPositionCounter = 0;
+	std::vector<int> cleanBlocked;
 	for (auto & wp : m_waypoints)
 		keysSecondIteration[waypointPositionCounter++] = wp.first;
 
@@ -867,6 +880,10 @@ void Game::_cleanWaypoints()
 				removeThisManyWaypoints++;
 		}
 	}
+	
+	std::cout << "Time: " << t.Stop(Timer::MILLISECONDS) << " ms\n";
+	std::cout << "Waypoints : " << m_waypoints.size() << "...\n\n";
+	std::cout << "Y-axis iteration... ";
 
 	/*
 	 * Third iteration - Remove waypoints that follow each other in the y-axis
@@ -931,9 +948,16 @@ void Game::_cleanWaypoints()
 		}
 	}
 
+	std::cout << "Time: " << t.Stop(Timer::MILLISECONDS) << " ms\n";
+	std::cout << "Waypoints : " << m_waypoints.size() << "...\n\n";
+	std::cout << "Diagonal iteration... ";
+
 	/*
 	 * Fourth iteration - Remove waypoints that follow each other in one of the diagonals
 	 */
+	/*
+	 * This function do not have any impact on the waypoints due to the way the triangles are defined.
+	 *
 	std::vector<int> keysFourthIteration(m_waypoints.size());
 	waypointPositionCounter = 0;
 	for (auto & wp : m_waypoints)
@@ -996,6 +1020,10 @@ void Game::_cleanWaypoints()
 		}
 	}
 
+	std::cout << "Time: " << t.Stop(Timer::MILLISECONDS) << " ms\n";
+	std::cout << "Waypoints : " << m_waypoints.size() << "...\n\n";
+	std::cout << "Other diagonal iteration... ";
+	*/
 	/*
 	 * Fifth iteration - Remove waypoints that follow each other in the other diagonal
 	 */
@@ -1061,8 +1089,58 @@ void Game::_cleanWaypoints()
 		}
 	}
 
-	std::cout << "Waypoints : " << m_waypoints.size() << "... ";
+	std::cout << "Time: " << t.Stop(Timer::MILLISECONDS) << " ms\n";
+	std::cout << "Waypoints : " << m_waypoints.size() << "...\n\n";
+	std::cout << "Cluster iteration... ";
+
+	/*
+	 * Sixth iteration - Cluster waypoints that are close to each other
+	 */
+	std::vector<int> keysSixthIteration(m_waypoints.size());
+	waypointPositionCounter = 0;
+	for (auto & wp : m_waypoints)
+	{
+		//keysSixthIteration[waypointPositionCounter++] = wp.first;
+		int currentKey = wp.first;
+		int indexAround[8];
+
+		// North
+		indexAround[0] = currentKey - TERRAIN_SIZE;
+		// East
+		indexAround[1] = currentKey + 1;
+		// South
+		indexAround[2] = currentKey + TERRAIN_SIZE;
+		// West
+		indexAround[3] = currentKey - 1;
+		// Northeast
+		indexAround[4] = currentKey - TERRAIN_SIZE + 1;
+		// Southeast
+		indexAround[5] = currentKey + TERRAIN_SIZE + 1;
+		// Southwest
+		indexAround[6] = currentKey + TERRAIN_SIZE - 1;
+		// Northwest
+		indexAround[7] = currentKey - TERRAIN_SIZE - 1;
+
+		for (int j = 0; j < 8; j++)
+		{
+			auto wpIt = m_waypoints.find(indexAround[j]);
+			if (wpIt != m_waypoints.end())
+			{
+				DirectX::XMFLOAT2 point1 = wp.second.GetPosition();
+				DirectX::XMFLOAT2 point2 = wpIt->second.GetPosition();
+
+				if (m_unblockedTriangleTree.PointInsideTriangle(point1, true) == m_unblockedTriangleTree.PointInsideTriangle(point2, true))
+					keysSixthIteration.push_back(wpIt->first);
+			}
+		}
+	}
+
+	vectorSize = keysSixthIteration.size();
+	for (int i = 0; i < vectorSize; i++)
+		m_waypoints.erase(keysSixthIteration[i]);
+	
 	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
+	std::cout << "Waypoints : " << m_waypoints.size() << "...\n";
 }
 
 void Game::_placeTrianglesInTree()
@@ -1072,6 +1150,53 @@ void Game::_placeTrianglesInTree()
 	t.Start();
 	m_blockedTriangleTree.PlaceObjects(m_blockedTriangles);
 	m_unblockedTriangleTree.PlaceObjects(m_unblockedTriangles);
+	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
+}
+
+void Game::_smoothUnorthodoxShapes()
+{
+	Timer t;
+	std::cout << "Smoothing unorthodox shapes... ";
+	t.Start();
+
+	for (auto & tri : m_unblockedTriangles)
+	{
+		// Check for blocked triangles in three directions
+		// If all three are blocked then block this one
+		for (int i = 0; i < 3; i++)
+		{
+			// Calculate triangle center
+			DirectX::XMVECTOR p0, p1, p2;
+			p0 = DirectX::XMLoadFloat3(&tri->points[0]);
+			p1 = DirectX::XMLoadFloat3(&tri->points[1]);
+			p2 = DirectX::XMLoadFloat3(&tri->points[2]);
+			DirectX::XMVECTOR result = DirectX::XMVectorAdd(DirectX::XMVectorAdd(p0, p1), p2);
+			result = DirectX::XMVectorScale(result, 0.3333333f);
+
+			DirectX::XMFLOAT3 intermediateFloat;
+			DirectX::XMFLOAT2 blockedCheckPoints[4];
+			DirectX::XMStoreFloat3(&intermediateFloat, result);
+			blockedCheckPoints[0] = DirectX::XMFLOAT2(intermediateFloat.x + 0.5f, intermediateFloat.z);
+			blockedCheckPoints[1] = DirectX::XMFLOAT2(intermediateFloat.x - 0.5f, intermediateFloat.z);
+			blockedCheckPoints[2] = DirectX::XMFLOAT2(intermediateFloat.x, intermediateFloat.z + 0.5f);
+			blockedCheckPoints[3] = DirectX::XMFLOAT2(intermediateFloat.x, intermediateFloat.z - 0.5f);
+
+			int directionCounter = 0;
+			for (int i = 0; i < 4; i++)
+			{
+				if (m_blockedTriangleTree.PointInsideTriangle(blockedCheckPoints[i], true) != nullptr)
+				{
+					directionCounter++;
+				}
+			}
+			if (directionCounter > 2)
+			{
+				Triangle * t = new Triangle(tri->points[0], tri->points[1], tri->points[2]);
+				m_blockedTriangles.push_back(t);
+				m_blockedTriangleTree.AddObject(t);
+			}
+		}
+	}
 	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
 }
 

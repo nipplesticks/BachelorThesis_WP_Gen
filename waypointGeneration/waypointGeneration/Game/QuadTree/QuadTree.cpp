@@ -62,6 +62,11 @@ void QuadTree::BuildTree(unsigned int maxLevel, unsigned int worldSize, float wo
 	BuildTree(maxLevel, worldSize, DirectX::XMFLOAT2(worldStartX, worldStartY));
 }
 
+void QuadTree::AddObject(Triangle * triangle)
+{
+	_traverseAndPlace(triangle, 0);
+}
+
 void QuadTree::PlaceObjects(std::vector<Drawable*>& objectVector)
 {
 	for (auto & q : m_leafs)
