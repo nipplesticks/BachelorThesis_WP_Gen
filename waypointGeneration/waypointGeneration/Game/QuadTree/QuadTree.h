@@ -10,6 +10,8 @@ public:
 	void BuildTree(unsigned int maxLevel, unsigned int worldSize, const DirectX::XMFLOAT2 & worldStart);
 	void BuildTree(unsigned int maxLevel, unsigned int worldSize, float worldStartX, float worldStartY);
 
+	void AddObject(Triangle * triangle);
+
 	void PlaceObjects(std::vector<Drawable*> & objectVector);
 	void PlaceObjects(std::vector<Waypoint*> & objectVector);
 	void PlaceObjects(std::vector<Triangle*> & objectVector);

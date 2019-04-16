@@ -97,9 +97,11 @@ private:
 private:
 	void _createTerrain();
 	void _buildTrees();
-	void _createBlockedTrianglesAndWaypoints();
+	void _createBlockedTriangles();
+	void _createWaypoints();
 	void _cleanWaypoints();
 	void _placeTrianglesInTree();
+	void _smoothUnorthodoxShapes();
 	void _createViewableTriangles();
 	void _createViewableWaypoints();
 	void _offsetWaypoints();
