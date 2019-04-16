@@ -33,6 +33,10 @@ struct Waypoint
 	uint	Connections[256];
 };
 
+cbuffer OffsetBuffer : register(b0)
+{
+    uint4 OFFSET;
+}
 StructuredBuffer<Triangle> Triangles : register(t0);		// Triangles
 ByteAddressBuffer QuadTreeBuffer : register(t1);			// Quad Tree
 RWStructuredBuffer<Waypoint> Waypoints : register(u0);		// Waypoints
@@ -175,26 +179,26 @@ bool LineTriangleIntersect(float2 origin, float2 end, Triangle tri)
     return false;
 }
 
-static const uint WP_SPLIT = 32;
+static const uint WP_SPLIT = 1024;
 
 [numthreads(WP_SPLIT, 1, 1)]
 void main(uint3 threadID : SV_GroupID, uint3 threadGroup : SV_GroupThreadID)
 {
-    uint waypointTarget = threadID.x;
-
+    uint waypointTarget = threadID.x + OFFSET.x;
     uint wpSplit = threadGroup.x;
 
     Waypoint target = Waypoints[waypointTarget];
     uint nrOfWaypoints = 0, dummy = 0;
     Waypoints.GetDimensions(nrOfWaypoints, dummy);
     
-    uint numberOfWP = nrOfWaypoints / WP_SPLIT;
+    uint numberOfWP = (float)nrOfWaypoints / WP_SPLIT + 0.5f;
     uint wpStart = numberOfWP * wpSplit;
     uint wpEnd = wpStart + numberOfWP;
 
     if (wpSplit == WP_SPLIT - 1)
         wpEnd = nrOfWaypoints;
 
+    wpEnd = min(wpEnd, nrOfWaypoints);
 
     float2 origin = target.Pos;
     
@@ -220,7 +224,7 @@ void main(uint3 threadID : SV_GroupID, uint3 threadGroup : SV_GroupThreadID)
             nodeStack[nodeStackSize].TargetChildren = 0;
             nodeStackSize++;
 			
-            while (nodeStackSize > 0)
+            while (nodeStackSize > 0 && !intersection)
             {
                 uint currentNode = nodeStackSize - 1;
                 node = GetNode(nodeStack[currentNode].Address, triIndexAddress);
@@ -231,7 +235,7 @@ void main(uint3 threadID : SV_GroupID, uint3 threadGroup : SV_GroupThreadID)
                     {
                         if (child.NrOfTriangles > 0)
                         {
-                            for (uint triIt = 0; triIt < child.NrOfTriangles; triIt++)
+                            for (uint triIt = 0; triIt < child.NrOfTriangles && !intersection; triIt++)
                             {
                                 Triangle tri = GetTriangle(triIndexAddress, triIt);
                                 intersection = LineTriangleIntersect(origin, end, tri);

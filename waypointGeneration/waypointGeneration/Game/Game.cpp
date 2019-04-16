@@ -464,7 +464,7 @@ void Game::_createWorld()
 	std::cout << std::endl;
 	_cleanWaypoints();
 	std::cout << std::endl;
-	//_connectWaypoints();
+	_connectWaypoints();
 	std::cout << std::endl;
 	_generateWorldEdges();
 	std::cout << std::endl;
@@ -1408,7 +1408,7 @@ void Game::_connectWaypoints()
 	for (auto & wp : m_waypoints)
 	{
 		gpuWaypoint gwp;
-		memset(gwp.connections, 0, 128 * sizeof(UINT));
+		memset(gwp.connections, 0, 256 * sizeof(UINT));
 
 		gwp.key = wp.first;
 		gwp.pos = wp.second.GetPosition();
@@ -1419,12 +1419,29 @@ void Game::_connectWaypoints()
 	ID3D11Buffer * trianglesOld = nullptr;			// This can be read only
 	ID3D11Buffer * wpsOld = nullptr;				// This this needs RW
 
+	ID3D11Buffer * offsetBuffer = nullptr;
+
+
+
 	ID3D11ShaderResourceView * quadTree = nullptr;
 	ID3D11ShaderResourceView * triangles = nullptr;
 	ID3D11UnorderedAccessView * wps = nullptr;
 
 	ID3D11Device * device = Renderer::GetInstance()->GetDevice();
 	ID3D11DeviceContext * deviceContext = Renderer::GetInstance()->GetDeviceContext();
+
+	DirectX::XMUINT4 DispatchOffset(0, 0, 0, 0);
+
+	D3D11_BUFFER_DESC bDesc = {};
+	bDesc.Usage = D3D11_USAGE_DYNAMIC;
+	bDesc.ByteWidth = sizeof(DirectX::XMUINT4);
+	bDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	bDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	bDesc.MiscFlags = 0;
+	bDesc.StructureByteStride = 0;
+
+	device->CreateBuffer(&bDesc, nullptr, &offsetBuffer);
+
 
 #pragma region CREATE_GPU
 	// Dunka upp qt till GPU
@@ -1570,10 +1587,6 @@ void Game::_connectWaypoints()
 	}
 #pragma endregion 
 
-	
-	deviceContext->Dispatch(gpuWp.size(), 1, 1);
-	//deviceContext->Dispatch(1, 1, 1);
-
 	Vertex v1, v2;
 	DirectX::XMFLOAT4A n = { 0.0f, 1.0f, 0.0f, 0.0f };
 	v1.Normal = n;
@@ -1581,49 +1594,68 @@ void Game::_connectWaypoints()
 	v1.Position.w = 1.0f;
 	v2.Position.w = 1.0f;
 
-	D3D11_MAPPED_SUBRESOURCE dataPtr;
+	size_t increment = 1;
 
-	gpuWaypoint * arr = nullptr;
+	size_t gpuwpSize = gpuWp.size() + increment - 1;
 
-	/*while(true)
+	std::cout << "\n";
+	for (size_t i = 0; i < gpuwpSize; i += increment)
 	{
-		deviceContext->Dispatch(gpuWp.size(), 1, 1);
-		Renderer::GetInstance()->Present();
-	}*/
+		std::cout <<  (double)i / gpuwpSize * 100.0 << "%\n";
+		D3D11_MAPPED_SUBRESOURCE offsetData;
 
-	if (SUCCEEDED(deviceContext->Map(wpsOld, 0, D3D11_MAP_READ, 0, &dataPtr)))
-	{
-		arr = (gpuWaypoint*)dataPtr.pData;
+		deviceContext->Map(offsetBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &offsetData);
 
-		for (size_t i = 0; i < gpuWp.size(); i++)
+		memcpy(offsetData.pData, &DispatchOffset, sizeof(DirectX::XMUINT4));
+
+		deviceContext->Unmap(offsetBuffer, 0);
+
+		deviceContext->CSSetConstantBuffers(0, 1, &offsetBuffer);
+
+		deviceContext->Dispatch(increment, 1, 1);
+		
+		DispatchOffset.x += increment;
+
+		D3D11_MAPPED_SUBRESOURCE dataPtr;
+
+		gpuWaypoint * arr = nullptr;
+
+		if (SUCCEEDED(deviceContext->Map(wpsOld, 0, D3D11_MAP_READ, 0, &dataPtr)))
 		{
-			UINT nrOfConnections = arr[i].nrOfConnections;
+			arr = (gpuWaypoint*)dataPtr.pData;
 
-			UINT key = arr[i].key;
-
-			for (UINT n = 0; n < nrOfConnections && n < 256; n++)
+			for (size_t t = i; t < gpuWp.size(); t++)
 			{
-				UINT key2 = arr[i].connections[n];
+				UINT nrOfConnections = arr[t].nrOfConnections;
 
-				if (m_waypoints[key].Connect(&m_waypoints[key2]))
+				UINT key = arr[t].key;
+
+				for (UINT n = 0; n < nrOfConnections && n < 256; n++)
 				{
-					v1.Position.x = m_waypoints[key].GetPosition().x;
-					v1.Position.y = m_waypoints[key].GetHeightVal();
-					v1.Position.z = m_waypoints[key].GetPosition().y;
-					v2.Position.x = m_waypoints[key2].GetPosition().x;
-					v2.Position.y = m_waypoints[key2].GetHeightVal();
-					v2.Position.z = m_waypoints[key2].GetPosition().y;
-					m_connectionMesh.push_back(v1);
-					m_connectionMesh.push_back(v2);
+					UINT key2 = arr[t].connections[n];
+					
+					if (m_waypoints[key].Connect(&m_waypoints[key2]))
+					{
+						v1.Position.x = m_waypoints[key].GetPosition().x;
+						v1.Position.y = m_waypoints[key].GetHeightVal();
+						v1.Position.z = m_waypoints[key].GetPosition().y;
+						v2.Position.x = m_waypoints[key2].GetPosition().x;
+						v2.Position.y = m_waypoints[key2].GetHeightVal();
+						v2.Position.z = m_waypoints[key2].GetPosition().y;
+						m_connectionMesh.push_back(v1);
+						m_connectionMesh.push_back(v2);
 
-					counter++;
-					m_waypoints[key2].ForceConnection(&m_waypoints[key]);
+						counter++;
+						m_waypoints[key2].ForceConnection(&m_waypoints[key]);
+					}
 				}
 			}
-		}
 
-		deviceContext->Unmap(wpsOld, 0);
+			deviceContext->Unmap(wpsOld, 0);
+		}
 	}
+
+
 
 	deviceContext->CSSetShader(nullptr, nullptr, NULL);
 	quadTreeOld->Release();
@@ -1633,6 +1665,7 @@ void Game::_connectWaypoints()
 	wps->Release();
 	triangles->Release();
 	cShader->Release();
+	offsetBuffer->Release();
 
 	std::cout << "\nConnection(s): " << counter << "... ";
 	std::cout << t.Stop(Timer::MILLISECONDS) << "ms\n";
