@@ -16,7 +16,9 @@ Window::Window()
 
 Window::~Window()
 {
-	
+	m_isOpen = false;
+	if (m_windowThread.joinable())
+		m_windowThread.join();
 }
 
 Window * Window::GetInstance()

@@ -14,7 +14,6 @@ struct TreeNode
 	float2 Max;
 
 	uint NrOfChildren;
-
 	uint ChildrenByteAddress[4];
 
 	uint NrOfTriangles;
@@ -100,7 +99,7 @@ bool LineLineIntersect(float2 l1Origin, float2 l1End, float2 l2Origin, float2 l2
 
     float u = (c.x * b.y - c.y * b.x) / bDotDPerp;
 
-	if (u < 0.0f || u > 1.0f)
+    if (u < 0.0f || u > 1.0f)
         return false;
 	
     return true;
@@ -108,20 +107,20 @@ bool LineLineIntersect(float2 l1Origin, float2 l1End, float2 l2Origin, float2 l2
 
 bool LineQuadIntersect(float2 origin, float2 end, float2 Min, float2 Max)
 {
-    if (origin.x >= Min.x && origin.y <= Max.x &&
+    float2 topRight, bottomLeft;
+    topRight.x = Max.x;
+    topRight.y = Min.y;
+    bottomLeft.x = Min.x;
+    bottomLeft.y = Max.y;
+
+    if (origin.x >= Min.x && origin.x <= Max.x &&
         origin.y >= Min.y && origin.y <= Max.y)
         return true;
 
     if (end.x >= Min.x && end.y <= Max.x &&
         end.y >= Min.y && end.y <= Max.y)
         return true;
-
-    float2 topRight, bottomLeft;
-    topRight.x = Max.x;
-    topRight.y = Min.y;
-    bottomLeft.x = Min.x;
-    bottomLeft.y = Max.y;
-	
+    
     if (LineLineIntersect(origin, end, Min, topRight))
         return true;
     if (LineLineIntersect(origin, end, topRight, Max))
@@ -134,16 +133,38 @@ bool LineQuadIntersect(float2 origin, float2 end, float2 Min, float2 Max)
     return false;
 }
 
+bool PointTriangleIntersect(float2 s, float2 a, float2 b, float2 c)
+{
+    float as_x = s.x - a.x;
+    float as_y = s.y - a.y;
+
+    bool s_ab = (b.x - a.x) * as_y - (b.y - a.y) * as_x > 0;
+
+    if ((c.x - a.x) * as_y - (c.y - a.y) * as_x >= 0 == s_ab)
+        return false;
+
+    if ((c.x - b.x) * (s.y - b.y) - (c.y - b.y) * (s.x - b.x) > 0 != s_ab)
+        return false;
+
+    return true;
+}
+
 bool LineTriangleIntersect(float2 origin, float2 end, Triangle tri)
 {
     float2 p0, p1, p2;
     p0.x = tri.Position[0].x;
     p0.y = tri.Position[0].z;
+
     p1.x = tri.Position[1].x;
     p1.y = tri.Position[1].z;
+
     p2.x = tri.Position[2].x;
     p2.y = tri.Position[2].z;
-
+    
+    if (PointTriangleIntersect(origin, p0, p1, p2))
+        return true;
+    if (PointTriangleIntersect(end, p0, p1, p2))
+        return true;
     if (LineLineIntersect(origin, end, p0, p1))
         return true;
     if (LineLineIntersect(origin, end, p1, p2))
@@ -154,25 +175,34 @@ bool LineTriangleIntersect(float2 origin, float2 end, Triangle tri)
     return false;
 }
 
-[numthreads(2, 1, 1)]
-void main(uint3 threadID : SV_DispatchThreadID, uint3 threadGroup : SV_GroupID)
+static const uint WP_SPLIT = 32;
+
+[numthreads(WP_SPLIT, 1, 1)]
+void main(uint3 threadID : SV_GroupID, uint3 threadGroup : SV_GroupThreadID)
 {
     uint waypointTarget = threadID.x;
-    
+
+    uint wpSplit = threadGroup.x;
+
     Waypoint target = Waypoints[waypointTarget];
     uint nrOfWaypoints = 0, dummy = 0;
     Waypoints.GetDimensions(nrOfWaypoints, dummy);
-	
-    uint tConnections[256];
     
-    
-    float2 origin = target.Pos;
+    uint numberOfWP = nrOfWaypoints / WP_SPLIT;
+    uint wpStart = numberOfWP * wpSplit;
+    uint wpEnd = wpStart + numberOfWP;
 
-	
-    for (uint i = 0; i < nrOfWaypoints; i++)
+    if (wpSplit == WP_SPLIT - 1)
+        wpEnd = nrOfWaypoints;
+
+
+    float2 origin = target.Pos;
+    
+    for (uint i = wpStart; i < wpEnd; i++)
     {
         if (i == waypointTarget)
             continue;
+        bool hit = false;
         
         Waypoint towards = Waypoints[i];
         float2 end = towards.Pos;
@@ -180,18 +210,17 @@ void main(uint3 threadID : SV_DispatchThreadID, uint3 threadGroup : SV_GroupID)
         AddressStack nodeStack[16];
         uint nodeStackSize = 0;
         uint triIndexAddress = 0;
-        TreeNode node = GetNode(0, triIndexAddress); // All Nodes seems to be NULL AF
+        TreeNode node = GetNode(0, triIndexAddress);
         
         if (LineQuadIntersect(origin, end, node.Min, node.Max))
         {
-
             bool intersection = false;
 
             nodeStack[nodeStackSize].Address = node.ByteStart;
             nodeStack[nodeStackSize].TargetChildren = 0;
             nodeStackSize++;
 			
-            while (nodeStackSize > 0 && !intersection)
+            while (nodeStackSize > 0)
             {
                 uint currentNode = nodeStackSize - 1;
                 node = GetNode(nodeStack[currentNode].Address, triIndexAddress);
@@ -202,10 +231,12 @@ void main(uint3 threadID : SV_DispatchThreadID, uint3 threadGroup : SV_GroupID)
                     {
                         if (child.NrOfTriangles > 0)
                         {
-                            for (uint triIt = 0; triIt < child.NrOfTriangles && !intersection; triIt++)
+                            for (uint triIt = 0; triIt < child.NrOfTriangles; triIt++)
                             {
                                 Triangle tri = GetTriangle(triIndexAddress, triIt);
                                 intersection = LineTriangleIntersect(origin, end, tri);
+                                if (intersection)
+                                    hit = true;
                             }
                         }
                         else
@@ -224,16 +255,23 @@ void main(uint3 threadID : SV_DispatchThreadID, uint3 threadGroup : SV_GroupID)
 
             } // While End
 
-            if (!intersection)
+            if (!hit)
             {
-                uint nrOfConnections = target.NrOfConnections;
-                tConnections[min(target.NrOfConnections, 255)] = towards.Key;
-                target.NrOfConnections++;
+                if (WP_SPLIT > 1)
+                {
+                    uint index;
+                    InterlockedAdd(Waypoints[waypointTarget].NrOfConnections, 1, index);
+                    index = min(index, 255);
+                    Waypoints[waypointTarget].Connections[index] = towards.Key;
+                }
+                else
+                {
+                    uint index = Waypoints[waypointTarget].NrOfConnections;
+                    Waypoints[waypointTarget].Connections[index] = towards.Key;
+                    Waypoints[waypointTarget].NrOfConnections++;
+                }
             }
 			
         } // If hit master node End
     } // For end
-
-    target.Connections = tConnections;
-    Waypoints[waypointTarget] = target;
 }

@@ -52,6 +52,16 @@ struct Triangle
 
 		DirectX::XMStoreFloat3(&normal, n);
 	}
+	Triangle & operator=(const Triangle & other)
+	{
+		if (this != &other)
+		{
+			normal = other.normal;
+			memcpy(points, other.points, sizeof(float) * 9);
+		}
+		return *this;
+	}
+
 	DirectX::XMFLOAT3 points[3];
 	DirectX::XMFLOAT3 normal;
 };

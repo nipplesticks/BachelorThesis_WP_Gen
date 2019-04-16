@@ -1269,6 +1269,11 @@ void Game::_connectWaypoints()
 
 	gpuQuadTree.PlaceObjects(bTri);
 
+	std::ofstream lol;
+	lol.open("GPUTREE.txt");
+	lol << gpuQuadTree.ToString();
+	lol.close();
+
 	const std::vector<GPUQuadrant> & qt = gpuQuadTree.GetQuadTree();
 	size_t wpSize = m_waypoints.size();
 	std::vector<gpuWaypoint> gpuWp(wpSize);
@@ -1299,14 +1304,6 @@ void Game::_connectWaypoints()
 #pragma region CREATE_GPU
 	// Dunka upp qt till GPU
 	{
-		D3D11_BUFFER_DESC qtBufferDesc = {};
-		qtBufferDesc.ByteWidth = TREE_SIZE;
-		qtBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
-		qtBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		qtBufferDesc.StructureByteStride = 0;
-		qtBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
-		qtBufferDesc.StructureByteStride = TREE_SIZE;
-
 		void * qtSer = malloc(TREE_SIZE);
 		UINT currentOffset = 0;
 		for (size_t i = 0; i < qt.size(); i++)
@@ -1317,10 +1314,17 @@ void Game::_connectWaypoints()
 			memcpy((char*)qtSer + currentOffset, qt[i].TriangleIndices.data(), sizeOfTriInd);
 			currentOffset += sizeOfTriInd;
 		}
+
+		D3D11_BUFFER_DESC qtBufferDesc = {};
+		qtBufferDesc.ByteWidth = currentOffset;
+		qtBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+		qtBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		qtBufferDesc.StructureByteStride = 0;
+		qtBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
 		
 		D3D11_BUFFEREX_SRV bsrv = {};
 		bsrv.FirstElement = 0;
-		bsrv.NumElements = TREE_SIZE / 4;
+		bsrv.NumElements = currentOffset / 4;
 		bsrv.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -1456,6 +1460,12 @@ void Game::_connectWaypoints()
 
 	gpuWaypoint * arr = nullptr;
 
+	/*while(true)
+	{
+		deviceContext->Dispatch(gpuWp.size(), 1, 1);
+		Renderer::GetInstance()->Present();
+	}*/
+
 	if (SUCCEEDED(deviceContext->Map(wpsOld, 0, D3D11_MAP_READ, 0, &dataPtr)))
 	{
 		arr = (gpuWaypoint*)dataPtr.pData;
@@ -1463,9 +1473,10 @@ void Game::_connectWaypoints()
 		for (size_t i = 0; i < gpuWp.size(); i++)
 		{
 			UINT nrOfConnections = arr[i].nrOfConnections;
+
 			UINT key = arr[i].key;
 
-			for (UINT n = 0; n < nrOfConnections; n++)
+			for (UINT n = 0; n < nrOfConnections && n < 256; n++)
 			{
 				UINT key2 = arr[i].connections[n];
 
