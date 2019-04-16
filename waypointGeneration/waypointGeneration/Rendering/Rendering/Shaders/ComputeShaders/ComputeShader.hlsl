@@ -189,7 +189,7 @@ void main(uint3 threadID : SV_GroupID, uint3 threadGroup : SV_GroupThreadID)
     uint nrOfWaypoints = 0, dummy = 0;
     Waypoints.GetDimensions(nrOfWaypoints, dummy);
     
-    uint numberOfWP = nrOfWaypoints / WP_SPLIT;
+    uint numberOfWP = max(nrOfWaypoints / WP_SPLIT, 1);
     uint wpStart = numberOfWP * wpSplit + waypointTarget + 1;
     uint wpEnd = wpStart + numberOfWP;
     
@@ -202,6 +202,11 @@ void main(uint3 threadID : SV_GroupID, uint3 threadGroup : SV_GroupThreadID)
         bool hit = false;
         Waypoint towards = Waypoints[i];
         float2 end = towards.Pos;
+
+        float l = length(end - origin);
+        if (l > 128)
+            continue;
+
 
         AddressStack nodeStack[7];
         uint nodeStackSize = 0;

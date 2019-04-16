@@ -445,7 +445,7 @@ void Game::_createWaterTexture()
 void Game::_createWorld()
 {
 	std::cout << "****************************************\nCreatingWorld\n\n";
-
+	std::cout << "Terrain Size: " << TERRAIN_SIZE << std::endl;
 	Timer t;
 	t.Start();
 	_createTerrain();
@@ -1634,7 +1634,7 @@ void Game::_connectWaypoints()
 	for (size_t i = 0; i < gpuwpSize; i += increment)
 	{
 		error = 0;
-		std::cout << "\r" << (double)i / gpuwpSize * 100.0 << " %";
+		std::cout << "\r" << (double)i / gpuwpSize * 100.0 << " %               ";
 		D3D11_MAPPED_SUBRESOURCE offsetData;
 
 		deviceContext->Map(offsetBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &offsetData);
@@ -1658,6 +1658,7 @@ void Game::_connectWaypoints()
 		}
 	}
 
+	std::cout << "\r" << 100.0 << " %               ";
 	D3D11_MAPPED_SUBRESOURCE dataPtr;
 
 	gpuWaypoint * arr = nullptr;
