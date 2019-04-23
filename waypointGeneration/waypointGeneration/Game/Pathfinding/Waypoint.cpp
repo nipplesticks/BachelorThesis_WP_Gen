@@ -64,6 +64,11 @@ void Waypoint::ForceConnection(Waypoint * wp)
 	m_connections.insert(std::make_pair(index, wc));
 }
 
+std::map<int, Waypoint::WaypointConnection>* Waypoint::GetConnections()
+{
+	return &m_connections;
+}
+
 bool floatEQ(float a, float b)
 {
 	return fabs(a - b) < 0.01f;

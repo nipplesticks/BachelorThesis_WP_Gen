@@ -8,6 +8,11 @@ public:
 	{
 		Waypoint * wp = nullptr;
 		float connectionCost = FLT_MAX;
+
+		bool operator<(const WaypointConnection & other)
+		{
+			return connectionCost < other.connectionCost;
+		}
 	};
 
 	Waypoint(float x = 0.0f, float y = 0.0f);
@@ -20,6 +25,8 @@ public:
 
 	bool Connect(Waypoint * wp);
 	void ForceConnection(Waypoint * wp);
+
+	std::map<int, WaypointConnection> * GetConnections();
 
 	bool operator==(const Waypoint & other);
 	bool operator<(const Waypoint & other);

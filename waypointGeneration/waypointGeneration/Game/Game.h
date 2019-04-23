@@ -7,15 +7,15 @@
 #include "Pathfinding/Waypoint.h"
 #include "QuadTree/QuadTree.h"
 
-#define DRAW_WAYPOINT true
+#define DRAW_WAYPOINT false
 #define DRAW_TRIANGLES false
 #define DRAW_CONNECTIONS false
 #define USE_RANDOM_SEED false
 
 #define MIN_HEIGHT	-10
 #define MAX_HEIGHT	15
-#define NOISE_MIN	15
-#define NOISE_RAND	6
+#define NOISE_MIN	3
+#define NOISE_RAND	1
 
 #define MOUSE_SESITIVITY_X	0.05
 #define MOUSE_SESITIVITY_Y	0.05
@@ -56,6 +56,9 @@ private:
 	std::vector<Triangle*> m_unblockedTriangles;
 	std::vector<Vertex> m_unblockedTrianglesVertices;
 	Drawable m_unblockedtrianglesDraw;
+
+	Drawable m_path;
+	std::vector<Vertex> m_pathLine;
 
 	std::vector<Vertex> m_connectionMesh;
 	Drawable m_connections;

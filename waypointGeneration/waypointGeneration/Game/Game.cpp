@@ -2,6 +2,8 @@
 #include "Game.h"
 #include "../Rendering/Rendering/Renderer.h"
 #include "GPUQuadTree/GPUQuadTree.h"
+#include "Pathfinding/Pathfinding.h"
+
 #include <time.h>
 #include <algorithm>
 
@@ -27,6 +29,8 @@ Game::Game()
 	m_mouseReferencePosition = wnd->GetMousePosition();
 
 	_setupGame();
+
+	//Pathfinding::FindPath(m_player.GetPosition(), DirectX::XMFLOAT3(55, 55, 55), m_blockedTriangleTree);
 }
 
 Game::~Game()
@@ -82,7 +86,6 @@ void Game::Update(double dt)
 		}
 	}
 
-
 	static DirectX::XMFLOAT2 waterUV = { 0,0 };
 	static double counter = 0;
 
@@ -118,6 +121,9 @@ void Game::Draw()
 		m_edges[i].Draw();
 
 	m_player.Draw();
+
+	if (!m_pathLine.empty())
+		m_path.Draw();
 
 	for (auto & b : m_buildings)
 		b.Draw();
@@ -414,6 +420,54 @@ void Game::_cameraControl(double dt)
 		}
 	}
 
+	if (wnd->IsMousePressed(Input::MOUSE_CODE::RBUTTON))
+	{
+		static bool Ass = false;
+
+		if (!Ass)
+		{
+			DirectX::XMFLOAT3 worldPos;
+			if (Renderer::GetInstance()->GetMousePicking(worldPos))
+			{
+				auto lol = Pathfinding::FindPath(m_player.GetPosition(), worldPos, m_blockedTriangleTree);
+
+
+				if (!lol.empty())
+				{
+					m_pathLine.clear();
+					lol.insert(lol.begin(), DirectX::XMFLOAT2(m_player.GetPosition().x, m_player.GetPosition().z));
+					//Ass = true;
+					std::cout << "WE HAVE PATH!\n";
+
+					Vertex vl;
+					vl.Normal = DirectX::XMFLOAT4A(1, 1, 1, 0);
+					vl.UV = DirectX::XMFLOAT2A(0, 0);
+					vl.Position.w = 1.0f;
+					for (int i = 0; i < lol.size() - 1; i++)
+					{
+						vl.Position.x = lol[i].x;
+						vl.Position.y = 0;
+						vl.Position.z = lol[i].y;
+						m_pathLine.push_back(vl);
+						vl.Position.x = lol[i + 1].x;
+						vl.Position.y = 0;
+						vl.Position.z = lol[i + 1].y;
+						m_pathLine.push_back(vl);
+					}
+
+					m_pathLine.front().Position.y = m_player.GetPosition().y;
+					m_pathLine.back().Position.y = worldPos.y;
+
+					m_path.SetVertices(&m_pathLine);
+					m_path.SetColor(1, 0, 0);
+					m_path.SetTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+					m_path.UseDepthBuffer(false);
+					m_path.Update();
+				}
+			}
+		}
+	}
+
 }
 
 #include "water_texture.h"
@@ -509,6 +563,9 @@ void Game::_createWorld()
 
 	std::cout << "Total Time: " << t.Stop() << " Seconds\n";
 	std::cout << "World Created\n****************************************\n";
+
+
+
 }
 
 void Game::_loadMeshes()
