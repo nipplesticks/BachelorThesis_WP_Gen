@@ -122,6 +122,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Game\Game.cpp" />
+    <ClCompile Include="Game\Pathfinding\Pathfinding.cpp" />
     <ClCompile Include="Game\Pathfinding\Waypoint.cpp" />
     <ClCompile Include="Game\QuadTree\Quadrant.cpp" />
     <ClCompile Include="Game\QuadTree\QuadTree.cpp" />
@@ -146,6 +147,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Game.h" />
+    <ClInclude Include="Game\Pathfinding\Pathfinding.h" />
     <ClInclude Include="Game\Pathfinding\Waypoint.h" />
     <ClInclude Include="Game\QuadTree\Quadrant.h" />
     <ClInclude Include="Game\QuadTree\QuadTree.h" />
