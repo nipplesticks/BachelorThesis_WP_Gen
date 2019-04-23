@@ -160,7 +160,7 @@ Triangle * QuadTree::PointInsideTriangle(const DirectX::XMFLOAT2 & point, bool f
 	return tri;
 }
 
-Waypoint* QuadTree::FindClosestWaypoint(const DirectX::XMFLOAT3& position, float radius)
+Waypoint* QuadTree::FindClosestWaypoint(const DirectX::XMFLOAT3& position, float radius, bool directView)
 {
 
 	DirectX::XMFLOAT3 center(position.x, position.z, 0.0f);
@@ -168,7 +168,7 @@ Waypoint* QuadTree::FindClosestWaypoint(const DirectX::XMFLOAT3& position, float
 	DirectX::BoundingSphere bs(center, radius);
 	Waypoint * wp = nullptr;
 	float dist = FLT_MAX;
-	_closestWaypoint(wp, dist, pos, bs, 0);
+	_closestWaypoint(wp, dist, pos, bs, 0, directView);
 
 	return wp;
 }
@@ -290,7 +290,7 @@ void QuadTree::_triangleTraversePoint(Triangle *& tPtr, const DirectX::XMVECTOR 
 	}
 }
 
-void QuadTree::_closestWaypoint(Waypoint*& wp, float & dist, DirectX::XMVECTOR pos, const DirectX::BoundingSphere& bs, UINT quadIndex)
+void QuadTree::_closestWaypoint(Waypoint*& wp, float & dist, DirectX::XMVECTOR pos, const DirectX::BoundingSphere& bs, UINT quadIndex, bool directView)
 {
 	if (dist > 0.0f)
 	{
@@ -301,7 +301,7 @@ void QuadTree::_closestWaypoint(Waypoint*& wp, float & dist, DirectX::XMVECTOR p
 			if (nrOfChildren > 0)
 			{
 				for (int i = 0; i < nrOfChildren; i++)
-					_closestWaypoint(wp, dist, pos, bs, children[i]);
+					_closestWaypoint(wp, dist, pos, bs, children[i], directView);
 				
 			}
 			else
@@ -318,7 +318,9 @@ void QuadTree::_closestWaypoint(Waypoint*& wp, float & dist, DirectX::XMVECTOR p
 
 				for (int i = 0; i < size; i++)
 				{
-					Triangle * triangle = LineIntersectionTriangle(lStart, waypoints[i]->GetPosition(), true, intersectionPoint);
+					Triangle * triangle = nullptr;
+					if (directView)
+						triangle = LineIntersectionTriangle(lStart, waypoints[i]->GetPosition(), true, intersectionPoint);
 					if (triangle == nullptr)
 					{
 						float tDist = DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(DirectX::XMVectorSubtract(pos, DirectX::XMLoadFloat2(&waypoints[i]->GetPosition()))));

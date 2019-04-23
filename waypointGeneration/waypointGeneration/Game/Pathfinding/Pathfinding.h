@@ -12,6 +12,11 @@ public:
 		const DirectX::XMFLOAT3 & destination,
 		QuadTree & blockedTriangles);
 
+	static std::vector<DirectX::XMFLOAT3> FindPath2(
+		const DirectX::XMFLOAT3 & source,
+		const DirectX::XMFLOAT3 & destination,
+		QuadTree & blockedTriangles);
+
 private:
 	struct Node
 	{
@@ -69,7 +74,10 @@ private:
 		const DirectX::XMFLOAT2 & source,
 		const DirectX::XMFLOAT2 & destination,
 		QuadTree & blockedTriangles);
-
+	static std::vector<DirectX::XMFLOAT3> _findPath2(
+		const DirectX::XMFLOAT2 & source,
+		DirectX::XMFLOAT2 & destination,
+		QuadTree & blockedTriangles);
 
 	static float _calcHCost(const DirectX::XMFLOAT2 & a, const DirectX::XMFLOAT2 & b);
 

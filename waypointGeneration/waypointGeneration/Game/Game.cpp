@@ -429,15 +429,17 @@ void Game::_cameraControl(double dt)
 			DirectX::XMFLOAT3 worldPos;
 			if (Renderer::GetInstance()->GetMousePicking(worldPos))
 			{
-				auto lol = Pathfinding::FindPath(m_player.GetPosition(), worldPos, m_blockedTriangleTree);
-
+				Timer t;
+				t.Start();
+				auto lol = Pathfinding::FindPath2(m_player.GetPosition(), worldPos, m_blockedTriangleTree);
+				std::cout << "\r" << t.Stop(Timer::MILLISECONDS) << " ms               ";
 
 				if (!lol.empty())
 				{
 					m_pathLine.clear();
-					lol.insert(lol.begin(), DirectX::XMFLOAT2(m_player.GetPosition().x, m_player.GetPosition().z));
+					lol.insert(lol.begin(), m_player.GetPosition());
 					//Ass = true;
-					std::cout << "WE HAVE PATH!\n";
+					//std::cout << "WE HAVE PATH!\n";
 
 					Vertex vl;
 					vl.Normal = DirectX::XMFLOAT4A(1, 1, 1, 0);
@@ -446,12 +448,12 @@ void Game::_cameraControl(double dt)
 					for (int i = 0; i < lol.size() - 1; i++)
 					{
 						vl.Position.x = lol[i].x;
-						vl.Position.y = 0;
-						vl.Position.z = lol[i].y;
+						vl.Position.y = lol[i].y;
+						vl.Position.z = lol[i].z;
 						m_pathLine.push_back(vl);
 						vl.Position.x = lol[i + 1].x;
-						vl.Position.y = 0;
-						vl.Position.z = lol[i + 1].y;
+						vl.Position.y = lol[i + 1].y;
+						vl.Position.z = lol[i + 1].z;
 						m_pathLine.push_back(vl);
 					}
 
@@ -1031,78 +1033,7 @@ void Game::_cleanWaypoints()
 	std::cout << "Waypoints : " << m_waypoints.size() << "...\n\n";
 	std::cout << "Diagonal iteration... ";
 
-	/*
-	 * Fourth iteration - Remove waypoints that follow each other in one of the diagonals
-	 */
-	/*
-	 * This function do not have any impact on the waypoints due to the way the triangles are defined.
-	 *
-	std::vector<int> keysFourthIteration(m_waypoints.size());
-	waypointPositionCounter = 0;
-	for (auto & wp : m_waypoints)
-		keysFourthIteration[waypointPositionCounter++] = wp.first;
-
-	vectorSize = keysFourthIteration.size();
-	for (int i = 0; i < vectorSize; i++)
-	{
-		int removeThisManyWaypoints = 1;
-		int lastWaypointKey = keysFourthIteration[i];
-		bool keysFollowEachother = true;
-		std::vector<int> keysToRemove;
-
-		while (keysFollowEachother)
-		{
-			if (i == vectorSize)
-			{
-				int removeSize = keysToRemove.size() - 1;
-				for (int j = 0; j < removeSize; j++)
-					m_waypoints.erase(keysToRemove[j]);
-
-				break;
-			}
-
-			// Diagonal movement forward direction
-			int nextWaypointKey = keysFourthIteration[i] + removeThisManyWaypoints + removeThisManyWaypoints * TERRAIN_SIZE;
-			auto nextWpIt = m_waypoints.find(nextWaypointKey);
-
-			if (nextWpIt != m_waypoints.end())
-			{
-				DirectX::XMFLOAT2 halfwayToNextTrianglePoint;
-				halfwayToNextTrianglePoint.x = (lastWaypointKey % TERRAIN_SIZE) + (nextWaypointKey % TERRAIN_SIZE);
-				halfwayToNextTrianglePoint.x *= 0.5;
-				halfwayToNextTrianglePoint.y = (lastWaypointKey / TERRAIN_SIZE) + (nextWaypointKey / TERRAIN_SIZE);
-				halfwayToNextTrianglePoint.y *= 0.5;
-				Triangle * ptr = m_blockedTriangleTree.PointInsideTriangle(halfwayToNextTrianglePoint, true);
-				if (ptr == nullptr)
-				{
-					keysFollowEachother = false;
-
-					int removeSize = keysToRemove.size() - 1;
-					for (int j = 0; j < removeSize; j++)
-						m_waypoints.erase(keysToRemove[j]);
-				}
-				else
-				{
-					removeThisManyWaypoints++;
-					lastWaypointKey = nextWaypointKey;
-					keysToRemove.push_back(nextWaypointKey);
-				}
-			}
-			else
-			{
-				keysFollowEachother = false;
-
-				int removeSize = keysToRemove.size() - 1;
-				for (int j = 0; j < removeSize; j++)
-					m_waypoints.erase(keysToRemove[j]);
-			}
-		}
-	}
-
-	std::cout << "Time: " << t.Stop(Timer::MILLISECONDS) << " ms\n";
-	std::cout << "Waypoints : " << m_waypoints.size() << "...\n\n";
-	std::cout << "Other diagonal iteration... ";
-	*/
+	
 	/*
 	 * Fifth iteration - Remove waypoints that follow each other in the other diagonal
 	 */
@@ -1340,6 +1271,9 @@ void Game::_createViewableWaypoints()
 
 void Game::_offsetWaypoints()
 {
+	const float OFFSET = 1.0f;
+
+
 	Timer t;
 	std::cout << "Prepareing Waypoints for connections... ";
 
@@ -1359,7 +1293,7 @@ void Game::_offsetWaypoints()
 		bool hasNorth = itNorth != m_waypoints.end();
 		if (hasNorth)
 		{
-			offset.y += 0.5f;
+			offset.y += OFFSET;
 		}
 
 		// East
@@ -1368,7 +1302,7 @@ void Game::_offsetWaypoints()
 		bool hasEast = itEast != m_waypoints.end();
 		if (hasEast)
 		{
-			offset.x -= 0.5f;
+			offset.x -= OFFSET;
 		}
 
 		// South
@@ -1377,7 +1311,7 @@ void Game::_offsetWaypoints()
 		bool hasSouth = itSouth != m_waypoints.end();
 		if (hasSouth)
 		{
-			offset.y -= 0.5f;
+			offset.y -= OFFSET;
 		}
 
 		// West
@@ -1386,7 +1320,7 @@ void Game::_offsetWaypoints()
 		bool hasWest = itWest != m_waypoints.end();
 		if (hasWest)
 		{
-			offset.x += 0.5f;
+			offset.x += OFFSET;
 		}
 
 		// North-East
@@ -1395,8 +1329,8 @@ void Game::_offsetWaypoints()
 		bool hasNorthEast = itNorthEast != m_waypoints.end();
 		if (hasNorthEast)
 		{
-			offset.y += 0.5f;
-			offset.x -= 0.5f;
+			offset.y += OFFSET;
+			offset.x -= OFFSET;
 		}
 
 
@@ -1406,8 +1340,8 @@ void Game::_offsetWaypoints()
 		bool hasSouthEast = itSouthEast != m_waypoints.end();
 		if (hasSouthEast)
 		{
-			offset.y -= 0.5f;
-			offset.x -= 0.5f;
+			offset.y -= OFFSET;
+			offset.x -= OFFSET;
 		}
 
 
@@ -1417,8 +1351,8 @@ void Game::_offsetWaypoints()
 		bool hasSouthWest = itSouthWest != m_waypoints.end();
 		if (hasSouthWest)
 		{
-			offset.y -= 0.5f;
-			offset.x += 0.5f;
+			offset.y -= OFFSET;
+			offset.x += OFFSET;
 		}
 
 		// North-West
@@ -1427,12 +1361,12 @@ void Game::_offsetWaypoints()
 		bool hasNorthWest = itNorthWest != m_waypoints.end();
 		if (hasNorthWest)
 		{
-			offset.y += 0.5f;
-			offset.x += 0.5f;
+			offset.y += OFFSET;
+			offset.x += OFFSET;
 		}
 
-		offset.x = std::clamp(offset.x, -0.5f, 0.5f);
-		offset.y = std::clamp(offset.y, -0.5f, 0.5f);
+		offset.x = std::clamp(offset.x, -OFFSET, OFFSET);
+		offset.y = std::clamp(offset.y, -OFFSET, OFFSET);
 
 		pRef.x += offset.x;
 		pRef.y += offset.y;

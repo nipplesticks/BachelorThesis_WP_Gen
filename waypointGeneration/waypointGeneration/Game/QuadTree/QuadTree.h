@@ -26,7 +26,7 @@ public:
 		bool firstHitFound, __out DirectX::XMFLOAT3 & interSectionPoint);
 	Triangle * PointInsideTriangle(const DirectX::XMFLOAT2 & point,	bool firstHitFound);
 
-	Waypoint * FindClosestWaypoint(const DirectX::XMFLOAT3 & position, float radius);
+	Waypoint * FindClosestWaypoint(const DirectX::XMFLOAT3 & position, float radius, bool directView = true);
 
 	//Drawable * LineIntersection(const DirectX::XMFLOAT2 & origin, const DirectX::XMFLOAT2 & direction, float & t, Drawable * avoidThis);
 	//Triangle * PointIntersection(const DirectX::XMFLOAT2 & point, Drawable * avoidThis);
@@ -46,7 +46,7 @@ private:
 		bool firstHitFound, int quadIndex, float & t);
 	void _triangleTraversePoint(__out Triangle *& tPtr, const DirectX::XMVECTOR & p, int quadIndex);
 
-	void _closestWaypoint(Waypoint *& wp, float & dist, DirectX::XMVECTOR pos, const DirectX::BoundingSphere & bs, UINT quadIndex);
+	void _closestWaypoint(Waypoint *& wp, float & dist, DirectX::XMVECTOR pos, const DirectX::BoundingSphere & bs, UINT quadIndex, bool directView);
 
 	bool _lineTriangleIntersection(const Triangle * tri, __out DirectX::XMFLOAT2 & interSectionPoint,
 		const DirectX::XMVECTOR & lineStart, const DirectX::XMVECTOR & lineEnd, float & t);
