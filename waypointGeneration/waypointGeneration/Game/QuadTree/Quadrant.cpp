@@ -92,6 +92,11 @@ bool Quadrant::Intersects(const Triangle & tri)
 	return m_aabb.Intersects(p[0], p[1], p[2]);
 }
 
+bool Quadrant::Intersects(const DirectX::BoundingSphere& BS) const
+{
+	return m_aabb.Intersects(BS);
+}
+
 bool Quadrant::Intersects(const DirectX::XMVECTOR & rayOrigin, const DirectX::XMVECTOR & rayDirection)
 {
 	DirectX::XMVECTOR result = DirectX::XMVectorEqual(rayDirection, DirectX::XMVectorZero());

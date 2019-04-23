@@ -11,6 +11,7 @@ public:
 	void BuildTree(unsigned int maxLevel, unsigned int worldSize, float worldStartX, float worldStartY);
 
 	void AddObject(Triangle * triangle);
+	void AddObject(Waypoint * wp);
 
 	void PlaceObjects(std::vector<Drawable*> & objectVector);
 	void PlaceObjects(std::vector<Waypoint*> & objectVector);
@@ -25,6 +26,7 @@ public:
 		bool firstHitFound, __out DirectX::XMFLOAT3 & interSectionPoint);
 	Triangle * PointInsideTriangle(const DirectX::XMFLOAT2 & point,	bool firstHitFound);
 
+	Waypoint * FindClosestWaypoint(const DirectX::XMFLOAT3 & position, float radius);
 
 	//Drawable * LineIntersection(const DirectX::XMFLOAT2 & origin, const DirectX::XMFLOAT2 & direction, float & t, Drawable * avoidThis);
 	//Triangle * PointIntersection(const DirectX::XMFLOAT2 & point, Drawable * avoidThis);
@@ -43,6 +45,8 @@ private:
 		const DirectX::XMVECTOR & ray, const DirectX::XMVECTOR & ray2D,
 		bool firstHitFound, int quadIndex, float & t);
 	void _triangleTraversePoint(__out Triangle *& tPtr, const DirectX::XMVECTOR & p, int quadIndex);
+
+	void _closestWaypoint(Waypoint *& wp, float & dist, DirectX::XMVECTOR pos, const DirectX::BoundingSphere & bs, UINT quadIndex);
 
 	bool _lineTriangleIntersection(const Triangle * tri, __out DirectX::XMFLOAT2 & interSectionPoint,
 		const DirectX::XMVECTOR & lineStart, const DirectX::XMVECTOR & lineEnd, float & t);

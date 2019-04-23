@@ -67,6 +67,11 @@ void QuadTree::AddObject(Triangle * triangle)
 	_traverseAndPlace(triangle, 0);
 }
 
+void QuadTree::AddObject(Waypoint* wp)
+{
+	_traverseAndPlace(wp, 0);
+}
+
 void QuadTree::PlaceObjects(std::vector<Drawable*>& objectVector)
 {
 	for (auto & q : m_leafs)
@@ -153,6 +158,19 @@ Triangle * QuadTree::PointInsideTriangle(const DirectX::XMFLOAT2 & point, bool f
 	_triangleTraversePoint(tri, p, 0);
 
 	return tri;
+}
+
+Waypoint* QuadTree::FindClosestWaypoint(const DirectX::XMFLOAT3& position, float radius)
+{
+
+	DirectX::XMFLOAT3 center(position.x, position.z, 0.0f);
+	DirectX::XMVECTOR pos = DirectX::XMLoadFloat3(&center);
+	DirectX::BoundingSphere bs(center, radius);
+	Waypoint * wp = nullptr;
+	float dist = FLT_MAX;
+	_closestWaypoint(wp, dist, pos, bs, 0);
+
+	return wp;
 }
 
 void QuadTree::_triangleTraversalLine(Triangle *& outPtr, DirectX::XMFLOAT2 & interSectionPoint, const DirectX::XMVECTOR & lineStart, const DirectX::XMVECTOR & lineEnd, const DirectX::XMVECTOR & dir, bool firstHitFound, int quadIndex, float & t)
@@ -265,6 +283,50 @@ void QuadTree::_triangleTraversePoint(Triangle *& tPtr, const DirectX::XMVECTOR 
 					{
 						tPtr = triangles[i];
 						canContinue = false;
+					}
+				}
+			}
+		}
+	}
+}
+
+void QuadTree::_closestWaypoint(Waypoint*& wp, float & dist, DirectX::XMVECTOR pos, const DirectX::BoundingSphere& bs, UINT quadIndex)
+{
+	if (dist > 0.0f)
+	{
+		if (m_quadTree[quadIndex].Intersects(bs))
+		{
+			int nrOfChildren = m_quadTree[quadIndex].GetNrOfChildren();
+			const unsigned int * children = m_quadTree[quadIndex].GetChildren();
+			if (nrOfChildren > 0)
+			{
+				for (int i = 0; i < nrOfChildren; i++)
+					_closestWaypoint(wp, dist, pos, bs, children[i]);
+				
+			}
+			else
+			{
+				const std::vector<Waypoint*> waypoints = m_quadTree[quadIndex].GetWaypoints();
+				if (waypoints.empty())
+					return;
+
+				size_t size = waypoints.size();
+				
+				DirectX::XMFLOAT2 lStart;
+				DirectX::XMFLOAT2 intersectionPoint;
+				DirectX::XMStoreFloat2(&lStart, pos);
+
+				for (int i = 0; i < size; i++)
+				{
+					Triangle * triangle = LineIntersectionTriangle(lStart, waypoints[i]->GetPosition(), true, intersectionPoint);
+					if (triangle == nullptr)
+					{
+						float tDist = DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(DirectX::XMVectorSubtract(pos, DirectX::XMLoadFloat2(&waypoints[i]->GetPosition()))));
+						if (tDist < dist)
+						{
+							dist = tDist;
+							wp = waypoints[i];
+						}
 					}
 				}
 			}

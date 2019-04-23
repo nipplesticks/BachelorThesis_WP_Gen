@@ -29,6 +29,7 @@ public:
 	bool Intersects(const DirectX::XMFLOAT2 & ray, const DirectX::XMFLOAT2 & origin, float & t) const;
 	bool Intersects(const DirectX::XMFLOAT2 & point) const;
 	bool Intersects(const Triangle & tri);
+	bool Intersects(const DirectX::BoundingSphere & BS) const;
 
 	bool Intersects(const DirectX::XMVECTOR & rayOrigin, const DirectX::XMVECTOR & rayDirection);
 	bool Intersects(const DirectX::XMVECTOR & point);
