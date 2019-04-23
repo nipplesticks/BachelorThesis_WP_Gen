@@ -31,4 +31,6 @@ private:
 	DirectX::XMFLOAT2 m_position;
 	float m_heightValue = 0;
 
+	
+
 };

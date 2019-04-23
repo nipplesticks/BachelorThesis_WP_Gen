@@ -44,7 +44,8 @@ Game::~Game()
 	m_blockedTriangles.clear();
 	m_unblockedTriangles.clear();
 	
-	m_wp.clear();
+	
+	m_wpDraw.clear();
 }
 
 void Game::Update(double dt)
@@ -61,6 +62,25 @@ void Game::Update(double dt)
 	m_camera.Update();
 	m_player.Update();
 	m_terrain.Update();
+
+	if (Window::GetInstance()->IsKeyPressed(Input::KEY_CODE::E))
+	{
+		if (m_target)
+		{
+			m_wpDraw[m_target].SetColor(0, 1, 1);
+			m_wpDraw[m_target].SetScale(0.1,0.1,0.1);
+			m_wpDraw[m_target].Update();
+		}
+
+		m_target = m_blockedTriangleTree.FindClosestWaypoint(m_player.GetPosition(), 15.0f);
+
+		if (m_target)
+		{
+			m_wpDraw[m_target].SetColor(0, 0, 1);
+			m_wpDraw[m_target].SetScale(1, 1, 1);
+			m_wpDraw[m_target].Update();
+		}
+	}
 
 
 	static DirectX::XMFLOAT2 waterUV = { 0,0 };
@@ -102,8 +122,8 @@ void Game::Draw()
 	for (auto & b : m_buildings)
 		b.Draw();
 
-	for (auto & d : m_wp)
-		d.Draw();
+	for (auto & d : m_wpDraw)
+		d.second.Draw();
 
 	m_water.Draw();
 }
@@ -1242,18 +1262,19 @@ void Game::_createViewableTriangles()
 void Game::_createViewableWaypoints()
 {
 	std::cout << "Create drawables for Waypoints... ";
-	m_wp = std::vector<Drawable>(m_waypoints.size());
-	int counter = 0;
+	//m_wp = std::vector<Drawable>(m_waypoints.size());
+	//int counter = 0;
 	Timer t;
 	t.Start();
 	for (auto & w : m_waypoints)
 	{
-		m_wp[counter].SetPosition(w.second.GetPosition().x, w.second.GetHeightVal(), w.second.GetPosition().y);
-		m_wp[counter].SetVertices(&m_playerMesh);
-		m_wp[counter].SetScale(0.1f, 0.1f, 0.1f);
-		m_wp[counter].UseDepthBuffer(false);
-		m_wp[counter].Update();
-		m_wp[counter++].SetColor(0, 1, 1);
+		m_wpDraw.insert(std::make_pair(&m_waypoints[w.first], Drawable()));
+		m_wpDraw[&m_waypoints[w.first]].SetPosition(w.second.GetPosition().x, w.second.GetHeightVal(), w.second.GetPosition().y);
+		m_wpDraw[&m_waypoints[w.first]].SetVertices(&m_playerMesh);
+		m_wpDraw[&m_waypoints[w.first]].SetScale(0.1f, 0.1f, 0.1f);
+		m_wpDraw[&m_waypoints[w.first]].UseDepthBuffer(false);
+		m_wpDraw[&m_waypoints[w.first]].Update();
+		m_wpDraw[&m_waypoints[w.first]].SetColor(0, 1, 1);
 	}
 
 	
@@ -1369,7 +1390,7 @@ void Game::_offsetWaypoints()
 #include <fstream>
 void Game::_connectWaypoints()
 {
-	static const UINT TREE_SIZE = 1024 * 1024 * 16;
+	static const UINT TREE_SIZE = 1024 * 1024 * 32;
 
 	// Connect Waypoints
 	std::cout << "Connecting Waypoints... ";
@@ -1671,6 +1692,8 @@ void Game::_connectWaypoints()
 			UINT nrOfConnections = arr[t].nrOfConnections;
 
 			UINT key = arr[t].key;
+
+			m_blockedTriangleTree.AddObject(&m_waypoints[key]);
 
 			for (UINT n = 0; n < nrOfConnections && n < 256; n++)
 			{

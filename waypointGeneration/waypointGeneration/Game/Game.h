@@ -7,10 +7,10 @@
 #include "Pathfinding/Waypoint.h"
 #include "QuadTree/QuadTree.h"
 
-#define DRAW_WAYPOINT false
+#define DRAW_WAYPOINT true
 #define DRAW_TRIANGLES false
 #define DRAW_CONNECTIONS false
-#define USE_RANDOM_SEED true
+#define USE_RANDOM_SEED false
 
 #define MIN_HEIGHT	-10
 #define MAX_HEIGHT	15
@@ -60,7 +60,9 @@ private:
 	std::vector<Vertex> m_connectionMesh;
 	Drawable m_connections;
 
-	std::vector<Drawable> m_wp;
+	//std::vector<Drawable> m_wp;
+	std::map<Waypoint*, Drawable> m_wpDraw;
+	Waypoint * m_target = nullptr;
 
 	std::vector<Vertex> m_edgeMeshes[4];
 	Drawable m_edges[4];
