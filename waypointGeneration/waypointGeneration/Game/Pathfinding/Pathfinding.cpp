@@ -26,7 +26,7 @@ std::vector<DirectX::XMFLOAT3> Pathfinding::FindPath2(const DirectX::XMFLOAT3& s
 
 std::vector<DirectX::XMFLOAT2> Pathfinding::_findPath(
 	const DirectX::XMFLOAT2& source,
-	const DirectX::XMFLOAT2& destination,
+	DirectX::XMFLOAT2& destination,
 	QuadTree& blockedTriangles)
 {
 	
@@ -44,6 +44,7 @@ std::vector<DirectX::XMFLOAT2> Pathfinding::_findPath(
 	std::map<Node, Waypoint*> openList;
 
 	Waypoint * startWaypoint = nullptr;
+	Waypoint * endWaypoint = nullptr;
 	float rad = 1;
 	while (startWaypoint == nullptr)
 	{
@@ -53,6 +54,23 @@ std::vector<DirectX::XMFLOAT2> Pathfinding::_findPath(
 
 		if (rad > 32)
 			return std::vector<DirectX::XMFLOAT2>();
+	}
+
+	if (blockedTriangles.PointInsideTriangle(destination, true))
+	{
+		rad = 1;
+		while (endWaypoint == nullptr)
+		{
+			endWaypoint = blockedTriangles.FindClosestWaypoint(
+				DirectX::XMFLOAT3(destination.x, 0.0f, destination.y),
+				rad *= 2, false);
+
+			if (rad > 32)
+				return std::vector<DirectX::XMFLOAT2>();
+		}
+
+		destination = endWaypoint->GetPosition();
+
 	}
 
 	Node current(nullptr, startWaypoint, 0.0f, _calcHCost(startWaypoint->GetPosition(), destination));
@@ -71,14 +89,31 @@ std::vector<DirectX::XMFLOAT2> Pathfinding::_findPath(
 		if (tri == nullptr)
 		{
 			Waypoint * p = current.target;
+
 			while (p)
 			{
 				DirectX::XMFLOAT2 pos = visited[p].target->GetPosition();
+
 				path.push_back(pos);
+
 				p = visited[p].parent;
 			}
 			std::reverse(path.begin(), path.end());
 			path.push_back(destination);
+
+			bool done = false;
+			int index = 0;
+			while (index < path.size() - 1)
+			{
+				tri = blockedTriangles.LineIntersectionTriangle(source, path[index], true, dummy);
+				if (tri)
+					break;
+				index++;
+			}
+			index--;
+			if (index >= 0)
+				path.erase(path.begin(), path.begin() + index);
+
 			return path;
 		}
 
@@ -87,12 +122,12 @@ std::vector<DirectX::XMFLOAT2> Pathfinding::_findPath(
 
 		for (auto & c : *currentConnections)
 		{
-			if (visited.find(c.second.wp) == visited.end())
+			if (visited.find(c.second.wp) == visited.end()) // Dont exist in map
 			{
 				Node n(current.target,
 					c.second.wp,
 					current.gCost + c.second.connectionCost,
-					_calcHCost(current.target->GetPosition(), c.second.wp->GetPosition()));
+					_calcHCost(c.second.wp->GetPosition(), destination));
 				visited.insert(std::make_pair(c.second.wp, n));
 				openList.insert(std::make_pair(n, c.second.wp));
 			}

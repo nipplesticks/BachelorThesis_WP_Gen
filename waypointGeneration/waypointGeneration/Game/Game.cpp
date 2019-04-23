@@ -29,8 +29,6 @@ Game::Game()
 	m_mouseReferencePosition = wnd->GetMousePosition();
 
 	_setupGame();
-
-	//Pathfinding::FindPath(m_player.GetPosition(), DirectX::XMFLOAT3(55, 55, 55), m_blockedTriangleTree);
 }
 
 Game::~Game()
@@ -66,25 +64,6 @@ void Game::Update(double dt)
 	m_camera.Update();
 	m_player.Update();
 	m_terrain.Update();
-
-	if (Window::GetInstance()->IsKeyPressed(Input::KEY_CODE::E))
-	{
-		if (m_target)
-		{
-			m_wpDraw[m_target].SetColor(0, 1, 1);
-			m_wpDraw[m_target].SetScale(0.1,0.1,0.1);
-			m_wpDraw[m_target].Update();
-		}
-
-		m_target = m_blockedTriangleTree.FindClosestWaypoint(m_player.GetPosition(), 15.0f);
-
-		if (m_target)
-		{
-			m_wpDraw[m_target].SetColor(0, 0, 1);
-			m_wpDraw[m_target].SetScale(1, 1, 1);
-			m_wpDraw[m_target].Update();
-		}
-	}
 
 	static DirectX::XMFLOAT2 waterUV = { 0,0 };
 	static double counter = 0;
@@ -122,9 +101,6 @@ void Game::Draw()
 
 	m_player.Draw();
 
-	if (!m_pathLine.empty())
-		m_path.Draw();
-
 	for (auto & b : m_buildings)
 		b.Draw();
 
@@ -137,38 +113,7 @@ void Game::Draw()
 void Game::_playerFixYPosition(double dt)
 {
 	Window * wnd = Window::GetInstance();
-	float speed = 10;
-	auto forward = m_camera.GetForwardVector();
-	auto right = m_camera.GetRightVector();
-
-	DirectX::XMFLOAT3 translate = { 0.0f, 0.0f, 0.0f };
-
-	if (wnd->IsKeyPressed(Input::W))
-	{
-		translate.x += forward.x * speed * (float)dt;
-		translate.y += forward.y * speed * (float)dt;
-		translate.z += forward.z * speed * (float)dt;
-	}
-	if (wnd->IsKeyPressed(Input::S))
-	{
-		translate.x -= forward.x * speed * (float)dt;
-		translate.y -= forward.y * speed * (float)dt;
-		translate.z -= forward.z * speed * (float)dt;
-	}
-	if (wnd->IsKeyPressed(Input::A))
-	{
-		translate.x -= right.x * speed * (float)dt;
-		translate.y -= right.y * speed * (float)dt;
-		translate.z -= right.z * speed * (float)dt;
-	}
-	if (wnd->IsKeyPressed(Input::D))
-	{
-		translate.x += right.x * speed * (float)dt;
-		translate.y += right.y * speed * (float)dt;
-		translate.z += right.z * speed * (float)dt;
-	}
-
-	m_player.Translate(translate);
+	m_player.UnitUpdate(dt, &m_blockedTriangleTree);
 
 	DirectX::XMFLOAT3 iPoint;
 	Triangle * tri = m_unblockedTriangleTree.RayIntersectionTriangle3D(m_player.GetPosition(), DirectX::XMFLOAT3(0, -1, 0), false, iPoint);
@@ -188,32 +133,6 @@ void Game::_playerFixYPosition(double dt)
 
 	if (tri)
 	{
-		/*
-		DirectX::XMVECTOR normal = DirectX::XMLoadFloat3(&tri->normal);
-		DirectX::XMVECTOR forward, right;
-		float angle = 0.0f;
-		
-		angle = DirectX::XMVectorGetX(DirectX::XMVector3Dot(normal, DirectX::XMVectorSet(0, 1, 0, 0)));
-		if (tri->normal.y < 0.99f)
-		{
-			right = (DirectX::XMVector3Cross(normal, DirectX::XMVectorSet(0, 1, 0, 0)));
-			right = DirectX::XMVectorSetY(right, 0.0f);
-			right = DirectX::XMVector3Normalize(right);
-		}
-		else
-		{
-			right = (DirectX::XMVector3Cross(normal, DirectX::XMVectorSet(0, 0, 1, 0)));
-			right = DirectX::XMVectorSetY(right, 0.0f);
-			right = DirectX::XMVector3Normalize(right);
-		}
-
-		forward = DirectX::XMVector3Cross(normal, right);
-
-		DirectX::XMFLOAT3 xmf, xmr, xmn = tri->normal;
-
-		DirectX::XMStoreFloat3(&xmf, forward);
-		DirectX::XMStoreFloat3(&xmr, right);
-*/
 		m_player.SetRotation(tri->normal);
 		auto pos = m_player.GetPosition();
 		pos.y = iPoint.y + 0.5f;
@@ -422,50 +341,17 @@ void Game::_cameraControl(double dt)
 
 	if (wnd->IsMousePressed(Input::MOUSE_CODE::RBUTTON))
 	{
-		static bool Ass = false;
-
-		if (!Ass)
+		DirectX::XMFLOAT3 worldPos;
+		if (Renderer::GetInstance()->GetMousePicking(worldPos))
 		{
-			DirectX::XMFLOAT3 worldPos;
-			if (Renderer::GetInstance()->GetMousePicking(worldPos))
+			Timer t;
+			t.Start();
+			std::vector<DirectX::XMFLOAT2> path = Pathfinding::FindPath(m_player.GetPosition(), worldPos, m_blockedTriangleTree);
+			std::cout << "\r" << t.Stop(Timer::MILLISECONDS) << " ms               ";
+
+			if (!path.empty())
 			{
-				Timer t;
-				t.Start();
-				auto lol = Pathfinding::FindPath2(m_player.GetPosition(), worldPos, m_blockedTriangleTree);
-				std::cout << "\r" << t.Stop(Timer::MILLISECONDS) << " ms               ";
-
-				if (!lol.empty())
-				{
-					m_pathLine.clear();
-					lol.insert(lol.begin(), m_player.GetPosition());
-					//Ass = true;
-					//std::cout << "WE HAVE PATH!\n";
-
-					Vertex vl;
-					vl.Normal = DirectX::XMFLOAT4A(1, 1, 1, 0);
-					vl.UV = DirectX::XMFLOAT2A(0, 0);
-					vl.Position.w = 1.0f;
-					for (int i = 0; i < lol.size() - 1; i++)
-					{
-						vl.Position.x = lol[i].x;
-						vl.Position.y = lol[i].y;
-						vl.Position.z = lol[i].z;
-						m_pathLine.push_back(vl);
-						vl.Position.x = lol[i + 1].x;
-						vl.Position.y = lol[i + 1].y;
-						vl.Position.z = lol[i + 1].z;
-						m_pathLine.push_back(vl);
-					}
-
-					m_pathLine.front().Position.y = m_player.GetPosition().y;
-					m_pathLine.back().Position.y = worldPos.y;
-
-					m_path.SetVertices(&m_pathLine);
-					m_path.SetColor(1, 0, 0);
-					m_path.SetTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-					m_path.UseDepthBuffer(false);
-					m_path.Update();
-				}
+				m_player.SetPath(path);
 			}
 		}
 	}

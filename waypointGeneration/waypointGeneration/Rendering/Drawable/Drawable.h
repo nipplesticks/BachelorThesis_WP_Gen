@@ -2,6 +2,8 @@
 #include "Transform/Transform.h"
 #include "../structs.h"
 
+class QuadTree;
+
 class Drawable : public Transform
 {
 public:
@@ -30,6 +32,14 @@ public:
 	void SetPickable(bool isPickable);
 	bool IsPickable() const;
 
+	void SetPath(const std::vector<DirectX::XMFLOAT2> & path);
+	std::vector<DirectX::XMFLOAT2> & GetPath();
+
+	void SetSpeed(float spd);
+	float GetSpeed() const;
+
+	void UnitUpdate(double dt, QuadTree * qt);
+
 	ID3D11ShaderResourceView * GetTexture() const;
 
 	void UseDepthBuffer(bool val);
@@ -37,6 +47,9 @@ public:
 	void Draw();
 
 private:
+	std::vector<DirectX::XMFLOAT2> m_path;
+	float m_speed = 10.0f;
+
 	DirectX::XMFLOAT4A m_color = {1,1,1,1};
 	DirectX::XMFLOAT2A m_uvOffset = { 0,0 };
 

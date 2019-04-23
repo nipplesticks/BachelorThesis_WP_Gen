@@ -72,7 +72,7 @@ private:
 private:
 	static std::vector<DirectX::XMFLOAT2> _findPath(
 		const DirectX::XMFLOAT2 & source,
-		const DirectX::XMFLOAT2 & destination,
+		DirectX::XMFLOAT2 & destination,
 		QuadTree & blockedTriangles);
 	static std::vector<DirectX::XMFLOAT3> _findPath2(
 		const DirectX::XMFLOAT2 & source,

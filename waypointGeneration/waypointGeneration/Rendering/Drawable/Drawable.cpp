@@ -2,6 +2,7 @@
 #include "Drawable.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Passess/IRender.h"
+#include "../../Game/QuadTree/QuadTree.h"
 
 // remove
 #include <vector>
@@ -147,6 +148,72 @@ void Drawable::SetPickable(bool isPickable)
 bool Drawable::IsPickable() const
 {
 	return m_isPickable;
+}
+
+void Drawable::SetPath(const std::vector<DirectX::XMFLOAT2>& path)
+{
+	m_path = path;
+}
+
+std::vector<DirectX::XMFLOAT2>& Drawable::GetPath()
+{
+	return m_path;
+}
+
+void Drawable::SetSpeed(float spd)
+{
+	m_speed = spd;
+}
+
+float Drawable::GetSpeed() const
+{
+	return m_speed;
+}
+
+void Drawable::UnitUpdate(double dt, QuadTree * qt)
+{
+	using namespace DirectX;
+	if (!m_path.empty())
+	{
+		XMFLOAT3 pos = GetPosition();
+		XMFLOAT2 current(pos.x, pos.z);
+		XMFLOAT2 target = m_path.front();
+		/*XMFLOAT2 dummy;
+
+		Triangle * tri = nullptr;
+		while (qt && m_path.size() > 1 && tri == nullptr)
+		{
+			XMFLOAT2 nexTarget = m_path[1];
+			tri = qt->LineIntersectionTriangle(current, nexTarget, true, dummy);
+			if (tri == nullptr)
+			{
+				m_path.erase(m_path.begin());
+				target = nexTarget;
+			}
+		}*/
+
+
+		XMVECTOR vCurrent = XMLoadFloat2(&current);
+		XMVECTOR vTarget = XMLoadFloat2(&target);
+		XMVECTOR vLine = XMVectorSubtract(vTarget, vCurrent);
+		float lBefore = XMVectorGetX(XMVector2Length(vLine));
+		XMVECTOR vDir = XMVector2Normalize(vLine);
+		vCurrent = XMVectorAdd(vCurrent, XMVectorScale(vDir, m_speed * dt));
+		vLine = XMVectorSubtract(vTarget, vCurrent);
+		float lAfter = XMVectorGetX(XMVector2Length(vLine));
+
+		if (lAfter < lBefore)
+			XMStoreFloat2(&current, vCurrent);
+		else
+		{
+			XMStoreFloat2(&current, vTarget);
+			m_path.erase(m_path.begin());
+		}
+		pos.x = current.x;
+		pos.z = current.y;
+
+		SetPosition(pos);
+	}
 }
 
 ID3D11ShaderResourceView * Drawable::GetTexture() const
