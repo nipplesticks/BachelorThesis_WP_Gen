@@ -14,7 +14,7 @@ private:
 		UINT64 workId;
 		bool isDone;
 
-		WorkerThread(std::function<R(Args...)> func)
+		WorkerThread(std::function<void()> func)
 		{
 			worker = std::thread(func);
 			workId = 0;
@@ -23,6 +23,7 @@ private:
 	};
 
 	int m_threadCount;
+	bool m_isRunning;
 	static UINT64 m_workId;
 	std::map<std::thread::id, WorkerThread*> m_pool;
 
@@ -39,8 +40,9 @@ public:
 	ThreadPool(int threadCount = 4);
 	~ThreadPool();
 
-	UINT64 ScheduleTask(std::function<std::function<R(Args...)>>);
+	UINT64 ScheduleTask(std::function<std::function<R(Args...)>> func, Args ... arg);
 	R GetWorkResults(UINT64 workId);
+	bool IsWorkDone(UINT64 workId);
 };
 
 template <class R, class ... Args>
@@ -49,7 +51,7 @@ void ThreadPool<R, Args...>::WaitingForWork()
 	std::function<R(Args...)> work;
 	UINT64 workId;
 
-	while (true)
+	while (m_isRunning)
 	{
 		{
 			std::unique_lock<std::mutex> lock(m_workMutex);
@@ -59,6 +61,7 @@ void ThreadPool<R, Args...>::WaitingForWork()
 			workId = m_work.front().second;
 			m_work.pop();
 		}
+
 		R returnValue = work();
 		m_pool[std::this_thread::get_id()]->isDone = true;
 
@@ -79,6 +82,7 @@ template <class R, class ... Args>
 ThreadPool<R, Args...>::ThreadPool(int threadCount)
 {
 	m_threadCount = threadCount;
+	m_isRunning = true;
 
 	for (int i = 0; i < m_threadCount; i++)
 	{
@@ -91,16 +95,22 @@ ThreadPool<R, Args...>::ThreadPool(int threadCount)
 template <class R, class ... Args>
 ThreadPool<R, Args...>::~ThreadPool()
 {
+	m_isRunning = false;
+	for (auto & t : m_pool)
+	{
+		t.second->worker.join();
+		delete t.second;
+	}
 }
 
 template <class R, class... Args>
 UINT64 ThreadPool<R, Args...>::ScheduleTask(
-	std::function<std::function<R(Args...)>> task)
+	std::function<std::function<R(Args...)>> task, Args ... arg)
 {
 	UINT64 id;
 	{
 		std::unique_lock<std::mutex> lock(m_workMutex);
-		m_work.push(std::make_pair(task, id = m_workId++));
+		m_work.push(std::make_pair(std::bind(task, arg), id = m_workId++));
 	}
 	m_condition.notify_one();
 
@@ -123,4 +133,24 @@ R ThreadPool<R, Args...>::GetWorkResults(UINT64 workId)
 	lock.unlock();
 
 	return results;
+}
+
+template <class R, class ... Args>
+bool ThreadPool<R, Args...>::IsWorkDone(UINT64 workId)
+{
+	std::unique_lock<std::mutex> lock(m_workIdMutex);
+
+	while (!lock.owns_lock())
+	{
+		lock.try_lock();
+	}
+
+	bool isDone;
+	auto it = m_results.find(workId);
+
+	isDone = it != m_results.end();
+
+	lock.unlock();
+
+	return isDone;
 }

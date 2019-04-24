@@ -127,7 +127,6 @@
     <ClCompile Include="Game\QuadTree\Quadrant.cpp" />
     <ClCompile Include="Game\QuadTree\QuadTree.cpp" />
     <ClCompile Include="Game\GPUQuadTree\GPUQuadTree.cpp" />
-    <ClCompile Include="Game\ThreadPool\ThreadPool.cpp" />
     <ClCompile Include="MapGeneration\DiamondSquare.cpp" />
     <ClCompile Include="MapGeneration\TerrainCreator.cpp" />
     <ClCompile Include="Rendering\Drawable\Drawable.cpp" />

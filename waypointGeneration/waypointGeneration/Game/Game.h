@@ -6,6 +6,7 @@
 #include "../MapGeneration/DiamondSquare.h"
 #include "Pathfinding/Waypoint.h"
 #include "QuadTree/QuadTree.h"
+#include "ThreadPool/ThreadPool.h"
 
 #define DRAW_WAYPOINT false
 #define DRAW_TRIANGLES false
@@ -88,6 +89,10 @@ private:
 	std::map<long int, Waypoint> m_waypoints;
 
 	std::vector<Drawable> m_buildings;
+
+	// Threads
+	ThreadPool<std::vector<DirectX::XMFLOAT2>, const DirectX::XMFLOAT3&, const DirectX::XMFLOAT3&, QuadTree&> m_threadPool;
+
 private:
 	void _playerFixYPosition(double dt);
 	void _cameraControl(double dt);
