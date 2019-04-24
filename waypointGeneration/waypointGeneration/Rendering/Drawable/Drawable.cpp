@@ -28,27 +28,29 @@ void Drawable::SetVertices(std::vector<Vertex>* vertices)
 		m_vertexBuffer->Release();
 	m_vertexBuffer = nullptr;
 
-	size_t size = vertices->size();
-	Vertex v = (*vertices)[0];
-	DirectX::XMFLOAT2 min = DirectX::XMFLOAT2(v.Position.x, v.Position.z);
-	DirectX::XMFLOAT2 max = DirectX::XMFLOAT2(v.Position.x, v.Position.z);
+	//size_t size = vertices->size();
+	//Vertex v = (*vertices)[0];
+	//DirectX::XMFLOAT2 min = DirectX::XMFLOAT2(v.Position.x, v.Position.z);
+	//DirectX::XMFLOAT2 max = DirectX::XMFLOAT2(v.Position.x, v.Position.z);
 
-	for (size_t i = 1; i < size; i++)
-	{
-		Vertex tempV = (*vertices)[i];
-		DirectX::XMFLOAT2 tempPos = DirectX::XMFLOAT2(tempV.Position.x, tempV.Position.z);
-		// Mesh min
-		if (tempPos.x < min.x) min.x = tempPos.x;
-		if (tempPos.y < min.y) min.y = tempPos.y;
-		// Mesh max
-		if (tempPos.x > max.x) max.x = tempPos.x;
-		if (tempPos.y > max.y) max.y = tempPos.y;
-	}
+	//for (size_t i = 1; i < size; i++)
+	//{
+	//	Vertex tempV = (*vertices)[i];
+	//	DirectX::XMFLOAT2 tempPos = DirectX::XMFLOAT2(tempV.Position.x, tempV.Position.z);
+	//	// Mesh min
+	//	if (tempPos.x < min.x) min.x = tempPos.x;
+	//	if (tempPos.y < min.y) min.y = tempPos.y;
+	//	// Mesh max
+	//	if (tempPos.x > max.x) max.x = tempPos.x;
+	//	if (tempPos.y > max.y) max.y = tempPos.y;
+	//}
 
-	m_min = min;
-	m_max = max;
-	DirectX::XMVECTOR vec = DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&max), DirectX::XMLoadFloat2(&min));
-	DirectX::XMStoreFloat2(&m_size, vec);
+	//m_min = min;
+	//m_max = max;
+	//DirectX::XMVECTOR vec = DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&max), DirectX::XMLoadFloat2(&min));
+	//DirectX::XMStoreFloat2(&m_size, vec);
+
+	UpdateMinAndMax();
 
 	/* Create Vertex Buffer */
 	UINT32 vertexSize = sizeof(Vertex);
@@ -178,7 +180,7 @@ void Drawable::UnitUpdate(double dt, QuadTree * qt)
 		XMFLOAT3 pos = GetPosition();
 		XMFLOAT2 current(pos.x, pos.z);
 		XMFLOAT2 target = m_path.front();
-		/*XMFLOAT2 dummy;
+		XMFLOAT2 dummy;
 
 		Triangle * tri = nullptr;
 		while (qt && m_path.size() > 1 && tri == nullptr)
@@ -190,7 +192,7 @@ void Drawable::UnitUpdate(double dt, QuadTree * qt)
 				m_path.erase(m_path.begin());
 				target = nexTarget;
 			}
-		}*/
+		}
 
 
 		XMVECTOR vCurrent = XMLoadFloat2(&current);
@@ -226,12 +228,41 @@ void Drawable::UseDepthBuffer(bool val)
 	m_useDepth = val;
 }
 
+void Drawable::UpdateMinAndMax()
+{
+	size_t size = m_vertices->size();
+	Vertex v = (*m_vertices)[0];
+	DirectX::XMFLOAT2 min = DirectX::XMFLOAT2(v.Position.x, v.Position.z);
+	DirectX::XMFLOAT2 max = DirectX::XMFLOAT2(v.Position.x, v.Position.z);
+
+	for (size_t i = 1; i < size; i++)
+	{
+		Vertex tempV = (*m_vertices)[i];
+		DirectX::XMFLOAT2 tempPos = DirectX::XMFLOAT2(tempV.Position.x, tempV.Position.z);
+		// Mesh min
+		if (tempPos.x < min.x) min.x = tempPos.x;
+		if (tempPos.y < min.y) min.y = tempPos.y;
+		// Mesh max
+		if (tempPos.x > max.x) max.x = tempPos.x;
+		if (tempPos.y > max.y) max.y = tempPos.y;
+	}
+
+	m_min = min;
+	m_max = max;
+
+	DirectX::XMVECTOR vec = DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&max), DirectX::XMLoadFloat2(&min));
+	DirectX::XMStoreFloat2(&m_size, vec);
+}
+
 void Drawable::Draw()
 {
-	if (!m_useDepth)
-		IRender::QueueNoDepth(this);
-	else if (m_color.w > 0.999f)
-		IRender::Queue(this);
-	else
-		IRender::QueueAlpha(this);
+	if (m_isActive)
+	{
+		if (!m_useDepth)
+			IRender::QueueNoDepth(this);
+		else if (m_color.w > 0.999f)
+			IRender::Queue(this);
+		else
+			IRender::QueueAlpha(this);
+	}
 }

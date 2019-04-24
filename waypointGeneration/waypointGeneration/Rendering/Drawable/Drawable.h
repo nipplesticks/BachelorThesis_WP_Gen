@@ -43,7 +43,12 @@ public:
 	ID3D11ShaderResourceView * GetTexture() const;
 
 	void UseDepthBuffer(bool val);
-	
+
+	void UpdateMinAndMax();
+
+	void SetActive(bool val) { m_isActive = val; }
+	bool IsActive() const { return m_isActive; }
+
 	void Draw();
 
 private:
@@ -56,6 +61,8 @@ private:
 	bool m_isPickable = false;
 
 	bool m_useDepth = true;
+
+	bool m_isActive = true;
 
 	D3D11_PRIMITIVE_TOPOLOGY m_topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 

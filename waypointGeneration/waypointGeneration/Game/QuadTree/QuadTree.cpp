@@ -72,15 +72,41 @@ void QuadTree::AddObject(Waypoint* wp)
 	_traverseAndPlace(wp, 0);
 }
 
+void QuadTree::AddObject(Drawable* d)
+{
+	DirectX::BoundingBox bb = d->GetBoundingBox();
+	DirectX::BoundingOrientedBox ob;
+	ob.CreateFromBoundingBox(ob, bb);
+
+	DirectX::XMFLOAT3 oldPos = d->GetPosition();
+	DirectX::XMFLOAT3 oldScale = d->GetScale();
+	DirectX::XMFLOAT3 oldRot = d->GetRotation();
+
+	d->SetPosition(oldPos.x, oldPos.z, 0.0f);
+	d->SetScale(oldScale.x, oldScale.z, 0.0f);
+	d->SetRotation(oldRot.x, oldRot.z, 0.0f);
+	d->Update();
+	ob.Transform(ob, DirectX::XMLoadFloat4x4A(&d->GetWorldMatrix()));
+	d->SetPosition(oldPos);
+	d->SetScale(oldScale);
+	d->SetRotation(oldRot);
+	d->Update();
+	_traverseAndPlace(d, 0, ob);
+}
+
 void QuadTree::PlaceObjects(std::vector<Drawable*>& objectVector)
 {
-	for (auto & q : m_leafs)
+	/*for (auto & q : m_leafs)
 		q->ClearDrawables();
 
 	int size = (int)objectVector.size();
 
 	for (size_t i = 0; i < size; i++)
-		_traverseAndPlace(objectVector[i], 0);
+	{
+		DirectX::BoundingBox bb = objectVector[i]->GetBoundingBox();
+		bb.Transform(bb, DirectX::XMLoadFloat4x4A(&objectVector[i]->GetWorldMatrix()));
+		_traverseAndPlace(objectVector[i], 0, ob);
+	}*/
 }
 
 void QuadTree::PlaceObjects(std::vector<Waypoint*>& objectVector)
@@ -171,6 +197,31 @@ Waypoint* QuadTree::FindClosestWaypoint(const DirectX::XMFLOAT3& position, float
 	_closestWaypoint(wp, dist, pos, bs, 0, directView);
 
 	return wp;
+}
+
+std::vector<Drawable*> QuadTree::DrawableIntersects(Drawable* input)
+{
+	DirectX::BoundingBox bb = input->GetBoundingBox();
+	DirectX::BoundingOrientedBox ob;
+	ob.CreateFromBoundingBox(ob, bb);
+
+	DirectX::XMFLOAT3 oldPos = input->GetPosition();
+	DirectX::XMFLOAT3 oldScale = input->GetScale();
+	DirectX::XMFLOAT3 oldRot = input->GetRotation();
+	input->SetPosition(oldPos.x, oldPos.z, 0.0f);
+	input->SetScale(oldScale.x, oldScale.z, 0.0f);
+	input->SetRotation(oldRot.x, oldRot.z, 0.0f);
+	input->Update();
+	ob.Transform(ob, DirectX::XMLoadFloat4x4A(&input->GetWorldMatrix()));
+	input->SetPosition(oldPos);
+	input->SetScale(oldScale);
+	input->SetRotation(oldRot);
+	input->Update();
+	std::vector<Drawable*> output;
+
+	_drawableTraversal(output, ob, 0);
+
+	return output;
 }
 
 void QuadTree::_triangleTraversalLine(Triangle *& outPtr, DirectX::XMFLOAT2 & interSectionPoint, const DirectX::XMVECTOR & lineStart, const DirectX::XMVECTOR & lineEnd, const DirectX::XMVECTOR & dir, bool firstHitFound, int quadIndex, float & t)
@@ -336,6 +387,64 @@ void QuadTree::_closestWaypoint(Waypoint*& wp, float & dist, DirectX::XMVECTOR p
 	}
 }
 
+void QuadTree::_drawableTraversal(std::vector<Drawable*>& output, const DirectX::BoundingOrientedBox& bb, int quadIndex)
+{
+	if (m_quadTree[quadIndex].Intersects(bb))
+	{
+		int nrOfChildren = m_quadTree[quadIndex].GetNrOfChildren();
+
+		if (nrOfChildren > 0)
+		{
+			const unsigned int * children = m_quadTree[quadIndex].GetChildren();
+			for (int i = 0; i < nrOfChildren; i++)
+				_drawableTraversal(output, bb, children[i]);
+		}
+		else
+		{
+			const std::vector<Drawable*> & o = m_quadTree[quadIndex].GetDrawables();
+			size_t size = o.size();
+
+			for (int i = 0; i < size; i++)
+			{
+				Drawable * target = o[i];
+				if (!target->IsActive())
+					continue;
+				DirectX::BoundingBox b = target->GetBoundingBox();
+				DirectX::BoundingOrientedBox ob;
+				ob.CreateFromBoundingBox(ob, b);
+
+				DirectX::XMFLOAT3 oldPos = target->GetPosition();
+				DirectX::XMFLOAT3 oldScale = target->GetScale();
+				DirectX::XMFLOAT3 oldRot = target->GetRotation();
+
+				target->SetPosition(oldPos.x, oldPos.z, 0.0f);
+				target->SetScale(oldScale.x, oldScale.z, 0.0f);
+				target->SetRotation(oldRot.x, oldRot.z, 0.0f);
+
+				target->Update();
+
+				b.Transform(b, DirectX::XMLoadFloat4x4A(&target->GetWorldMatrix()));
+
+				target->SetPosition(oldPos);
+				target->SetScale(oldScale);
+				target->SetRotation(oldRot);
+
+				target->Update();
+
+				if (bb.Intersects(b))
+				{
+					if (std::find(output.begin(), output.end(), target) == output.end())
+						output.push_back(target);
+				}
+			}
+
+		}
+	}
+
+
+
+}
+
 bool QuadTree::_lineTriangleIntersection(const Triangle * tri, DirectX::XMFLOAT2 & interSectionPoint, const DirectX::XMVECTOR & lineStart, const DirectX::XMVECTOR & lineEnd, float & t)
 {
 	static const float EPSILON = 0.0001f;
@@ -347,7 +456,7 @@ bool QuadTree::_lineTriangleIntersection(const Triangle * tri, DirectX::XMFLOAT2
 	DirectX::XMStoreFloat2(&l1S, lineStart);
 	DirectX::XMStoreFloat2(&l1E, lineEnd);
 
-	DirectX::XMVECTOR isPoint;
+	//DirectX::XMVECTOR isPoint;
 	float lSq = FLT_MAX;
 
 	DirectX::XMFLOAT2 l2S, l2E;
@@ -455,10 +564,11 @@ size_t QuadTree::_GetQuadrantIndex(const DirectX::XMFLOAT2 & worldPos, unsigned 
 	return levelStartIndex + (int)step.x + (int)step.y * (int)std::pow(2, level);
 }
 
-void QuadTree::_traverseAndPlace(Drawable * e, int quadIndex)
+void QuadTree::_traverseAndPlace(Drawable * d, int quadIndex, const DirectX::BoundingOrientedBox & bb)
 {
-	DirectX::XMFLOAT3 pos = e->GetPosition();
-	if (_insideAABB(DirectX::XMFLOAT2(pos.x, pos.z), e->GetSize(), m_quadTree[quadIndex]))
+	//DirectX::XMFLOAT3 pos = d->GetPosition();
+
+	if (m_quadTree[quadIndex].Intersects(bb))
 	{
 		int nrOfChildren = m_quadTree[quadIndex].GetNrOfChildren();
 
@@ -466,10 +576,10 @@ void QuadTree::_traverseAndPlace(Drawable * e, int quadIndex)
 		{
 			const unsigned int * children = m_quadTree[quadIndex].GetChildren();
 			for (int i = 0; i < nrOfChildren; i++)
-				_traverseAndPlace(e, children[i]);
+				_traverseAndPlace(d, children[i], bb);
 		}
 		else
-			m_quadTree[quadIndex].SetObject(e);
+			m_quadTree[quadIndex].SetObject(d);
 	}
 }
 

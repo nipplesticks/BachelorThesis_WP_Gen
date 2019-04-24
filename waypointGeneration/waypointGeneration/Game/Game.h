@@ -10,7 +10,7 @@
 #define DRAW_WAYPOINT false
 #define DRAW_TRIANGLES false
 #define DRAW_CONNECTIONS false
-#define USE_RANDOM_SEED false
+#define USE_RANDOM_SEED true
 
 #define MIN_HEIGHT	-10
 #define MAX_HEIGHT	15
@@ -30,6 +30,7 @@ public:
 
 	void Update(double dt);
 	void Draw();
+	bool GameOver();
 
 private:
 	Camera m_camera;
@@ -60,7 +61,10 @@ private:
 	std::vector<Vertex> m_connectionMesh;
 	Drawable m_connections;
 
-	//std::vector<Drawable> m_wp;
+	// Coins
+	int	m_numberOfCoins = 10;
+	std::vector<Drawable> m_coins;
+
 	std::map<Waypoint*, Drawable> m_wpDraw;
 	
 	std::vector<Vertex> m_edgeMeshes[4];
@@ -109,4 +113,5 @@ private:
 	void _connectWaypoints();
 	void _createViewableConnections();
 	void _generateWorldEdges();
+	void _creatingCoins();
 };
