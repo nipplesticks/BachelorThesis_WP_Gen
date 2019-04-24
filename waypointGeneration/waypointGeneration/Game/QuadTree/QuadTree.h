@@ -12,6 +12,7 @@ public:
 
 	void AddObject(Triangle * triangle);
 	void AddObject(Waypoint * wp);
+	void AddObject(Drawable * d);
 
 	void PlaceObjects(std::vector<Drawable*> & objectVector);
 	void PlaceObjects(std::vector<Waypoint*> & objectVector);
@@ -27,6 +28,8 @@ public:
 	Triangle * PointInsideTriangle(const DirectX::XMFLOAT2 & point,	bool firstHitFound);
 
 	Waypoint * FindClosestWaypoint(const DirectX::XMFLOAT3 & position, float radius, bool directView = true);
+
+	std::vector<Drawable*> DrawableIntersects(Drawable * input);
 
 	//Drawable * LineIntersection(const DirectX::XMFLOAT2 & origin, const DirectX::XMFLOAT2 & direction, float & t, Drawable * avoidThis);
 	//Triangle * PointIntersection(const DirectX::XMFLOAT2 & point, Drawable * avoidThis);
@@ -48,15 +51,20 @@ private:
 
 	void _closestWaypoint(Waypoint *& wp, float & dist, DirectX::XMVECTOR pos, const DirectX::BoundingSphere & bs, UINT quadIndex, bool directView);
 
+	void _drawableTraversal(std::vector<Drawable*> & output, const DirectX::BoundingOrientedBox & bb, int quadIndex);
+
 	bool _lineTriangleIntersection(const Triangle * tri, __out DirectX::XMFLOAT2 & interSectionPoint,
 		const DirectX::XMVECTOR & lineStart, const DirectX::XMVECTOR & lineEnd, float & t);
 	bool _Ray3DTriangleIntersection(const Triangle * tri,
 		const DirectX::XMVECTOR & origin, const DirectX::XMVECTOR & dir, float & t);
 	bool _PointTriangleIntersection(const Triangle * tri, const DirectX::XMVECTOR & p);
 
+	
+
+
 private:
 	size_t _GetQuadrantIndex(const DirectX::XMFLOAT2 & worldPos, unsigned int level);
-	void _traverseAndPlace(Drawable * e, int quadIndex);
+	void _traverseAndPlace(Drawable * d, int quadIndex, const DirectX::BoundingOrientedBox & bb);
 	void _traverseAndPlace(Waypoint * e, int quadIndex);
 	void _traverseAndPlace(Triangle * e, int quadIndex);
 	void _pointTraverse(const DirectX::XMFLOAT2 & point, int quadIndex, Drawable *& ePtr) const;

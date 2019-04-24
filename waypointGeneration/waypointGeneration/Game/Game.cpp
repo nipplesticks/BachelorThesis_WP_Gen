@@ -7,6 +7,38 @@
 #include <time.h>
 #include <algorithm>
 
+static const DirectX::XMFLOAT4 _SXMcube[] =
+{
+	{ 0.5,	-0.5,  0.5, 1.0f},	{-0.5,	-0.5,	-0.5, 1.0f},	{ 0.5,	-0.5,	-0.5, 1.0f},
+	{-0.5,	 0.5, -0.5, 1.0f},	{ 0.5,	 0.5,	 0.5, 1.0f},	{ 0.5,	 0.5,	-0.5, 1.0f},
+	{ 0.5,	 0.5, -0.5, 1.0f},	{ 0.5,	-0.5,	 0.5, 1.0f},	{ 0.5,	-0.5,	-0.5, 1.0f},
+	{ 0.5,	 0.5,  0.5, 1.0f},	{-0.5,	-0.5,	 0.5, 1.0f},	{ 0.5,	-0.5,	 0.5, 1.0f},
+	{-0.5,	-0.5,  0.5, 1.0f},	{-0.5,	 0.5,	-0.5, 1.0f},	{-0.5,	-0.5,	-0.5, 1.0f},
+	{ 0.5,	-0.5, -0.5, 1.0f},	{-0.5,	 0.5,	-0.5, 1.0f},	{ 0.5,	 0.5,	-0.5, 1.0f},
+	{ 0.5,	-0.5,  0.5, 1.0f},	{-0.5,	-0.5,	 0.5, 1.0f},	{-0.5,	-0.5,	-0.5, 1.0f},
+	{-0.5,	 0.5, -0.5, 1.0f},	{-0.5,	 0.5,	 0.5, 1.0f},	{ 0.5,	 0.5,	 0.5, 1.0f},
+	{ 0.5,	 0.5, -0.5, 1.0f},	{ 0.5,	 0.5,	 0.5, 1.0f},	{ 0.5,	-0.5,	 0.5, 1.0f},
+	{ 0.5,	 0.5,  0.5, 1.0f},	{-0.5,	 0.5,	 0.5, 1.0f},	{-0.5,	-0.5,	 0.5, 1.0f},
+	{-0.5,	-0.5,  0.5, 1.0f},	{-0.5,	 0.5,	 0.5, 1.0f},	{-0.5,	 0.5,	-0.5, 1.0f},
+	{ 0.5,	-0.5, -0.5, 1.0f},	{-0.5,	-0.5,	-0.5, 1.0f},	{-0.5,	 0.5,	-0.5, 1.0f}
+};
+
+static const DirectX::XMFLOAT4A _SXMPlane[] =
+{
+	{-0.5, 0.0f, 0.5f, 1.0f}, {0.5, 0.0f, 0.5f, 1.0f}, {-0.5, 0.0f, -0.5f, 1.0f},
+	{0.5, 0.0f, 0.5f, 1.0f}, {0.5, 0.0f, -0.5f, 1.0f}, {-0.5, 0.0f, -0.5f, 1.0f}
+};
+
+static const DirectX::XMFLOAT2A _SXMUV[] =
+{
+	{0.0f, 0.0f},
+	{0.0f, 1.0f},
+	{1.0f, 1.0f},
+
+	{0.0f, 0.0f},
+	{1.0f, 0.0f},
+	{1.0f, 1.0f},
+};
 
 Game::Game()
 {
@@ -52,12 +84,6 @@ Game::~Game()
 
 void Game::Update(double dt)
 {
-	/*
-	
-		PathFinding
-	
-	*/
-
 	_playerFixYPosition(dt);
 	_cameraControl(dt);
 
@@ -78,9 +104,33 @@ void Game::Update(double dt)
 
 	for (int i = 0; i < 4; i++)
 		m_edges[i].Update();
+	
 
 	for (auto & b : m_buildings)
 		b.Update();
+
+	static double trans = 0.0;
+	static double rot = 0.0;
+
+	trans += dt;
+	if (trans > DirectX::XM_2PI)
+		trans -= DirectX::XM_2PI;
+
+	double t = cos(trans);
+
+	for (auto & c : m_coins)
+	{
+		c.Translate(0, t * dt, 0);
+		c.Rotate(0, dt, 0);
+		c.Update();
+	}
+
+	std::vector<Drawable*> col = m_unblockedTriangleTree.DrawableIntersects(&m_player);
+
+	for (auto & c : col)
+		c->SetActive(false);
+
+
 }
 
 void Game::Draw()
@@ -107,7 +157,18 @@ void Game::Draw()
 	for (auto & d : m_wpDraw)
 		d.second.Draw();
 
+	for (auto & c : m_coins)
+		c.Draw();
+
 	m_water.Draw();
+}
+
+bool Game::GameOver()
+{
+	for (auto & c : m_coins)
+		if (c.IsActive())
+			return false;
+	return true;
 }
 
 void Game::_playerFixYPosition(double dt)
@@ -430,6 +491,8 @@ void Game::_createWorld()
 	std::cout << std::endl;
 	_generateWorldEdges();
 	std::cout << std::endl;
+	_creatingCoins();
+	std::cout << std::endl;
 
 	if (DRAW_TRIANGLES)
 	{
@@ -458,40 +521,6 @@ void Game::_createWorld()
 
 void Game::_loadMeshes()
 {
-	static const DirectX::XMFLOAT4 _SXMcube[] =
-	{
-		{ 0.5,	-0.5,  0.5, 1.0f},	{-0.5,	-0.5,	-0.5, 1.0f},	{ 0.5,	-0.5,	-0.5, 1.0f},
-		{-0.5,	 0.5, -0.5, 1.0f},	{ 0.5,	 0.5,	 0.5, 1.0f},	{ 0.5,	 0.5,	-0.5, 1.0f},
-		{ 0.5,	 0.5, -0.5, 1.0f},	{ 0.5,	-0.5,	 0.5, 1.0f},	{ 0.5,	-0.5,	-0.5, 1.0f},
-		{ 0.5,	 0.5,  0.5, 1.0f},	{-0.5,	-0.5,	 0.5, 1.0f},	{ 0.5,	-0.5,	 0.5, 1.0f},
-		{-0.5,	-0.5,  0.5, 1.0f},	{-0.5,	 0.5,	-0.5, 1.0f},	{-0.5,	-0.5,	-0.5, 1.0f},
-		{ 0.5,	-0.5, -0.5, 1.0f},	{-0.5,	 0.5,	-0.5, 1.0f},	{ 0.5,	 0.5,	-0.5, 1.0f},
-		{ 0.5,	-0.5,  0.5, 1.0f},	{-0.5,	-0.5,	 0.5, 1.0f},	{-0.5,	-0.5,	-0.5, 1.0f},
-		{-0.5,	 0.5, -0.5, 1.0f},	{-0.5,	 0.5,	 0.5, 1.0f},	{ 0.5,	 0.5,	 0.5, 1.0f},
-		{ 0.5,	 0.5, -0.5, 1.0f},	{ 0.5,	 0.5,	 0.5, 1.0f},	{ 0.5,	-0.5,	 0.5, 1.0f},
-		{ 0.5,	 0.5,  0.5, 1.0f},	{-0.5,	 0.5,	 0.5, 1.0f},	{-0.5,	-0.5,	 0.5, 1.0f},
-		{-0.5,	-0.5,  0.5, 1.0f},	{-0.5,	 0.5,	 0.5, 1.0f},	{-0.5,	 0.5,	-0.5, 1.0f},
-		{ 0.5,	-0.5, -0.5, 1.0f},	{-0.5,	-0.5,	-0.5, 1.0f},	{-0.5,	 0.5,	-0.5, 1.0f}
-	};
-
-	static const DirectX::XMFLOAT4A _SXMPlane[] =
-	{
-		{-0.5, 0.0f, 0.5f, 1.0f}, {0.5, 0.0f, 0.5f, 1.0f}, {-0.5, 0.0f, -0.5f, 1.0f},
-		{0.5, 0.0f, 0.5f, 1.0f}, {0.5, 0.0f, -0.5f, 1.0f}, {-0.5, 0.0f, -0.5f, 1.0f}
-	};
-
-	static const DirectX::XMFLOAT2A _SXMUV[] = 
-	{
-		{0.0f, 0.0f},
-		{0.0f, 1.0f},
-		{1.0f, 1.0f},
-
-		{0.0f, 0.0f},
-		{1.0f, 0.0f},
-		{1.0f, 1.0f},
-	};
-
-
 	/* CUBE */
 	std::vector<Vertex> verts;
 	for (int i = 0; i < _countof(_SXMcube); i++)
@@ -1682,5 +1711,79 @@ void Game::_generateWorldEdges()
 		m_edges[i].SetPickable(true);
 	}
 	
+	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
+}
+
+void Game::_creatingCoins()
+{
+	std::cout << "Placing Coins... ";
+	Timer t;
+	t.Start();
+	int YetToPlace = m_numberOfCoins;
+	m_coins = std::vector<Drawable>(m_numberOfCoins);
+	m_numberOfCoins = 0;
+
+	DirectX::XMFLOAT2 center(TERRAIN_SIZE * 0.5f, TERRAIN_SIZE * 0.5f);
+
+	bool centerFix = false;
+	while (!centerFix)
+	{
+		centerFix = true;
+		Triangle * tri = m_blockedTriangleTree.PointInsideTriangle(center, true);
+		if (tri)
+		{
+			centerFix = false;
+
+			center.x += 1;
+		}
+	}
+
+	Triangle * tri = m_unblockedTriangleTree.PointInsideTriangle(center, true);
+	m_player.SetPosition(center.x, tri->points[0].y, center.y);
+
+	size_t unblockedSize = (m_unblockedTriangles.size() - 1);
+
+	while (YetToPlace > 0)
+	{
+		float proc = ((float)rand() / (float)RAND_MAX);
+
+		size_t triIndex = unblockedSize * proc;
+
+		DirectX::XMFLOAT3 spawn(0,0,0);
+
+		for (int i = 0; i < 3; i++)
+		{
+			spawn.x += m_unblockedTriangles[triIndex]->points[i].x;
+			spawn.y += m_unblockedTriangles[triIndex]->points[i].y;
+			spawn.z += m_unblockedTriangles[triIndex]->points[i].z;
+		}
+		spawn.x /= 3.0f;
+		spawn.y /= 3.0f;
+		spawn.z /= 3.0f;
+
+		std::vector<DirectX::XMFLOAT2> p;
+		if (!(p = Pathfinding::FindPath(m_player.GetPosition(), spawn, m_blockedTriangleTree)).empty())
+		{
+			spawn.x = p.back().x;
+			spawn.y = -500;
+			spawn.z = p.back().y;
+			DirectX::XMFLOAT3 iPoint;
+			Triangle * t = m_unblockedTriangleTree.RayIntersectionTriangle3D(spawn, DirectX::XMFLOAT3(0,1,0), true, iPoint);
+			if (t == nullptr)
+				std::cout << "THIS IS BAD AF!\n\n";
+			spawn.y = iPoint.y + 2.5f;
+			m_coins[m_numberOfCoins].SetVertices(&m_playerMesh);
+			m_coins[m_numberOfCoins].SetColor(1, 1, 0);
+			m_coins[m_numberOfCoins].SetPosition(spawn);
+			m_coins[m_numberOfCoins].SetScale(5, 5, 5);
+			m_coins[m_numberOfCoins].Update();
+			m_unblockedTriangleTree.AddObject(&m_coins[m_numberOfCoins]);
+			m_numberOfCoins++;
+			YetToPlace--;
+		}
+	}
+
+	
+
 	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
 }

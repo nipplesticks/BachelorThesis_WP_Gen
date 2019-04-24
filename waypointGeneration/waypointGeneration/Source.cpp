@@ -39,7 +39,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 	while (wnd->IsOpen())
 	{
-		if (wnd->IsKeyPressed(Input::R))
+		if (wnd->IsKeyPressed(Input::R) || game->GameOver())
 		{
 			delete game;
 			game = new Game();
