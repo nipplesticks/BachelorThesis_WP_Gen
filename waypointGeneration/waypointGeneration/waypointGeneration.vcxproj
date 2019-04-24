@@ -151,7 +151,7 @@
     <ClInclude Include="Game\Pathfinding\Waypoint.h" />
     <ClInclude Include="Game\QuadTree\Quadrant.h" />
     <ClInclude Include="Game\QuadTree\QuadTree.h" />
-    <ClInclude Include="Game\ThreadPool\ThreadPool.h" />
+    <ClInclude Include="Game\ThreadPool\DeadPool.h" />
     <ClInclude Include="Game\water_texture.h" />
     <ClInclude Include="Game\GPUQuadTree\GPUQuadTree.h" />
     <ClInclude Include="MapGeneration\DiamondSquare.h" />

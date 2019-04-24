@@ -20,7 +20,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	SetWindowPos(hwnd, 0, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 
 	HWND consoleWindow = GetConsoleWindow();
-	SetWindowPos(consoleWindow, 0, wnd->GetWindowSize().x + 1, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+	SetWindowPos(consoleWindow, 0, wnd->GetWindowSize().x + 400, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 	RECT r;
 	GetWindowRect(consoleWindow, &r);
 	MoveWindow(consoleWindow, r.left, r.top, 1920 - wnd->GetWindowSize().x, 1080, TRUE);

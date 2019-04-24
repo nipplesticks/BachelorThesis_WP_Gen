@@ -61,6 +61,10 @@ Game::Game()
 	m_mouseReferencePosition = wnd->GetMousePosition();
 
 	_setupGame();
+	m_pathfinding.InitiateThreadpool(4);
+	m_pathId = UINT64_MAX;
+	m_player.SetSpeed(25);
+
 }
 
 Game::~Game()
@@ -69,6 +73,8 @@ Game::~Game()
 	m_terrainTexture->Release();
 	m_waterTex2D->Release();
 	m_waterTexture->Release();
+
+	m_pathfinding.Terminate();
 
 	for (auto & t : m_blockedTriangles)
 		delete t;
@@ -84,6 +90,14 @@ Game::~Game()
 
 void Game::Update(double dt)
 {
+	if (m_pathId != UINT64_MAX)
+		if (m_pathfinding.IsPathDone(m_pathId))
+		{
+			std::vector<DirectX::XMFLOAT2> path = m_pathfinding.GetPath(m_pathId);
+			m_player.SetPath(path);
+			m_pathId = UINT64_MAX;
+		}
+
 	_playerFixYPosition(dt);
 	_cameraControl(dt);
 
@@ -403,17 +417,18 @@ void Game::_cameraControl(double dt)
 	if (wnd->IsMousePressed(Input::MOUSE_CODE::RBUTTON))
 	{
 		DirectX::XMFLOAT3 worldPos;
-		if (Renderer::GetInstance()->GetMousePicking(worldPos))
+		if (Renderer::GetInstance()->GetMousePicking(worldPos) && m_pathId == UINT64_MAX)
 		{
 			Timer t;
 			t.Start();
-			std::vector<DirectX::XMFLOAT2> path = Pathfinding::FindPath(m_player.GetPosition(), worldPos, m_blockedTriangleTree);
+			m_pathId = m_pathfinding.RequestPath(m_player.GetPosition(), worldPos, m_blockedTriangleTree);
+			//std::vector<DirectX::XMFLOAT2> path = Pathfinding::FindPath(m_player.GetPosition(), worldPos, m_blockedTriangleTree);
 			std::cout << "\r" << t.Stop(Timer::MILLISECONDS) << " ms               ";
 
-			if (!path.empty())
+			/*if (!path.empty())
 			{
 				m_player.SetPath(path);
-			}
+			}*/
 		}
 	}
 

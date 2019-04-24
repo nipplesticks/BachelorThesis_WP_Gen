@@ -131,7 +131,7 @@
     <ClInclude Include="Game\Pathfinding\Pathfinding.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Game\ThreadPool\ThreadPool.h">
+    <ClInclude Include="Game\ThreadPool\DeadPool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

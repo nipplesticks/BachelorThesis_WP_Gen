@@ -2,6 +2,98 @@
 #include "Pathfinding.h"
 #include <algorithm>
 
+
+Pathfinding::Pathfinding()
+{
+}
+
+Pathfinding::~Pathfinding()
+{
+	m_isRunning = false;
+	for (auto & t : m_pool)
+	{
+		if (t.second->worker.joinable())
+			delete t.second;
+	}
+	m_pool.clear();
+}
+
+void Pathfinding::Terminate()
+{
+	m_isRunning = false;
+	m_condition.notify_all();
+	for (auto & t : m_pool)
+	{
+		delete t.second;
+	}
+	m_pool.clear();
+}
+
+void Pathfinding::InitiateThreadpool(int count)
+{
+	m_threadCount = count;
+	m_isRunning = true;
+	m_workId = 0;
+
+	for (int i = 0; i < count; i++)
+	{		
+		std::function<void()> func = std::bind(&Pathfinding::WaitingForWork, this);
+		WorkerThread * wt = new WorkerThread(func);
+		m_pool.insert(std::make_pair(wt->worker.get_id(), wt));
+	}
+}
+
+UINT64 Pathfinding::RequestPath(const DirectX::XMFLOAT3& source, const DirectX::XMFLOAT3& destination,
+	QuadTree& blockedTriangles)
+{
+	ThreadArguments tA;
+	tA.source = source;
+	tA.destination = destination;
+	tA.blockedTriangles = &blockedTriangles;
+	UINT64 id;
+	{
+		std::unique_lock<std::mutex> lock(m_workMutex);
+		m_work.push(std::make_pair(tA, id = m_workId++));
+	}
+	m_condition.notify_one();
+
+	return id;
+}
+
+std::vector<DirectX::XMFLOAT2> Pathfinding::GetPath(UINT64 pathId)
+{
+	std::unique_lock<std::mutex> lock(m_workIdMutex);
+
+	/*while (!lock.owns_lock())
+	{
+		lock.lock();
+	}*/
+
+	std::vector<DirectX::XMFLOAT2> results = m_results[pathId];
+	m_results.erase(pathId);
+
+	//lock.unlock();
+
+	return results;
+}
+
+bool Pathfinding::IsPathDone(UINT64 pathId)
+{
+	std::unique_lock<std::mutex> lock(m_workIdMutex);
+
+	/*while (!lock.owns_lock())
+	{
+		lock.lock();
+	}
+	*/
+	auto it = m_results.find(pathId);
+	bool isDone = it != m_results.end();
+
+	//lock.unlock();
+
+	return isDone;
+}
+
 std::vector<DirectX::XMFLOAT2> Pathfinding::FindPath(
 	const DirectX::XMFLOAT3& source,
 	const DirectX::XMFLOAT3& destination,
@@ -254,4 +346,39 @@ float Pathfinding::_calcHCost(const DirectX::XMFLOAT2 & a, const DirectX::XMFLOA
 				DirectX::XMLoadFloat2(&a),
 				DirectX::XMLoadFloat2(&b)
 			)));
+}
+
+void Pathfinding::WaitingForWork()
+{
+	std::function<std::vector<DirectX::XMFLOAT2>(const DirectX::XMFLOAT3 &, const DirectX::XMFLOAT3 &, QuadTree &)> work(&Pathfinding::FindPath);
+	UINT64 workId;
+	ThreadArguments tA;
+
+	while (m_isRunning)
+	{
+		{
+			std::unique_lock<std::mutex> lock(m_workMutex);
+			m_condition.wait(lock, [this] { return !m_work.empty() || !m_isRunning; });
+			if (!m_isRunning)
+				return;
+			m_pool[std::this_thread::get_id()]->isDone = false;
+			tA = m_work.front().first;
+			workId = m_work.front().second;
+			m_work.pop();
+		}
+
+		std::vector<DirectX::XMFLOAT2> returnValue = work(tA.source, tA.destination, *tA.blockedTriangles);
+		m_pool[std::this_thread::get_id()]->isDone = true;
+
+		std::unique_lock<std::mutex> lock(m_workIdMutex);
+		
+		/*while (!lock.owns_lock())
+		{
+			lock.lock();
+		}*/
+
+		m_results.insert(std::make_pair(workId, returnValue));
+
+		//lock.unlock();
+	}
 }
