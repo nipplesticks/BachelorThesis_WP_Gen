@@ -180,7 +180,6 @@ std::vector<DirectX::XMFLOAT3> Pathfinding::_findPath2(const DirectX::XMFLOAT2& 
 		}
 
 		destination = endWaypoint->GetPosition();
-
 	}
 
 	Node current(nullptr, startWaypoint, 0.0f, _calcHCost(startWaypoint->GetPosition(), destination));
