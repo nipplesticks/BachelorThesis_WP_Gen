@@ -127,7 +127,7 @@ void Game::Update(double dt)
 	static double rot = 0.0;
 
 	trans += dt;
-	if (trans > DirectX::XM_2PI)
+	while (trans > DirectX::XM_2PI)
 		trans -= DirectX::XM_2PI;
 
 	double t = cos(trans);
@@ -257,26 +257,30 @@ void Game::_cameraControl(double dt)
 
 	DirectX::XMFLOAT3 translation(0, 0, 0);
 
-	if (wnd->IsKeyPressed(Input::UP_ARROW) || mp.y < 0.1 * wnd->GetResolutionSize().y)
+	if (!m_isFollowingPlayer)
 	{
-		translation.z += CAMERA_XZ_SPEED * (float)dt;
-		m_isFollowingPlayer = false;
+		if (wnd->IsKeyPressed(Input::UP_ARROW) || mp.y < 0.1 * wnd->GetResolutionSize().y)
+		{
+			translation.z += CAMERA_XZ_SPEED * (float)dt;
+			m_isFollowingPlayer = false;
+		}
+		if (wnd->IsKeyPressed(Input::DOWN_ARROW) || mp.y > wnd->GetResolutionSize().y * 0.9)
+		{
+			translation.z -= CAMERA_XZ_SPEED * (float)dt;
+			m_isFollowingPlayer = false;
+		}
+		if (wnd->IsKeyPressed(Input::RIGHT_ARROW) || mp.x > wnd->GetResolutionSize().x * 0.9)
+		{
+			translation.x += CAMERA_XZ_SPEED * (float)dt;
+			m_isFollowingPlayer = false;
+		}
+		if (wnd->IsKeyPressed(Input::LEFT_ARROW) || mp.x < wnd->GetResolutionSize().x * 0.1)
+		{
+			translation.x -= CAMERA_XZ_SPEED * (float)dt;
+			m_isFollowingPlayer = false;
+		}
 	}
-	if (wnd->IsKeyPressed(Input::DOWN_ARROW) || mp.y > wnd->GetResolutionSize().y * 0.9)
-	{
-		translation.z -= CAMERA_XZ_SPEED * (float)dt;
-		m_isFollowingPlayer = false;
-	}
-	if (wnd->IsKeyPressed(Input::RIGHT_ARROW) || mp.x > wnd->GetResolutionSize().x * 0.9)
-	{
-		translation.x += CAMERA_XZ_SPEED * (float)dt;
-		m_isFollowingPlayer = false;
-	}
-	if (wnd->IsKeyPressed(Input::LEFT_ARROW) || mp.x < wnd->GetResolutionSize().x * 0.1)
-	{
-		translation.x -= CAMERA_XZ_SPEED * (float)dt;
-		m_isFollowingPlayer = false;
-	}
+
 	if (wnd->IsKeyPressed(Input::V))
 	{
 		translation.y += CAMERA_XZ_SPEED * (float)dt;
