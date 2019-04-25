@@ -114,7 +114,7 @@ bool Renderer::GetMousePicking(DirectX::XMFLOAT3 & worldPos)
 void Renderer::Clear()
 {
 	IRender::Clear();
-	const float c[4] = { .0f,.0f,.0f,1.0f };
+	const float c[4] = { .1f,.3f,0.5f,1.0f };
 
 	m_deviceContext->ClearRenderTargetView(m_backBufferRTV, c);
 	m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 0, 0);

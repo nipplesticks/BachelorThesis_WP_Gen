@@ -14,13 +14,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 {
 	_allocConsole();
 	Window * wnd = Window::GetInstance();
-	wnd->Create(hInstance, nCmdShow, 1280, 720, 0, "Kandidatarbete", "Frametime: 0 ms Frame: 0");
+	wnd->Create(hInstance, nCmdShow, 1280, 1000, 0, "Kandidatarbete", "Frametime: 0 ms Frame: 0");
 
 	HWND hwnd = wnd->GetHwnd();
 	SetWindowPos(hwnd, 0, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 
 	HWND consoleWindow = GetConsoleWindow();
-	SetWindowPos(consoleWindow, 0, wnd->GetWindowSize().x + 400, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+	SetWindowPos(consoleWindow, 0, wnd->GetWindowSize().x, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 	RECT r;
 	GetWindowRect(consoleWindow, &r);
 	MoveWindow(consoleWindow, r.left, r.top, 1920 - wnd->GetWindowSize().x, 1080, TRUE);
