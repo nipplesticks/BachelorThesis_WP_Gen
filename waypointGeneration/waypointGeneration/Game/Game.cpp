@@ -1287,7 +1287,7 @@ void Game::_offsetWaypoints()
 
 	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
 }
-#include <fstream>
+
 void Game::_connectWaypoints()
 {
 	static const UINT TREE_SIZE = 1024 * 1024 * 32;
@@ -1315,11 +1315,6 @@ void Game::_connectWaypoints()
 		bTri[i] = *m_blockedTriangles[i];
 
 	gpuQuadTree.PlaceObjects(bTri);
-
-	std::ofstream lol;
-	lol.open("GPUTREE.txt");
-	lol << gpuQuadTree.ToString();
-	lol.close();
 
 	const std::vector<GPUQuadrant> & qt = gpuQuadTree.GetQuadTree();
 	size_t wpSize = m_waypoints.size();
