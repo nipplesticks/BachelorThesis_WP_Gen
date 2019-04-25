@@ -13,7 +13,7 @@
 #define DRAW_CONNECTIONS false
 #define USE_RANDOM_SEED true
 
-#define MIN_HEIGHT	-10
+#define MIN_HEIGHT	-13
 #define MAX_HEIGHT	15
 #define NOISE_MIN	15
 #define NOISE_RAND	6
