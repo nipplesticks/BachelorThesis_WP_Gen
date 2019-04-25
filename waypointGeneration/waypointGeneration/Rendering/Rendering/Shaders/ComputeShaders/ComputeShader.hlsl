@@ -161,17 +161,17 @@ bool PointTriangleIntersect(float2 s, float2 a, float2 b, float2 c)
 
 bool LineTriangleIntersect(float2 origin, float2 end, Triangle tri)
 {
-    //if (PointTriangleIntersect(origin, tri.Position[0].xz, tri.Position[1].xz, tri.Position[2].xz))
-    //    return true;
-    //if (PointTriangleIntersect(end, tri.Position[0].xz, tri.Position[1].xz, tri.Position[2].xz))
-    //    return true;
+    if (PointTriangleIntersect(origin, tri.Position[0].xz, tri.Position[1].xz, tri.Position[2].xz))
+        return true;
+    if (PointTriangleIntersect(end, tri.Position[0].xz, tri.Position[1].xz, tri.Position[2].xz))
+        return true;
     
     if (LineLineIntersect(origin, end, tri.Position[0].xz, tri.Position[1].xz))
         return true;
     if (LineLineIntersect(origin, end, tri.Position[1].xz, tri.Position[2].xz))
         return true;
-    //if (LineLineIntersect(origin, end, tri.Position[2].xz, tri.Position[0].xz))
-    //    return true;
+    if (LineLineIntersect(origin, end, tri.Position[2].xz, tri.Position[0].xz))
+        return true;
 
     return false;
 }

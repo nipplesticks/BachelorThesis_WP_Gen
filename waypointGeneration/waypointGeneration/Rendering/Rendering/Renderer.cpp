@@ -167,10 +167,8 @@ void Renderer::Release()
 	m_defaultTexture = nullptr;
 
 	m_forwardRenderer.Release();
-
 	m_deviceContext->Release();
 
-#ifdef _DEBUG
 	if (m_device->Release() > 0)
 	{
 		ID3D11Debug* dbg_device = nullptr;
@@ -183,7 +181,6 @@ void Renderer::Release()
 			dbg_device->Release();
 		}
 	}
-#endif
 }
 
 ID3D11Device * Renderer::GetDevice()

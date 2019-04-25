@@ -43,6 +43,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		{
 			delete game;
 			game = new Game();
+			deltaTime.Stop();
 		}
 
 		double dt = deltaTime.Stop();

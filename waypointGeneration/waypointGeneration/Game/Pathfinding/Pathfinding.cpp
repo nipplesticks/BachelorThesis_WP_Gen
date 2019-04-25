@@ -144,7 +144,7 @@ std::vector<DirectX::XMFLOAT2> Pathfinding::_findPath(
 			DirectX::XMFLOAT3(source.x, 0.0f, source.y),
 			rad *= 2);
 
-		if (rad > 32)
+		if (rad > 128)
 			return std::vector<DirectX::XMFLOAT2>();
 	}
 
