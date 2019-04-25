@@ -1180,8 +1180,7 @@ void Game::_createViewableWaypoints()
 
 void Game::_offsetWaypoints()
 {
-	const float OFFSET = 1.0f;
-
+	const float OFFSET = 1.5f;
 
 	Timer t;
 	std::cout << "Prepareing Waypoints for connections... ";
@@ -1766,6 +1765,7 @@ void Game::_creatingCoins()
 			m_coins[m_numberOfCoins].SetPosition(spawn);
 			m_coins[m_numberOfCoins].SetScale(5, 5, 5);
 			m_coins[m_numberOfCoins].Update();
+			m_coins[m_numberOfCoins].SetPickable(true);
 			m_unblockedTriangleTree.AddObject(&m_coins[m_numberOfCoins]);
 			m_numberOfCoins++;
 			YetToPlace--;
