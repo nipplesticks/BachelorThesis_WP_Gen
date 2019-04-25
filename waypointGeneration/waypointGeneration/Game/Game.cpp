@@ -47,6 +47,7 @@ Game::Game()
 		srand(static_cast<unsigned>(time(0)));
 	}
 
+	m_pathfinding.InitiateThreadpool(4);
 	_createWaterTexture();
 	_loadMeshes();
 	_createWorld();
@@ -60,7 +61,6 @@ Game::Game()
 	m_mouseReferencePosition = wnd->GetMousePosition();
 
 	_setupGame();
-	m_pathfinding.InitiateThreadpool(4);
 	m_pathId = UINT64_MAX;
 	m_player.SetSpeed(25);
 
@@ -1721,13 +1721,60 @@ void Game::_creatingCoins()
 	bool centerFix = false;
 	while (!centerFix)
 	{
-		centerFix = true;
-		Triangle * tri = m_blockedTriangleTree.PointInsideTriangle(center, true);
-		if (tri)
+		//Triangle * tri = m_blockedTriangleTree.PointInsideTriangle(center, true);
+		//if (tri)
 		{
-			centerFix = false;
+			Timer dummy;
+			dummy.Start();
 
-			center.x += 1;
+			center.x = rand() % TERRAIN_SIZE;
+			center.y = rand() % TERRAIN_SIZE;
+
+			UINT64 corner1, corner2, corner3, corner4;
+			DirectX::XMFLOAT3 center3d = { center.x, 0.0f, center.y };
+			DirectX::XMFLOAT3 corner1threedee = { 1.0f, 0.0f, 1.0f };
+			DirectX::XMFLOAT3 corner2threedee = { TERRAIN_SIZE - 1.0f, 0.0f, 1.0f };
+			DirectX::XMFLOAT3 corner3threedee = { 1.0f, 0.0f, TERRAIN_SIZE - 1.0f };
+			DirectX::XMFLOAT3 corner4threedee = { TERRAIN_SIZE - 1.0f, 0.0f, TERRAIN_SIZE - 1.0f };
+
+
+			corner1 = m_pathfinding.RequestPath(center3d, corner1threedee, m_blockedTriangleTree);
+			corner2 = m_pathfinding.RequestPath(center3d, corner2threedee, m_blockedTriangleTree);
+			corner3 = m_pathfinding.RequestPath(center3d, corner3threedee, m_blockedTriangleTree);
+			corner4 = m_pathfinding.RequestPath(center3d, corner4threedee, m_blockedTriangleTree);
+
+			while (!m_pathfinding.IsPathDone(corner1))
+			{
+				dummy.Stop();
+			}
+			if (!m_pathfinding.GetPath(corner1).empty())
+			{
+				centerFix = true;
+			}
+			while (!m_pathfinding.IsPathDone(corner2))
+			{
+				dummy.Stop();
+			}
+			if (!m_pathfinding.GetPath(corner2).empty())
+			{
+				centerFix = true;
+			}
+			while (!m_pathfinding.IsPathDone(corner3))
+			{
+				dummy.Stop();
+			}
+			if (!m_pathfinding.GetPath(corner3).empty())
+			{
+				centerFix = true;
+			}
+			while (!m_pathfinding.IsPathDone(corner4))
+			{
+				dummy.Stop();
+			}
+			if (!m_pathfinding.GetPath(corner4).empty())
+			{
+				centerFix = true;
+			}
 		}
 	}
 
