@@ -86,6 +86,11 @@ private:
 	float m_minHeight = 0.0f;
 	float m_noise = 0.0f;
 
+	DirectX::XMFLOAT2 m_waterUV = { 0.0f, 0.0f };
+	double m_waterCounter = 0.0;
+
+	double m_coinTrans = 0.0;
+	
 	std::map<long int, Waypoint> m_waypoints;
 
 	std::vector<Drawable> m_buildings;

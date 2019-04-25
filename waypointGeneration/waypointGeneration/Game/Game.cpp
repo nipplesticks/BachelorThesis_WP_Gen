@@ -47,7 +47,6 @@ Game::Game()
 		srand(static_cast<unsigned>(time(0)));
 	}
 
-
 	_createWaterTexture();
 	_loadMeshes();
 	_createWorld();
@@ -94,9 +93,13 @@ void Game::Update(double dt)
 		if (m_pathfinding.IsPathDone(m_pathId))
 		{
 			std::vector<DirectX::XMFLOAT2> path = m_pathfinding.GetPath(m_pathId);
-			m_player.SetPath(path);
+			if (!path.empty())
+				m_player.SetPath(path);
 			m_pathId = UINT64_MAX;
 		}
+
+	if (Window::GetInstance()->IsKeyPressed(Input::KEY_CODE::S))
+		m_player.SetPath(std::vector<DirectX::XMFLOAT2>());
 
 	_playerFixYPosition(dt);
 	_cameraControl(dt);
@@ -105,15 +108,12 @@ void Game::Update(double dt)
 	m_player.Update();
 	m_terrain.Update();
 
-	static DirectX::XMFLOAT2 waterUV = { 0,0 };
-	static double counter = 0;
+	m_waterCounter += dt * 0.1;
 
-	counter += dt * 0.1;
+	m_waterUV.x = (float)m_waterCounter;
+	m_waterUV.y = m_waterUV.x;
 
-	waterUV.x = (float)counter;
-	waterUV.y = waterUV.x;
-
-	m_water.SetUVOffset(waterUV.x, waterUV.y);
+	m_water.SetUVOffset(m_waterUV.x, m_waterUV.y);
 	m_water.Update();
 
 	for (int i = 0; i < 4; i++)
@@ -123,14 +123,11 @@ void Game::Update(double dt)
 	for (auto & b : m_buildings)
 		b.Update();
 
-	static double trans = 0.0;
-	static double rot = 0.0;
+	m_coinTrans += dt;
+	while (m_coinTrans > DirectX::XM_2PI)
+		m_coinTrans -= DirectX::XM_2PI;
 
-	trans += dt;
-	if (trans > DirectX::XM_2PI)
-		trans -= DirectX::XM_2PI;
-
-	double t = cos(trans);
+	double t = cos(m_coinTrans);
 
 	for (auto & c : m_coins)
 	{
@@ -219,14 +216,6 @@ void Game::_cameraControl(double dt)
 {
 	Window * wnd = Window::GetInstance();
 	POINT mp = wnd->GetMousePosition();
-
-	//wnd->MouseToCenter();
-	/*float mouseDeltaX = (float)mp.x - (float)m_mouseReferencePosition.x;
-	float mouseDeltaY = (float)mp.y - (float)m_mouseReferencePosition.y;
-
-	DirectX::XMFLOAT2 camRotation(DirectX::XMConvertToRadians(mouseDeltaX) * MOUSE_SESITIVITY_X, DirectX::XMConvertToRadians(mouseDeltaY) * MOUSE_SESITIVITY_Y);
-
-	m_camera.Rotate(camRotation.y, camRotation.x, 0.0f);*/
 
 	static bool FollowPlayerPressedLastFrame = false;
 	bool FollowPlayerPressed = wnd->IsKeyPressed(Input::SPACE);
@@ -388,7 +377,6 @@ void Game::_cameraControl(double dt)
 				SampleOffset = true;
 			}
 
-			//DirectX::XMStoreFloat4(&camPos, DirectX::XMVectorAdd(vNewCamPos, _sCameraPosOffset));
 			DirectX::XMStoreFloat4(&camPos, vNewCamPos);
 			m_camera.SetPosition(camPos.x, camPos.y, camPos.z);
 		}
@@ -405,30 +393,21 @@ void Game::_cameraControl(double dt)
 		m_camera.SetDirection(1, -2, 1);
 	}
 
-	if (wnd->IsMousePressed(Input::MOUSE_CODE::LBUTTON))
+	/*if (wnd->IsMousePressed(Input::MOUSE_CODE::LBUTTON))
 	{
 		DirectX::XMFLOAT3 worldPos;
 		if (Renderer::GetInstance()->GetMousePicking(worldPos))
 		{
 			m_player.SetPosition(worldPos.x, worldPos.y + 0.5f, worldPos.z);
 		}
-	}
+	}*/
 
 	if (wnd->IsMousePressed(Input::MOUSE_CODE::RBUTTON))
 	{
 		DirectX::XMFLOAT3 worldPos;
 		if (Renderer::GetInstance()->GetMousePicking(worldPos) && m_pathId == UINT64_MAX)
 		{
-			Timer t;
-			t.Start();
-			m_pathId = m_pathfinding.RequestPath(m_player.GetPosition(), worldPos, m_blockedTriangleTree);
-			//std::vector<DirectX::XMFLOAT2> path = Pathfinding::FindPath(m_player.GetPosition(), worldPos, m_blockedTriangleTree);
-			std::cout << "\r" << t.Stop(Timer::MILLISECONDS) << " ms               ";
-
-			/*if (!path.empty())
-			{
-				m_player.SetPath(path);
-			}*/
+			m_pathId = m_pathfinding.RequestPath(m_player.GetPosition(), worldPos, m_blockedTriangleTree);	
 		}
 	}
 
