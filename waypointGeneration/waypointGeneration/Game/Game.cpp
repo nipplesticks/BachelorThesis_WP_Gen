@@ -1293,7 +1293,7 @@ void Game::_offsetWaypoints()
 
 void Game::_connectWaypoints()
 {
-	static const UINT TREE_SIZE = 1024 * 1024 * 32;
+	static const UINT TREE_SIZE = 1024 * 1024 * 128;
 
 	// Connect Waypoints
 	std::cout << "Connecting Waypoints... ";
@@ -1726,21 +1726,22 @@ void Game::_creatingCoins()
 			Timer dummy;
 			dummy.Start();
 
-			center.x = rand() % TERRAIN_SIZE;
-			center.y = rand() % TERRAIN_SIZE;
+			center.x = (rand() % int(TERRAIN_SIZE * 0.5)) + TERRAIN_SIZE * 0.25;
+			center.y = (rand() % int(TERRAIN_SIZE * 0.5)) + TERRAIN_SIZE * 0.25;
 
-			UINT64 corner1, corner2, corner3, corner4;
+			UINT64 corner1, corner2, corner3, corner4, corner5;
 			DirectX::XMFLOAT3 center3d = { center.x, 0.0f, center.y };
 			DirectX::XMFLOAT3 corner1threedee = { 1.0f, 0.0f, 1.0f };
 			DirectX::XMFLOAT3 corner2threedee = { TERRAIN_SIZE - 1.0f, 0.0f, 1.0f };
 			DirectX::XMFLOAT3 corner3threedee = { 1.0f, 0.0f, TERRAIN_SIZE - 1.0f };
 			DirectX::XMFLOAT3 corner4threedee = { TERRAIN_SIZE - 1.0f, 0.0f, TERRAIN_SIZE - 1.0f };
-
+			DirectX::XMFLOAT3 corner5threedee = { TERRAIN_SIZE * 0.5f, 0.0f, TERRAIN_SIZE * 0.5f };
 
 			corner1 = m_pathfinding.RequestPath(center3d, corner1threedee, m_blockedTriangleTree);
 			corner2 = m_pathfinding.RequestPath(center3d, corner2threedee, m_blockedTriangleTree);
 			corner3 = m_pathfinding.RequestPath(center3d, corner3threedee, m_blockedTriangleTree);
 			corner4 = m_pathfinding.RequestPath(center3d, corner4threedee, m_blockedTriangleTree);
+			corner5 = m_pathfinding.RequestPath(center3d, corner5threedee, m_blockedTriangleTree); // Middle corner
 
 			while (!m_pathfinding.IsPathDone(corner1))
 			{
@@ -1771,6 +1772,14 @@ void Game::_creatingCoins()
 				dummy.Stop();
 			}
 			if (!m_pathfinding.GetPath(corner4).empty())
+			{
+				centerFix = true;
+			}
+			while (!m_pathfinding.IsPathDone(corner5))
+			{
+				dummy.Stop();
+			}
+			if (!m_pathfinding.GetPath(corner5).empty())
 			{
 				centerFix = true;
 			}
