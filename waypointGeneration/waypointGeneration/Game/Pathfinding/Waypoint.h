@@ -25,6 +25,9 @@ public:
 
 	bool Connect(Waypoint * wp);
 	void ForceConnection(Waypoint * wp);
+	void SetOffset(const DirectX::XMFLOAT2 & o) { m_offset = o; }
+	const DirectX::XMFLOAT2 & GetOffset() const { return m_offset; }
+
 
 	std::map<int, WaypointConnection> * GetConnections();
 
@@ -32,7 +35,7 @@ public:
 	bool operator<(const Waypoint & other);
 
 private:	
-
+	DirectX::XMFLOAT2 m_offset = DirectX::XMFLOAT2(0, 0);
 	std::map<int, WaypointConnection> m_connections;
 
 	DirectX::XMFLOAT2 m_position;
