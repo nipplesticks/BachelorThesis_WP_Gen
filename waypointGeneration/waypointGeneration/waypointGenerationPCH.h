@@ -22,7 +22,7 @@
 // DEFINES
 //#define TERRAIN_SIZE 1025
 #define TERRAIN_SIZE (unsigned int)(std::pow(2, 10) + 1)
-//#define TERRAIN_SIZE (unsigned int)(std::pow(2, 6) + 1)
+//#define TERRAIN_SIZE (unsigned int)(std::pow(2, 7) + 1)
 //#define TERRAIN_SIZE 513
 //#define TERRAIN_SIZE 257
 //#define TERRAIN_SIZE 129

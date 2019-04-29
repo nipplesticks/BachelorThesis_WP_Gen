@@ -481,9 +481,9 @@ void Game::_createWorld()
 	std::cout << std::endl;
 	_createWaypoints();
 	std::cout << std::endl;
-	_offsetWaypoints();
-	std::cout << std::endl;
 	_cleanWaypoints();
+	std::cout << std::endl;
+	_offsetWaypoints();
 	std::cout << std::endl;
 	_connectWaypoints();
 	std::cout << std::endl;
@@ -721,7 +721,18 @@ void Game::_createWaypoints()
 	for (int i = 0; i < vectorSize; i++)
 	{
 		DirectX::XMFLOAT3 points[3];
+		DirectX::XMFLOAT2 center(0.0f, 0.0f);
 		memcpy(points, m_blockedTriangles[i]->points, sizeof(float) * 9);
+
+		for (int j = 0; j < 3; j++)
+		{
+			center.x += points[j].x;
+			center.y += points[j].z;
+		}
+		center.x /= 3;
+		center.y /= 3;
+
+		DirectX::XMVECTOR vC = DirectX::XMLoadFloat2(&center);
 
 		for (int j = 0; j < 3; j++)
 		{
@@ -734,6 +745,9 @@ void Game::_createWaypoints()
 			if (it == m_waypoints.end())
 			{
 				Waypoint wp(points[j].x, points[j].z);
+				DirectX::XMFLOAT2 offset;
+				DirectX::XMStoreFloat2(&offset, DirectX::XMVector2Normalize(DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&wp.GetPosition()), vC)));
+				wp.SetOffset(offset);
 				wp.SetHeightVal(points[j].y);
 				m_waypoints.insert(std::make_pair(key, wp));
 			}
@@ -1184,7 +1198,7 @@ void Game::_createViewableWaypoints()
 
 void Game::_offsetWaypoints()
 {
-	const float OFFSET = 1.5f;
+	const float OFFSET = 0.5f;
 
 	Timer t;
 	std::cout << "Prepareing Waypoints for connections... ";
@@ -1194,96 +1208,98 @@ void Game::_offsetWaypoints()
 	for (auto & wp : m_waypoints)
 	{
 		DirectX::XMFLOAT2 pRef = wp.second.GetPosition();
-		DirectX::XMFLOAT2 offset(0.0f, 0.0f);
-		
-		int xRef = (pRef.x + 0.5f);
-		int yRef = (pRef.y + 0.5f);
-
-		// North
-		DirectX::XMINT2 north(xRef, yRef - 1);
-		auto itNorth = m_waypoints.find((north.x + north.y * TERRAIN_SIZE));
-		bool hasNorth = itNorth != m_waypoints.end();
-		if (hasNorth)
-		{
-			offset.y += OFFSET;
-		}
-
-		// East
-		DirectX::XMINT2 east(xRef + 1, yRef);
-		auto itEast = m_waypoints.find((east.x + east.y * TERRAIN_SIZE));
-		bool hasEast = itEast != m_waypoints.end();
-		if (hasEast)
-		{
-			offset.x -= OFFSET;
-		}
-
-		// South
-		DirectX::XMINT2 south(xRef, yRef + 1);
-		auto itSouth = m_waypoints.find((south.x + south.y * TERRAIN_SIZE));
-		bool hasSouth = itSouth != m_waypoints.end();
-		if (hasSouth)
-		{
-			offset.y -= OFFSET;
-		}
-
-		// West
-		DirectX::XMINT2 west(xRef - 1, yRef);
-		auto itWest = m_waypoints.find((west.x + west.y * TERRAIN_SIZE));
-		bool hasWest = itWest != m_waypoints.end();
-		if (hasWest)
-		{
-			offset.x += OFFSET;
-		}
-
-		// North-East
-		DirectX::XMINT2 northEast(xRef + 1, yRef - 1);
-		auto itNorthEast = m_waypoints.find((northEast.x + northEast.y * TERRAIN_SIZE));
-		bool hasNorthEast = itNorthEast != m_waypoints.end();
-		if (hasNorthEast)
-		{
-			offset.y += OFFSET;
-			offset.x -= OFFSET;
-		}
+		DirectX::XMFLOAT2 offset = wp.second.GetOffset();
+		wp.second.SetPosition(pRef.x + offset.x, pRef.y + offset.y);
 
 
-		// South-East
-		DirectX::XMINT2 southEast(xRef + 1, yRef + 1);
-		auto itSouthEast = m_waypoints.find((southEast.x + southEast.y * TERRAIN_SIZE));
-		bool hasSouthEast = itSouthEast != m_waypoints.end();
-		if (hasSouthEast)
-		{
-			offset.y -= OFFSET;
-			offset.x -= OFFSET;
-		}
+		//int xRef = (pRef.x + 0.5f);
+		//int yRef = (pRef.y + 0.5f);
+
+		//// North
+		//DirectX::XMINT2 north(xRef, yRef - 1);
+		//auto itNorth = m_waypoints.find((north.x + north.y * TERRAIN_SIZE));
+		//bool hasNorth = itNorth != m_waypoints.end();
+		//if (hasNorth)
+		//{
+		//	offset.y += OFFSET;
+		//}
+
+		//// East
+		//DirectX::XMINT2 east(xRef + 1, yRef);
+		//auto itEast = m_waypoints.find((east.x + east.y * TERRAIN_SIZE));
+		//bool hasEast = itEast != m_waypoints.end();
+		//if (hasEast)
+		//{
+		//	offset.x -= OFFSET;
+		//}
+
+		//// South
+		//DirectX::XMINT2 south(xRef, yRef + 1);
+		//auto itSouth = m_waypoints.find((south.x + south.y * TERRAIN_SIZE));
+		//bool hasSouth = itSouth != m_waypoints.end();
+		//if (hasSouth)
+		//{
+		//	offset.y -= OFFSET;
+		//}
+
+		//// West
+		//DirectX::XMINT2 west(xRef - 1, yRef);
+		//auto itWest = m_waypoints.find((west.x + west.y * TERRAIN_SIZE));
+		//bool hasWest = itWest != m_waypoints.end();
+		//if (hasWest)
+		//{
+		//	offset.x += OFFSET;
+		//}
+
+		//// North-East
+		//DirectX::XMINT2 northEast(xRef + 1, yRef - 1);
+		//auto itNorthEast = m_waypoints.find((northEast.x + northEast.y * TERRAIN_SIZE));
+		//bool hasNorthEast = itNorthEast != m_waypoints.end();
+		//if (hasNorthEast)
+		//{
+		//	offset.y += OFFSET;
+		//	offset.x -= OFFSET;
+		//}
 
 
-		// South-West
-		DirectX::XMINT2 southWest(xRef - 1, yRef + 1);
-		auto itSouthWest = m_waypoints.find((southWest.x + southWest.y * TERRAIN_SIZE));
-		bool hasSouthWest = itSouthWest != m_waypoints.end();
-		if (hasSouthWest)
-		{
-			offset.y -= OFFSET;
-			offset.x += OFFSET;
-		}
+		//// South-East
+		//DirectX::XMINT2 southEast(xRef + 1, yRef + 1);
+		//auto itSouthEast = m_waypoints.find((southEast.x + southEast.y * TERRAIN_SIZE));
+		//bool hasSouthEast = itSouthEast != m_waypoints.end();
+		//if (hasSouthEast)
+		//{
+		//	offset.y -= OFFSET;
+		//	offset.x -= OFFSET;
+		//}
 
-		// North-West
-		DirectX::XMINT2 NorthWest(xRef + 1, yRef - 1);
-		auto itNorthWest = m_waypoints.find((NorthWest.x + NorthWest.y * TERRAIN_SIZE));
-		bool hasNorthWest = itNorthWest != m_waypoints.end();
-		if (hasNorthWest)
-		{
-			offset.y += OFFSET;
-			offset.x += OFFSET;
-		}
 
-		offset.x = std::clamp(offset.x, -OFFSET, OFFSET);
-		offset.y = std::clamp(offset.y, -OFFSET, OFFSET);
+		//// South-West
+		//DirectX::XMINT2 southWest(xRef - 1, yRef + 1);
+		//auto itSouthWest = m_waypoints.find((southWest.x + southWest.y * TERRAIN_SIZE));
+		//bool hasSouthWest = itSouthWest != m_waypoints.end();
+		//if (hasSouthWest)
+		//{
+		//	offset.y -= OFFSET;
+		//	offset.x += OFFSET;
+		//}
 
-		pRef.x += offset.x;
-		pRef.y += offset.y;
+		//// North-West
+		//DirectX::XMINT2 NorthWest(xRef + 1, yRef - 1);
+		//auto itNorthWest = m_waypoints.find((NorthWest.x + NorthWest.y * TERRAIN_SIZE));
+		//bool hasNorthWest = itNorthWest != m_waypoints.end();
+		//if (hasNorthWest)
+		//{
+		//	offset.y += OFFSET;
+		//	offset.x += OFFSET;
+		//}
 
-		wp.second.SetPosition(pRef.x, pRef.y);
+		//offset.x = std::clamp(offset.x, -OFFSET, OFFSET);
+		//offset.y = std::clamp(offset.y, -OFFSET, OFFSET);
+
+		//pRef.x += offset.x;
+		//pRef.y += offset.y;
+
+		//wp.second.SetPosition(pRef.x, pRef.y);
 
 	}
 
@@ -1726,8 +1742,8 @@ void Game::_creatingCoins()
 			Timer dummy;
 			dummy.Start();
 
-			center.x = (rand() % int(TERRAIN_SIZE * 0.5)) + TERRAIN_SIZE * 0.25;
-			center.y = (rand() % int(TERRAIN_SIZE * 0.5)) + TERRAIN_SIZE * 0.25;
+			center.x = (rand() % int(TERRAIN_SIZE * 0.75)) + TERRAIN_SIZE * 0.125;
+			center.y = (rand() % int(TERRAIN_SIZE * 0.75)) + TERRAIN_SIZE * 0.125;
 
 			UINT64 corner1, corner2, corner3, corner4, corner5;
 			DirectX::XMFLOAT3 center3d = { center.x, 0.0f, center.y };

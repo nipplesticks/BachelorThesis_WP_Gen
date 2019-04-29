@@ -44,7 +44,7 @@ bool Waypoint::Connect(Waypoint * wp)
 		{
 			WaypointConnection wc = {};
 			wc.wp = wp;
-			wc.connectionCost = DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&wp->GetPosition()), DirectX::XMLoadFloat2(&m_position))));
+			wc.connectionCost = DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&wp->GetPosition()), DirectX::XMLoadFloat2(&m_position))));
 
 			m_connections.insert(std::make_pair(index, wc));
 			return true;
@@ -60,7 +60,7 @@ void Waypoint::ForceConnection(Waypoint * wp)
 	WaypointConnection wc;
 	wc.wp = wp;
 
-	wc.connectionCost = DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&wp->GetPosition()), DirectX::XMLoadFloat2(&m_position))));
+	wc.connectionCost = DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&wp->GetPosition()), DirectX::XMLoadFloat2(&m_position))));
 	m_connections.insert(std::make_pair(index, wc));
 }
 

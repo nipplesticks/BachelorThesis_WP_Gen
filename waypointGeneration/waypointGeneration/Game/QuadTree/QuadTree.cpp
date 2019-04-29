@@ -374,7 +374,7 @@ void QuadTree::_closestWaypoint(Waypoint*& wp, float & dist, DirectX::XMVECTOR p
 						triangle = LineIntersectionTriangle(lStart, waypoints[i]->GetPosition(), true, intersectionPoint);
 					if (triangle == nullptr)
 					{
-						float tDist = DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(DirectX::XMVectorSubtract(pos, DirectX::XMLoadFloat2(&waypoints[i]->GetPosition()))));
+						float tDist = DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSubtract(pos, DirectX::XMLoadFloat2(&waypoints[i]->GetPosition()))));
 						if (tDist < dist)
 						{
 							dist = tDist;

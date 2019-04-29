@@ -220,7 +220,9 @@ std::vector<DirectX::XMFLOAT2> Pathfinding::_findPath(
 					c.second.wp,
 					current.gCost + c.second.connectionCost,
 					_calcHCost(c.second.wp->GetPosition(), destination));
+
 				visited.insert(std::make_pair(c.second.wp, n));
+
 				openList.insert(std::make_pair(n, c.second.wp));
 			}
 		}
@@ -331,6 +333,7 @@ std::vector<DirectX::XMFLOAT3> Pathfinding::_findPath2(const DirectX::XMFLOAT2& 
 					_calcHCost(c.second.wp->GetPosition(), destination));
 				visited.insert(std::make_pair(c.second.wp, n));
 				openList.insert(std::make_pair(n, c.second.wp));
+				
 			}
 		}
 	}
@@ -340,8 +343,13 @@ std::vector<DirectX::XMFLOAT3> Pathfinding::_findPath2(const DirectX::XMFLOAT2& 
 
 float Pathfinding::_calcHCost(const DirectX::XMFLOAT2 & a, const DirectX::XMFLOAT2 & b)
 {
+	/*float dx = abs(a.x - b.x);
+	float dy = abs(a.y - b.y);
+
+	return (dx + dy) + (1.414 - 2) * min(dx, dy);
+*/
 	return DirectX::XMVectorGetX(
-		DirectX::XMVector2LengthSq(
+		DirectX::XMVector2Length(
 			DirectX::XMVectorSubtract(
 				DirectX::XMLoadFloat2(&a),
 				DirectX::XMLoadFloat2(&b)
