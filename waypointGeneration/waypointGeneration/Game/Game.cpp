@@ -610,7 +610,7 @@ void Game::_setupGame()
 
 	DirectX::XMVECTOR camPosDir = DirectX::XMVectorScale(DirectX::XMLoadFloat4(&camDir), -1.0f);
 	DirectX::XMVECTOR playerPos = DirectX::XMLoadFloat3(&m_player.GetPosition());
-	DirectX::XMVECTOR camPos = DirectX::XMVectorAdd(playerPos, DirectX::XMVectorScale(camPosDir, TERRAIN_SIZE));
+	DirectX::XMVECTOR camPos = DirectX::XMVectorAdd(playerPos, DirectX::XMVectorScale(camPosDir, TERRAIN_SIZE * 0.20));
 
 	DirectX::XMFLOAT3 xmCamPos;
 	DirectX::XMStoreFloat3(&xmCamPos, camPos);
