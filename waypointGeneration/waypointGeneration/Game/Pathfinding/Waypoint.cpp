@@ -32,7 +32,7 @@ const DirectX::XMFLOAT2 Waypoint::GetPosition()
 	return m_position;
 }
 
-bool Waypoint::Connect(Waypoint * wp)
+int Waypoint::Connect(Waypoint * wp)
 {
 	if (wp != this)
 	{
@@ -42,26 +42,74 @@ bool Waypoint::Connect(Waypoint * wp)
 
 		if (it == m_connections.end())
 		{
-			WaypointConnection wc = {};
-			wc.wp = wp;
-			wc.connectionCost = DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&wp->GetPosition()), DirectX::XMLoadFloat2(&m_position))));
+			float l = DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&wp->GetPosition()), DirectX::XMLoadFloat2(&m_position))));
+			DirectX::XMVECTOR vDir = DirectX::XMVector2Normalize(DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&wp->GetPosition()), DirectX::XMLoadFloat2(&m_position)));
+			
 
-			m_connections.insert(std::make_pair(index, wc));
-			return true;
+			// is 0 if it should not be added
+			// is 1 if it should be added
+			// is index if it should be swapped
+
+			int canAdd = 1;
+			for (auto & wc : m_connections)
+			{
+				DirectX::XMVECTOR vDir2 = DirectX::XMVector2Normalize(DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&wc.second.wp->GetPosition()), DirectX::XMLoadFloat2(&m_position)));
+				float dot = DirectX::XMVectorGetX(DirectX::XMVector2Dot(vDir, vDir2));
+
+				if (dot > 0.95f)
+				{
+					float oldLength = wc.second.connectionCost;
+					if (l < oldLength)
+					{
+						canAdd = wc.first;
+					}
+					else
+					{
+						canAdd = 0;
+					}
+					break;
+				}
+			}
+
+			if (canAdd > 0)
+			{
+				int add = 1;
+				if (canAdd != 1)
+				{
+					m_connections.erase(canAdd);
+					add = 0;
+				}
+				
+				WaypointConnection wc = {};
+				wc.wp = wp;
+				wc.connectionCost = l;
+				m_connections.insert(std::make_pair(index, wc));
+
+				return add;
+			}
 		}
 	}
 
-	return false;
+	return -1;
 }
 
 void Waypoint::ForceConnection(Waypoint * wp)
 {
-	int index = wp->GetPosition().x + wp->GetPosition().y * TERRAIN_SIZE;
-	WaypointConnection wc;
-	wc.wp = wp;
+	if (wp != this)
+	{
+		int index = wp->GetPosition().x + wp->GetPosition().y * TERRAIN_SIZE;
 
-	wc.connectionCost = DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&wp->GetPosition()), DirectX::XMLoadFloat2(&m_position))));
-	m_connections.insert(std::make_pair(index, wc));
+		auto it = m_connections.find(index);
+
+		if (it == m_connections.end())
+		{
+			WaypointConnection wc;
+			wc.wp = wp;
+
+			wc.connectionCost = DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&wp->GetPosition()), DirectX::XMLoadFloat2(&m_position))));
+			m_connections.insert(std::make_pair(index, wc));
+		}
+	}
 }
 
 std::map<int, Waypoint::WaypointConnection>* Waypoint::GetConnections()

@@ -1613,25 +1613,28 @@ void Game::_connectWaypoints()
 			{
 				UINT key2 = arr[t].connections[n];
 
-				bool hasConnection = false;
-
-				hasConnection = m_waypoints[key].Connect(&m_waypoints[key2]);
-
-				if (m_waypoints[key2].Connect(&m_waypoints[key]))
+				int add1, add2;
+				add1 = m_waypoints[key].Connect(&m_waypoints[key2]);
+				if (add1 == 0)
 				{
-					if (hasConnection)
-					{
-						v1.Position.x = m_waypoints[key].GetPosition().x;
-						v1.Position.y = m_waypoints[key].GetHeightVal();
-						v1.Position.z = m_waypoints[key].GetPosition().y;
-						v2.Position.x = m_waypoints[key2].GetPosition().x;
-						v2.Position.y = m_waypoints[key2].GetHeightVal();
-						v2.Position.z = m_waypoints[key2].GetPosition().y;
-						m_connectionMesh.push_back(v1);
-						m_connectionMesh.push_back(v2);
-						counter++;
-					}
+					m_waypoints[key2].ForceConnection(&m_waypoints[key]);
 				}
+				else if (add1 == 1)
+				{
+					m_waypoints[key2].Connect(&m_waypoints[key]);
+				}
+				//if (add1 > 0 || add2 > 0)
+				//{
+				//	/*v1.Position.x = m_waypoints[key].GetPosition().x;
+				//	v1.Position.y = m_waypoints[key].GetHeightVal();
+				//	v1.Position.z = m_waypoints[key].GetPosition().y;
+				//	v2.Position.x = m_waypoints[key2].GetPosition().x;
+				//	v2.Position.y = m_waypoints[key2].GetHeightVal();
+				//	v2.Position.z = m_waypoints[key2].GetPosition().y;
+				//	m_connectionMesh.push_back(v1);
+				//	m_connectionMesh.push_back(v2);*/
+				//	counter++;	
+				//}
 					
 			}
 		}
@@ -1669,6 +1672,24 @@ void Game::_connectWaypoints()
 	timeStamp->Release();
 	disJoint->Release();
 	timeStamp2->Release();
+
+	for (auto & wp : m_waypoints)
+	{
+		auto con = wp.second.GetConnections();
+		for (auto & c : *con)
+		{
+			v1.Position.x = wp.second.GetPosition().x;
+			v1.Position.y = wp.second.GetHeightVal();
+			v1.Position.z = wp.second.GetPosition().y;
+			v2.Position.x = c.second.wp->GetPosition().x;
+			v2.Position.y = c.second.wp->GetHeightVal();
+			v2.Position.z = c.second.wp->GetPosition().y;
+			m_connectionMesh.push_back(v1);
+			m_connectionMesh.push_back(v2);
+			counter++;
+		}
+	}
+
 
 	std::cout << "\nConnection(s): " << counter << "... ";
 	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";

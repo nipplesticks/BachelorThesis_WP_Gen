@@ -23,7 +23,7 @@ public:
 	void SetPosition(float x, float y);
 	const DirectX::XMFLOAT2 GetPosition();
 
-	bool Connect(Waypoint * wp);
+	int Connect(Waypoint * wp);
 	void ForceConnection(Waypoint * wp);
 	void SetOffset(const DirectX::XMFLOAT2 & o) { m_offset = o; }
 	const DirectX::XMFLOAT2 & GetOffset() const { return m_offset; }
