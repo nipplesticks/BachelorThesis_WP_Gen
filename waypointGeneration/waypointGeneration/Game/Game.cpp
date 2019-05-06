@@ -220,7 +220,6 @@ void Game::_cameraControl(double dt)
 	static bool FollowPlayerPressedLastFrame = false;
 	bool FollowPlayerPressed = wnd->IsKeyPressed(Input::SPACE);
 
-
 	if (!FollowPlayerPressedLastFrame && FollowPlayerPressed)
 	{
 		m_isFollowingPlayer = !m_isFollowingPlayer;
@@ -245,8 +244,8 @@ void Game::_cameraControl(double dt)
 	}
 
 	DirectX::XMFLOAT3 translation(0, 0, 0);
-
-	if (!m_isFollowingPlayer)
+	
+	if (!m_isFollowingPlayer && _mouseInsideWindow())
 	{
 		if (wnd->IsKeyPressed(Input::UP_ARROW) || mp.y < 0.1 * wnd->GetResolutionSize().y)
 		{
@@ -1798,4 +1797,13 @@ void Game::_creatingCoins()
 	
 
 	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
+}
+
+bool Game::_mouseInsideWindow()
+{
+	Window * wnd = Window::GetInstance();
+	POINT mp = wnd->GetMousePosition();
+	POINT wndSize = wnd->GetWindowSize();
+
+	return mp.x > 0 && mp.y > 0 && mp.x < wndSize.x && mp.y < wndSize.y;
 }

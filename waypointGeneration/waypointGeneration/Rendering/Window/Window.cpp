@@ -322,7 +322,7 @@ void Window::_create(HINSTANCE hInstance, INT ShowWnd)
 	m_hwnd = CreateWindowEx(NULL,
 		m_windowName.c_str(),
 		m_windowTitle.c_str(),
-		WS_OVERLAPPEDWINDOW,
+		WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX,
 		CW_USEDEFAULT, CW_USEDEFAULT,
 		r.right - r.left, r.bottom - r.top,
 		NULL,

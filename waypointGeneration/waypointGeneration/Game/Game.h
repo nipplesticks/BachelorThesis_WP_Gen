@@ -124,4 +124,6 @@ private:
 	void _createViewableConnections();
 	void _generateWorldEdges();
 	void _creatingCoins();
+
+	bool _mouseInsideWindow();
 };
