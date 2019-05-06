@@ -56,7 +56,7 @@ int Waypoint::Connect(Waypoint * wp)
 				DirectX::XMVECTOR vDir2 = DirectX::XMVector2Normalize(DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&wc.second.wp->GetPosition()), DirectX::XMLoadFloat2(&m_position)));
 				float dot = DirectX::XMVectorGetX(DirectX::XMVector2Dot(vDir, vDir2));
 
-				if (dot > 0.95f)
+				if (dot > 0.9f)
 				{
 					float oldLength = wc.second.connectionCost;
 					if (l < oldLength)

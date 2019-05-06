@@ -510,11 +510,14 @@ void Game::_createWorld()
 		std::cout << std::endl;
 	}
 
-	std::cout << "Total Time: " << t.Stop() << " Seconds\n";
-	std::cout << "World Created\n****************************************\n";
+	std::string loadTime = "# Total Time: " + std::to_string(t.Stop()) + " Seconds #";
 
-
-
+	for (int i = 0; i < loadTime.size(); i++)
+		std::cout << "#";
+	std::cout << "\n" << loadTime << "\n";
+	for (int i = 0; i < loadTime.size(); i++)
+		std::cout << "#";
+	std::cout << "\n\nWorld Created\n****************************************\n";
 }
 
 void Game::_loadMeshes()
@@ -729,9 +732,10 @@ void Game::_createWaypoints()
 			center.x += points[j].x;
 			center.y += points[j].z;
 		}
+
 		center.x /= 3;
 		center.y /= 3;
-
+		
 		DirectX::XMVECTOR vC = DirectX::XMLoadFloat2(&center);
 
 		for (int j = 0; j < 3; j++)
@@ -1198,7 +1202,7 @@ void Game::_createViewableWaypoints()
 
 void Game::_offsetWaypoints()
 {
-	const float OFFSET = 0.5f;
+	const float OFFSET = 1.0f;
 
 	Timer t;
 	std::cout << "Prepareing Waypoints for connections... ";
@@ -1209,98 +1213,7 @@ void Game::_offsetWaypoints()
 	{
 		DirectX::XMFLOAT2 pRef = wp.second.GetPosition();
 		DirectX::XMFLOAT2 offset = wp.second.GetOffset();
-		wp.second.SetPosition(pRef.x + offset.x, pRef.y + offset.y);
-
-
-		//int xRef = (pRef.x + 0.5f);
-		//int yRef = (pRef.y + 0.5f);
-
-		//// North
-		//DirectX::XMINT2 north(xRef, yRef - 1);
-		//auto itNorth = m_waypoints.find((north.x + north.y * TERRAIN_SIZE));
-		//bool hasNorth = itNorth != m_waypoints.end();
-		//if (hasNorth)
-		//{
-		//	offset.y += OFFSET;
-		//}
-
-		//// East
-		//DirectX::XMINT2 east(xRef + 1, yRef);
-		//auto itEast = m_waypoints.find((east.x + east.y * TERRAIN_SIZE));
-		//bool hasEast = itEast != m_waypoints.end();
-		//if (hasEast)
-		//{
-		//	offset.x -= OFFSET;
-		//}
-
-		//// South
-		//DirectX::XMINT2 south(xRef, yRef + 1);
-		//auto itSouth = m_waypoints.find((south.x + south.y * TERRAIN_SIZE));
-		//bool hasSouth = itSouth != m_waypoints.end();
-		//if (hasSouth)
-		//{
-		//	offset.y -= OFFSET;
-		//}
-
-		//// West
-		//DirectX::XMINT2 west(xRef - 1, yRef);
-		//auto itWest = m_waypoints.find((west.x + west.y * TERRAIN_SIZE));
-		//bool hasWest = itWest != m_waypoints.end();
-		//if (hasWest)
-		//{
-		//	offset.x += OFFSET;
-		//}
-
-		//// North-East
-		//DirectX::XMINT2 northEast(xRef + 1, yRef - 1);
-		//auto itNorthEast = m_waypoints.find((northEast.x + northEast.y * TERRAIN_SIZE));
-		//bool hasNorthEast = itNorthEast != m_waypoints.end();
-		//if (hasNorthEast)
-		//{
-		//	offset.y += OFFSET;
-		//	offset.x -= OFFSET;
-		//}
-
-
-		//// South-East
-		//DirectX::XMINT2 southEast(xRef + 1, yRef + 1);
-		//auto itSouthEast = m_waypoints.find((southEast.x + southEast.y * TERRAIN_SIZE));
-		//bool hasSouthEast = itSouthEast != m_waypoints.end();
-		//if (hasSouthEast)
-		//{
-		//	offset.y -= OFFSET;
-		//	offset.x -= OFFSET;
-		//}
-
-
-		//// South-West
-		//DirectX::XMINT2 southWest(xRef - 1, yRef + 1);
-		//auto itSouthWest = m_waypoints.find((southWest.x + southWest.y * TERRAIN_SIZE));
-		//bool hasSouthWest = itSouthWest != m_waypoints.end();
-		//if (hasSouthWest)
-		//{
-		//	offset.y -= OFFSET;
-		//	offset.x += OFFSET;
-		//}
-
-		//// North-West
-		//DirectX::XMINT2 NorthWest(xRef + 1, yRef - 1);
-		//auto itNorthWest = m_waypoints.find((NorthWest.x + NorthWest.y * TERRAIN_SIZE));
-		//bool hasNorthWest = itNorthWest != m_waypoints.end();
-		//if (hasNorthWest)
-		//{
-		//	offset.y += OFFSET;
-		//	offset.x += OFFSET;
-		//}
-
-		//offset.x = std::clamp(offset.x, -OFFSET, OFFSET);
-		//offset.y = std::clamp(offset.y, -OFFSET, OFFSET);
-
-		//pRef.x += offset.x;
-		//pRef.y += offset.y;
-
-		//wp.second.SetPosition(pRef.x, pRef.y);
-
+		wp.second.SetPosition(pRef.x + offset.x * OFFSET, pRef.y + offset.y * OFFSET);
 	}
 
 
@@ -1673,25 +1586,38 @@ void Game::_connectWaypoints()
 	disJoint->Release();
 	timeStamp2->Release();
 
+	std::vector<int> removeThis;
+
 	for (auto & wp : m_waypoints)
 	{
 		auto con = wp.second.GetConnections();
-		for (auto & c : *con)
+		if (con->size() == 0)
 		{
-			v1.Position.x = wp.second.GetPosition().x;
-			v1.Position.y = wp.second.GetHeightVal();
-			v1.Position.z = wp.second.GetPosition().y;
-			v2.Position.x = c.second.wp->GetPosition().x;
-			v2.Position.y = c.second.wp->GetHeightVal();
-			v2.Position.z = c.second.wp->GetPosition().y;
-			m_connectionMesh.push_back(v1);
-			m_connectionMesh.push_back(v2);
-			counter++;
+			removeThis.push_back(wp.first);
+		}
+		else
+		{
+			for (auto & c : *con)
+			{
+				v1.Position.x = wp.second.GetPosition().x;
+				v1.Position.y = wp.second.GetHeightVal();
+				v1.Position.z = wp.second.GetPosition().y;
+				v2.Position.x = c.second.wp->GetPosition().x;
+				v2.Position.y = c.second.wp->GetHeightVal();
+				v2.Position.z = c.second.wp->GetPosition().y;
+				m_connectionMesh.push_back(v1);
+				m_connectionMesh.push_back(v2);
+				counter++;
+			}
 		}
 	}
+	for (auto & i : removeThis)
+	{
+		m_waypoints.erase(i);
+	}
 
-
-	std::cout << "\nConnection(s): " << counter << "... ";
+	std::cout << "\nConnection(s): " << counter << "\n";
+	std::cout << "\nFinal Waypoint count: " << m_waypoints.size() << "... ";
 	std::cout << t.Stop(Timer::MILLISECONDS) << " ms\n";
 }
 

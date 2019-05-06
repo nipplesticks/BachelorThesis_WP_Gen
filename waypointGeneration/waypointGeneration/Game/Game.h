@@ -10,8 +10,8 @@
 
 #define DRAW_WAYPOINT false
 #define DRAW_TRIANGLES false
-#define DRAW_CONNECTIONS true
-#define USE_RANDOM_SEED false
+#define DRAW_CONNECTIONS false
+#define USE_RANDOM_SEED true
 
 #define MIN_HEIGHT	-13
 #define MAX_HEIGHT	15

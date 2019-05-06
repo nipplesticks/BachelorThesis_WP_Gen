@@ -180,7 +180,7 @@ void Drawable::UnitUpdate(double dt, QuadTree * qt)
 		XMFLOAT3 pos = GetPosition();
 		XMFLOAT2 current(pos.x, pos.z);
 		XMFLOAT2 target = m_path.front();
-		/*
+		
 		XMFLOAT2 dummy;
 
 		Triangle * tri = nullptr;
@@ -194,8 +194,6 @@ void Drawable::UnitUpdate(double dt, QuadTree * qt)
 				target = nexTarget;
 			}
 		}
-		*/
-
 
 		XMVECTOR vCurrent = XMLoadFloat2(&current);
 		XMVECTOR vTarget = XMLoadFloat2(&target);
